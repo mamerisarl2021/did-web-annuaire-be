@@ -1,0 +1,58 @@
+name: deploy-staging-prime-backend
+
+on:
+  workflow_run:
+    workflows: ["build-and-push-backend-prime"]
+    types: [completed]
+
+jobs:
+  deploy-staging-prime:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging-prime' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache
+
+      - name: Docker prune
+        run: docker system prune -af
+
+      - name: SSH deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ANNUAIRE_DID_BACKEND_HOST }}
+          username: ${{ secrets.ANNUAIRE_DID_BACKEND_USER }}
+          password: ${{ secrets.ANNUAIRE_DID_BACKEND_PASSWORD }}
+          script: |
+            set -euo pipefail
+
+            BACKEND_DIR=~/app/did-web-annuaire-backend/staging
+
+            echo "➡️  Ensuring shared network exists"
+            docker network create annuaire_staging_net 2>/dev/null || true
+
+            cd "$BACKEND_DIR"
+
+            echo "➡️  Pulling latest images"
+            docker compose -f compose.yml pull annuaire-backend
+
+            echo "➡️  Recreating backend services"
+            # Only recreates containers whose image changed.
+            # Redis, Postgres, Celery workers get recreated too since they
+            # share the same compose file, but their images haven't changed
+            # so Docker just verifies and skips them.
+            docker compose -f compose.yml up -d --force-recreate --remove-orphans
+
+            echo "➡️  Waiting for backend to be healthy"
+            sleep 5
+
+            echo "➡️  Service status"
+            docker compose -f compose.yml ps
+
+            echo "➡️  Pruning old images"
+            docker image prune -f
+
+            echo "✅  Deploy complete"
