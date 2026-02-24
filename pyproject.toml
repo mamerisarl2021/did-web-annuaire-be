@@ -11,6 +11,7 @@ dependencies = [
     "django-extensions>=4.1",
     "django-ninja>=1.5.3",
     "django-structlog>=10.0.0",
+    "gunicorn>=25.1.0",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
