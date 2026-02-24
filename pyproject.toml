@@ -1,0 +1,20 @@
+[project]
+name = "did-web-annuaire-be"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "django==5.2.11",
+    "django-celery-beat>=2.8.1",
+    "django-cors-headers>=4.9.0",
+    "django-ninja>=1.5.3",
+    "django-structlog>=10.0.0",
+    "psycopg2-binary>=2.9.11",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
+    "pyotp>=2.9.0",
+    "qrcode>=8.2",
+    "redis>=7.2.0",
+    "structlog>=25.5.0",
+]
