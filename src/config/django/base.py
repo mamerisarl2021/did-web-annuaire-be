@@ -18,7 +18,7 @@ WSGI_APPLICATION = "src.wsgi.application"
 ASGI_APPLICATION = "src.asgi.application"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-AUTH_USER_MODEL = "users.User"
+#AUTH_USER_MODEL = "users.User"
 
 
 # ── Installed Apps ──────────────────────────────────────────────────────
@@ -36,6 +36,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "django_celery_beat",
     "django_structlog",
+    "django_extensions",
 ]
 
 LOCAL_APPS = []

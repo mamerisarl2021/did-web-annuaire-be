@@ -88,16 +88,16 @@ class AppSettings(BaseSettings):
     # ── Session / Cookies ───────────────────────────────────────────────
     SESSION_COOKIE_NAME: str = "annuaire_session"
     SESSION_COOKIE_AGE: int = 86400  # 24h
-    SESSION_COOKIE_SECURE: bool = False  # True in prod
-    SESSION_COOKIE_DOMAIN: str = ""  # ".qcdigitalhub.com" in prod
-    CSRF_COOKIE_SECURE: bool = False  # True in prod
+    SESSION_COOKIE_SECURE: bool = False
+    SESSION_COOKIE_DOMAIN: str = ""
+    CSRF_COOKIE_SECURE: bool = False
 
     # ── External services ───────────────────────────────────────────────
     UNIVERSAL_REGISTRAR_URL: str = "http://uni-registrar-web:9080"
     SIGNSERVER_URL: str = "http://signserver-node:8080/signserver/process"
     SIGNSERVER_WORKER_NAME: str = "DIDDocumentSigner"
     CERT_SERVICE_JAR_PATH: str = "/app/bin/ecdsa-extractor.jar"
-    CERT_SERVICE_TIMEOUT: int = 5
+    CERT_SERVICE_TIMEOUT: int = 10
 
     # ── Platform ────────────────────────────────────────────────────────
     PLATFORM_DOMAIN: str = "annuairedid-be.qcdigitalhub.com"
