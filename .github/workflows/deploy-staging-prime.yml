@@ -29,7 +29,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            BACKEND_DIR=~/app/did-web-annuaire-backend/staging
+            BACKEND_DIR=~/apps/did-web-annuaire-backend/staging
 
             echo "➡️  Ensuring shared network exists"
             docker network create annuaire_staging_net 2>/dev/null || true
