@@ -60,12 +60,12 @@ sys.exit(1)
 # ── Migrations ──────────────────────────────────────────────────────────
 
 echo "→ Running migrations..."
-python src/manage.py migrate --noinput
+python -m src.manage migrate --noinput
 
 # ── Collect static files ────────────────────────────────────────────────
 
 echo "→ Collecting static files..."
-python src/manage.py collectstatic --noinput --clear 2>/dev/null || true
+python -m src.manage collectstatic --noinput --clear 2>/dev/null || true
 
 # ── Java check ──────────────────────────────────────────────────────────
 
