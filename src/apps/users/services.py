@@ -3,6 +3,7 @@ User services (write operations).
 """
 
 import structlog
+from django.db import transaction
 from django.utils import timezone
 
 from .models import User
@@ -10,7 +11,7 @@ from src.common.exceptions import ConflictError, ValidationError
 
 logger = structlog.get_logger(__name__)
 
-
+@transaction.atomic
 def create_user(
     *,
     email: str,
@@ -37,7 +38,7 @@ def create_user(
     logger.info("user_created", user_id=str(user.id), email=user.email)
     return user
 
-
+@transaction.atomic
 def activate_user(*, user: User) -> User:
     if user.is_active:
         raise ValidationError("Account is already activated.")
@@ -49,7 +50,7 @@ def activate_user(*, user: User) -> User:
     logger.info("user_activated", user_id=str(user.id))
     return user
 
-
+@transaction.atomic
 def update_user_profile(*, user: User, full_name: str | None = None, phone: str | None = None, functions: str | None = None) -> User:
     fields_to_update = ["updated_at"]
     if full_name is not None:
@@ -64,7 +65,7 @@ def update_user_profile(*, user: User, full_name: str | None = None, phone: str 
     user.save(update_fields=fields_to_update)
     return user
 
-
+@transaction.atomic
 def set_otp_secret(*, user: User, otp_secret: str) -> User:
     user.otp_secret = otp_secret
     user.save(update_fields=["otp_secret", "updated_at"])

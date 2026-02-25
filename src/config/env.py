@@ -16,6 +16,7 @@ Environment switching:
 """
 
 from pathlib import Path
+from urllib.parse import quote
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -61,13 +62,15 @@ class AppSettings(BaseSettings):
         )
 
     # ── Redis ───────────────────────────────────────────────────────────
-    REDIS_PASSWORD: str = "changeme_redis"
+    #REDIS_PASSWORD: str = "changeme_redis"
+    REDIS_PASSWORD: str = "redisallow-alex@123"
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
 
     @property
     def REDIS_URL(self) -> str:
-        return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}"
+        password = quote(self.REDIS_PASSWORD)
+        return f"redis://:{password}@{self.REDIS_HOST}:{self.REDIS_PORT}"
 
     @property
     def CELERY_BROKER_URL(self) -> str:
@@ -110,7 +113,7 @@ class AppSettings(BaseSettings):
     CERT_SERVICE_TIMEOUT: int = 10
 
     # ── Platform ────────────────────────────────────────────────────────
-    PLATFORM_DOMAIN: str = "annuairedid-be.qcdigitalhub.com"
+    PLATFORM_DOMAIN: str = "localhost:8000"
 
     @property
     def PLATFORM_DID(self) -> str:

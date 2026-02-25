@@ -1,0 +1,122 @@
+{% extends "superadmin/base_superadmin.html" %}
+{% block title %}Organizations{% endblock %}
+
+{% block content %}
+<div class="sa-page-header">
+  <div>
+    <h2>Organizations</h2>
+    <p>Review and manage registered organizations</p>
+  </div>
+</div>
+
+<div id="alert-box"></div>
+
+<!-- Status tabs -->
+<div class="sa-tabs" id="status-tabs">
+  <button class="sa-tab active" data-status="" onclick="switchTab(this)">
+    All <span class="count" id="count-all">—</span>
+  </button>
+  <button class="sa-tab" data-status="PENDING_REVIEW" onclick="switchTab(this)">
+    Pending <span class="count" id="count-pending">—</span>
+  </button>
+  <button class="sa-tab" data-status="APPROVED" onclick="switchTab(this)">
+    Approved <span class="count" id="count-approved">—</span>
+  </button>
+  <button class="sa-tab" data-status="REJECTED" onclick="switchTab(this)">
+    Rejected <span class="count" id="count-rejected">—</span>
+  </button>
+  <button class="sa-tab" data-status="SUSPENDED" onclick="switchTab(this)">
+    Suspended <span class="count" id="count-suspended">—</span>
+  </button>
+</div>
+
+<div id="org-table">
+  <div class="sa-empty"><p>Loading...</p></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allOrgs = [];
+let currentStatus = "";
+
+// Check for URL query param
+const urlParams = new URLSearchParams(window.location.search);
+const initialStatus = urlParams.get("status") || "";
+
+async function loadOrgs() {
+  try {
+    allOrgs = await SA.listOrgs();
+    updateCounts();
+
+    if (initialStatus) {
+      currentStatus = initialStatus;
+      document.querySelectorAll(".sa-tab").forEach(t => {
+        t.classList.toggle("active", t.dataset.status === initialStatus);
+      });
+    }
+
+    renderTable();
+  } catch (err) {
+    saShowAlert("alert-box", err.detail || "Failed to load organizations.", "error");
+  }
+}
+
+function updateCounts() {
+  document.getElementById("count-all").textContent = allOrgs.length;
+  document.getElementById("count-pending").textContent = allOrgs.filter(o => o.status === "PENDING_REVIEW").length;
+  document.getElementById("count-approved").textContent = allOrgs.filter(o => o.status === "APPROVED").length;
+  document.getElementById("count-rejected").textContent = allOrgs.filter(o => o.status === "REJECTED").length;
+  document.getElementById("count-suspended").textContent = allOrgs.filter(o => o.status === "SUSPENDED").length;
+}
+
+function switchTab(tab) {
+  currentStatus = tab.dataset.status;
+  document.querySelectorAll(".sa-tab").forEach(t => t.classList.remove("active"));
+  tab.classList.add("active");
+  renderTable();
+}
+
+function renderTable() {
+  const filtered = currentStatus ? allOrgs.filter(o => o.status === currentStatus) : allOrgs;
+
+  if (filtered.length === 0) {
+    document.getElementById("org-table").innerHTML = `
+      <div class="sa-empty">
+        <div class="icon">🏢</div>
+        <p>No organizations ${currentStatus ? "with status " + currentStatus.toLowerCase().replace("_", " ") : "found"}</p>
+      </div>`;
+    return;
+  }
+
+  const rows = filtered.map(org => `
+    <tr>
+      <td>
+        <div class="org-name">${org.name}</div>
+        <div class="org-slug">${org.slug}</div>
+      </td>
+      <td>${org.type || "—"}</td>
+      <td>${org.country || "—"}</td>
+      <td>${org.admin_email || "—"}</td>
+      <td><span class="sa-badge ${badgeClass(org.status)}">${badgeLabel(org.status)}</span></td>
+      <td>${formatDate(org.created_at)}</td>
+      <td>
+        <a class="view-link" href="{% url 'superadmin:sa_organizations' %}${org.id}/">View →</a>
+      </td>
+    </tr>
+  `).join("");
+
+  document.getElementById("org-table").innerHTML = `
+    <div class="sa-table-wrap">
+      <table class="sa-table">
+        <thead><tr>
+          <th>Organization</th><th>Type</th><th>Country</th><th>Admin</th><th>Status</th><th>Submitted</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+loadOrgs();
+</script>
+{% endblock %}

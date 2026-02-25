@@ -16,6 +16,7 @@ import structlog
 from django.core.cache import cache
 from django.core.files.uploadedfile import UploadedFile
 from django.utils import timezone
+from django.db import transaction
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
@@ -32,7 +33,7 @@ RESET_TOKEN_TTL = timedelta(hours=1)
 
 # ── Registration ────────────────────────────────────────────────────────
 
-
+@transaction.atomic
 def register_user_and_org(
     *,
     # Organization fields (step 1)
@@ -101,14 +102,19 @@ def register_user_and_org(
         status=MembershipStatus.INVITED,
     )
 
-    # TODO: Celery task — email superadmin about new registration
     logger.info("registration_complete", user_id=str(user.id), org_slug=org.slug)
+    from src.apps.emails.tasks import send_superadmin_new_registration_email
+    send_superadmin_new_registration_email.delay(
+        org_name=org_name,
+        org_slug=org.slug,
+        admin_email=email,
+    )
     return user
 
 
 # ── OTP Setup ───────────────────────────────────────────────────────────
 
-
+@transaction.atomic
 def setup_otp(*, user: User) -> dict:
     if user.is_active and user.account_activated_at:
         raise ValidationError("Account is already activated.")
@@ -137,7 +143,7 @@ def setup_otp(*, user: User) -> dict:
 
 # ── OTP Verification ───────────────────────────────────────────────────
 
-
+@transaction.atomic
 def verify_otp_and_activate(*, user: User, otp_code: str) -> User:
     if not user.otp_secret:
         raise ValidationError("OTP has not been set up. Call the setup endpoint first.")
@@ -153,7 +159,7 @@ def verify_otp_and_activate(*, user: User, otp_code: str) -> User:
 
 # ── Token generation ────────────────────────────────────────────────────
 
-
+@transaction.atomic
 def generate_tokens_for_user(*, user: User) -> dict:
     refresh = RefreshToken.for_user(user)
     refresh["email"] = user.email
@@ -168,7 +174,7 @@ def generate_tokens_for_user(*, user: User) -> dict:
 
 # ── Logout ──────────────────────────────────────────────────────────────
 
-
+@transaction.atomic
 def logout_user(*, refresh_token: str) -> None:
     try:
         token = RefreshToken(refresh_token)
@@ -180,7 +186,7 @@ def logout_user(*, refresh_token: str) -> None:
 
 # ── Password Reset ──────────────────────────────────────────────────────
 
-
+@transaction.atomic
 def request_password_reset(*, email: str) -> None:
     """
     Generate a reset token in Redis and trigger a reset email.
@@ -200,7 +206,7 @@ def request_password_reset(*, email: str) -> None:
     # TODO: Celery task — send password reset email
     logger.info("password_reset_token_generated", user_id=str(user.id), token=token)
 
-
+@transaction.atomic
 def confirm_password_reset(*, token: str, new_password: str) -> None:
     from src.apps.users.selectors import get_user_by_id
 
@@ -227,7 +233,7 @@ def confirm_password_reset(*, token: str, new_password: str) -> None:
 
     logger.info("password_reset_confirmed", user_id=str(user.id))
 
-
+@transaction.atomic
 def change_password(*, user: User, old_password: str, new_password: str) -> None:
     if not user.check_password(old_password):
         raise ValidationError("Current password is incorrect.")

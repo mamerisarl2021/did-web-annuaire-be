@@ -3,6 +3,7 @@ Organization services (write operations).
 """
 
 import structlog
+from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -18,7 +19,7 @@ logger = structlog.get_logger(__name__)
 
 # ── Organization lifecycle ──────────────────────────────────────────────
 
-
+@transaction.atomic
 def create_organization(
     *,
     name: str,
@@ -57,7 +58,7 @@ def create_organization(
     logger.info("org_created", org_id=str(org.id), slug=org.slug)
     return org
 
-
+@transaction.atomic
 def approve_organization(*, organization: Organization, reviewed_by: User) -> Organization:
     if organization.status != OrgStatus.PENDING_REVIEW:
         raise ValidationError(f"Organization is '{organization.status}', not PENDING_REVIEW.")
@@ -70,7 +71,7 @@ def approve_organization(*, organization: Organization, reviewed_by: User) -> Or
     logger.info("org_approved", org_id=str(organization.id))
     return organization
 
-
+@transaction.atomic
 def reject_organization(
     *, organization: Organization, reviewed_by: User, reason: str = ""
 ) -> Organization:
@@ -88,7 +89,7 @@ def reject_organization(
     logger.info("org_rejected", org_id=str(organization.id))
     return organization
 
-
+@transaction.atomic
 def suspend_organization(*, organization: Organization, reviewed_by: User) -> Organization:
     if organization.status != OrgStatus.APPROVED:
         raise ValidationError(f"Can only suspend APPROVED orgs, got '{organization.status}'.")
@@ -104,7 +105,7 @@ def suspend_organization(*, organization: Organization, reviewed_by: User) -> Or
 
 # ── Membership management ───────────────────────────────────────────────
 
-
+@transaction.atomic
 def create_membership(
     *,
     user: User,
@@ -129,7 +130,7 @@ def create_membership(
     logger.info("membership_created", user=user.email, org=organization.slug, role=role)
     return membership
 
-
+@transaction.atomic
 def activate_membership(*, membership: Membership) -> Membership:
     if membership.status == MembershipStatus.ACTIVE:
         raise ValidationError("Membership is already active.")
@@ -141,7 +142,7 @@ def activate_membership(*, membership: Membership) -> Membership:
     logger.info("membership_activated", user=membership.user.email, org=membership.organization.slug)
     return membership
 
-
+@transaction.atomic
 def invite_member(
     *, organization: Organization, email: str, role: Role, invited_by: User
 ) -> Membership:
@@ -168,7 +169,7 @@ def invite_member(
     # TODO: Celery task to send invitation email
     return membership
 
-
+@transaction.atomic
 def change_member_role(*, membership: Membership, new_role: Role, changed_by: User) -> Membership:
     old_role = membership.role
     membership.role = new_role
@@ -176,7 +177,7 @@ def change_member_role(*, membership: Membership, new_role: Role, changed_by: Us
     logger.info("member_role_changed", old_role=old_role, new_role=new_role)
     return membership
 
-
+@transaction.atomic
 def deactivate_membership(*, membership: Membership, deactivated_by: User) -> Membership:
     membership.status = MembershipStatus.DEACTIVATED
     membership.save(update_fields=["status", "updated_at"])

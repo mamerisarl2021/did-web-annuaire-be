@@ -1,10 +1,11 @@
 """
 Root URL configuration.
 
-- /api/v2/          → NinjaExtraAPI (JWT auth, REST endpoints)
-- /superadmin/api/v2/ → Superadmin API
-- /login/, /register/, etc. → Django Templates + HTMX frontend
-- /admin/           → Django admin
+- /api/v2/              → Main NinjaExtraAPI (JWT auth, REST endpoints)
+- /superadmin/api/v2/   → Superadmin API
+- /superadmin/          → Superadmin frontend (Django templates)
+- /login/, /register/   → Public frontend (Django templates)
+- /admin/               → Django admin
 """
 
 from django.contrib import admin
@@ -13,13 +14,14 @@ from ninja_extra import NinjaExtraAPI
 from ninja_jwt.controller import NinjaJWTDefaultController
 
 from src.apps.authentication.apis import router as auth_router
+from src.apps.superadmin.apis import router as superadmin_router
 from src.common.exceptions import configure_exception_handlers
 
 # ── Main API ────────────────────────────────────────────────────────────
 
 api = NinjaExtraAPI(
     title="Annuaire DID API",
-    version="1.0.0",
+    version="1.0.1",
     description="DID Directory — decentralized identity management",
     urls_namespace="api",
 )
@@ -36,12 +38,13 @@ api.add_router("/auth", auth_router)
 
 superadmin_api = NinjaExtraAPI(
     title="Annuaire DID Superadmin API",
-    version="1.0.0",
+    version="1.0.1",
     urls_namespace="superadmin_api",
     docs_url="/docs",
 )
 
 configure_exception_handlers(superadmin_api)
+superadmin_api.add_router("/", superadmin_router)
 
 # ── URL patterns ────────────────────────────────────────────────────────
 
@@ -53,6 +56,9 @@ urlpatterns = [
     # Django admin
     path("admin/", admin.site.urls),
 
-    # Frontend (templates + HTMX)
+    # Superadmin frontend (templates)
+    path("superadmin/", include("src.apps.superadmin.urls")),
+
+    # Public frontend (templates) — must be last (catch-all paths)
     path("", include("src.apps.frontend.urls")),
 ]

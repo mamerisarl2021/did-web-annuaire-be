@@ -4,6 +4,7 @@ File services — handles upload, validation, and deletion.
 
 import structlog
 from django.core.files.uploadedfile import UploadedFile
+from django.db import transaction
 from django.utils import timezone
 
 from src.apps.files.models import File
@@ -72,7 +73,7 @@ def _validate_file(
 
     return content_type
 
-
+@transaction.atomic
 def upload_file(
     *,
     file: UploadedFile,
@@ -108,7 +109,7 @@ def upload_file(
     )
     return file_instance
 
-
+@transaction.atomic
 def upload_document(*, file: UploadedFile, uploaded_by=None) -> File:
     """Upload a document file (PDF only)."""
     return upload_file(
@@ -117,7 +118,7 @@ def upload_document(*, file: UploadedFile, uploaded_by=None) -> File:
         allowed_types=ALLOWED_DOCUMENT_TYPES,
     )
 
-
+@transaction.atomic
 def upload_certificate_file(*, file: UploadedFile, uploaded_by=None) -> File:
     """Upload a certificate file (PEM/DER)."""
     return upload_file(
@@ -126,7 +127,7 @@ def upload_certificate_file(*, file: UploadedFile, uploaded_by=None) -> File:
         allowed_types=ALLOWED_CERTIFICATE_TYPES,
     )
 
-
+@transaction.atomic
 def delete_file(*, file_instance: File) -> None:
     """Delete a file from storage and the database."""
     file_id = str(file_instance.id)

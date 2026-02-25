@@ -20,6 +20,10 @@ ASGI_APPLICATION = "src.asgi.application"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
+# ── Others ──────────────────────────────────────────────────────
+
+PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
+
 
 # ── Installed Apps ──────────────────────────────────────────────────────
 
@@ -49,6 +53,7 @@ LOCAL_APPS = [
     "src.apps.files",
     "src.apps.emails",
     "src.apps.frontend",
+    "src.apps.superadmin",
     "src.seeders",
 ]
 
@@ -75,6 +80,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
+        #"DIRS": [os.path.join(APPS_DIR, "templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -105,6 +111,17 @@ DATABASES = {
     },
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env.CACHE_REDIS_URL,
+        "OPTIONS": {
+            "socket_connect_timeout": 5,
+            "socket_timeout": 5,
+        },
+    },
+}
+
 
 
 
@@ -125,6 +142,16 @@ LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+
+#ADMIN_USER_NAME = "david"
+#ADMIN_USER_EMAIL = "princedavealex.20@gmail.com"
+
+#ADMINS = []
+
+#if ADMIN_USER_NAME and ADMIN_USER_EMAIL:
+#    ADMINS.append((ADMIN_USER_NAME, ADMIN_USER_EMAIL))
+
+#MANAGERS = ADMINS
 
 # ── Split configs (imported from others/) ───────────────────────────────
 # Each file exports top-level Django settings variables.
