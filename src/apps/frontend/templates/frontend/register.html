@@ -1,0 +1,253 @@
+{% extends "frontend/base.html" %}
+{% block title %}Register — AnnuaireDID{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <div class="card card--wide">
+    <div class="brand">
+      <h1><span>Annuaire</span>DID</h1>
+      <p>Register your organization</p>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="steps">
+      <div class="step active" id="step-ind-1">
+        <div class="step-bar"></div>
+        <div class="step-label">Organization Info</div>
+      </div>
+      <div class="step" id="step-ind-2">
+        <div class="step-bar"></div>
+        <div class="step-label">Admin Account</div>
+      </div>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <!-- ── Success Screen (hidden) ──────────────────────────────── -->
+    <div id="success-screen" class="hidden text-center">
+      <div class="success-icon">✓</div>
+      <h2>Registration Submitted</h2>
+      <p style="color: var(--text-muted); font-size: 0.875rem; line-height: 1.6; margin-top: 0.5rem;">
+        Your organization registration is now pending review by an administrator.
+        You will receive an email once approved with instructions to activate your account.
+      </p>
+      <a href="{% url 'frontend:login' %}" class="btn btn-primary mt-3">Back to Sign In</a>
+    </div>
+
+    <!-- ── Step 1: Organization ─────────────────────────────────── -->
+    <div id="step-1">
+      <div class="form-group">
+        <label for="org_name">Organization Name <span class="required">*</span></label>
+        <input id="org_name" class="form-input" placeholder="Acme Corporation" required
+               oninput="document.getElementById('org_slug').value = autoSlug(this.value);">
+      </div>
+
+      <div class="form-group">
+        <label for="org_slug">Slug (URL identifier)</label>
+        <input id="org_slug" class="form-input mono" placeholder="acme-corporation">
+      </div>
+
+      <div class="form-group">
+        <label for="org_type">Organization Type</label>
+        <select id="org_type" class="form-select">
+          <option value="">Select type...</option>
+          <option value="enterprise">Enterprise</option>
+          <option value="government">Government</option>
+          <option value="ngo">NGO</option>
+          <option value="education">Education</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="financial">Financial</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="org_country">Country</label>
+          <input id="org_country" class="form-input" placeholder="Canada">
+        </div>
+        <div class="form-group">
+          <label for="org_email">Organization Email <span class="required">*</span></label>
+          <input id="org_email" type="email" class="form-input" placeholder="contact@acme.com" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="org_address">Address</label>
+        <textarea id="org_address" class="form-textarea" placeholder="123 Main St, Montreal, QC"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="org_description">Description</label>
+        <textarea id="org_description" class="form-textarea" placeholder="Brief description of your organization..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Authorization Document <span class="required">*</span></label>
+        <div class="file-drop" id="auth-doc-drop" onclick="document.getElementById('auth_doc').click();">
+          <input type="file" id="auth_doc" accept=".pdf" onchange="handleFileSelect(this, 'auth-doc-drop');">
+          <div class="placeholder">
+            Click to upload PDF
+            <small>Administrative proof — required. Max 10MB</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Justification Document</label>
+        <div class="file-drop" id="just-doc-drop" onclick="document.getElementById('just_doc').click();">
+          <input type="file" id="just_doc" accept=".pdf" onchange="handleFileSelect(this, 'just-doc-drop');">
+          <div class="placeholder">
+            Click to upload PDF
+            <small>Optional. Max 10MB</small>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-primary" onclick="goToStep2();">
+        <span class="btn-label">Continue to Admin Account →</span>
+      </button>
+    </div>
+
+    <!-- ── Step 2: Admin Account ────────────────────────────────── -->
+    <div id="step-2" class="hidden">
+      <div class="form-group">
+        <label for="user_email">Email <span class="required">*</span></label>
+        <input id="user_email" type="email" class="form-input" placeholder="admin@acme.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="user_fullname">Full Name <span class="required">*</span></label>
+        <input id="user_fullname" class="form-input" placeholder="Jean Dupont" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="user_phone">Phone</label>
+          <input id="user_phone" class="form-input" placeholder="+1 514 555 0000">
+        </div>
+        <div class="form-group">
+          <label for="user_functions">Function / Title</label>
+          <input id="user_functions" class="form-input" placeholder="CTO">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="user_password">Password <span class="required">*</span></label>
+        <input id="user_password" type="password" class="form-input" placeholder="Minimum 8 characters" required>
+      </div>
+
+      <div class="form-group">
+        <label for="user_confirm">Confirm Password <span class="required">*</span></label>
+        <input id="user_confirm" type="password" class="form-input" placeholder="Repeat password" required>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" onclick="goToStep1();">← Back</button>
+        <button type="button" id="submit-btn" class="btn btn-primary" onclick="handleRegister();">
+          <span class="btn-label">Submit Registration</span>
+          <span class="htmx-indicator spinner"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="footer-link" id="footer-link">
+      Already registered?
+      <a href="{% url 'frontend:login' %}" class="link">Sign in</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function handleFileSelect(input, dropId) {
+    const drop = document.getElementById(dropId);
+    if (input.files.length > 0) {
+      const f = input.files[0];
+      const sizeKB = (f.size / 1024).toFixed(0);
+      drop.classList.add("has-file");
+      drop.querySelector(".placeholder").innerHTML =
+        `<div class="file-info">📄 ${f.name} <span class="size">(${sizeKB} KB)</span></div>`;
+    }
+  }
+
+  function goToStep2() {
+    clearAlert("alert-box");
+    const name = document.getElementById("org_name").value.trim();
+    const email = document.getElementById("org_email").value.trim();
+    const authDoc = document.getElementById("auth_doc").files[0];
+
+    if (!name) { showAlert("alert-box", "Organization name is required."); return; }
+    if (!email) { showAlert("alert-box", "Organization email is required."); return; }
+    if (!authDoc) { showAlert("alert-box", "Authorization document is required."); return; }
+
+    document.getElementById("step-1").classList.add("hidden");
+    document.getElementById("step-2").classList.remove("hidden");
+    document.getElementById("step-ind-2").classList.add("active");
+    window.scrollTo(0, 0);
+  }
+
+  function goToStep1() {
+    clearAlert("alert-box");
+    document.getElementById("step-2").classList.add("hidden");
+    document.getElementById("step-1").classList.remove("hidden");
+    document.getElementById("step-ind-2").classList.remove("active");
+    window.scrollTo(0, 0);
+  }
+
+  async function handleRegister() {
+    clearAlert("alert-box");
+    const btn = document.getElementById("submit-btn");
+    const pw = document.getElementById("user_password").value;
+    const confirm = document.getElementById("user_confirm").value;
+
+    if (!document.getElementById("user_email").value.trim()) {
+      showAlert("alert-box", "Email is required."); return;
+    }
+    if (!document.getElementById("user_fullname").value.trim()) {
+      showAlert("alert-box", "Full name is required."); return;
+    }
+    if (pw.length < 8) {
+      showAlert("alert-box", "Password must be at least 8 characters."); return;
+    }
+    if (pw !== confirm) {
+      showAlert("alert-box", "Passwords do not match."); return;
+    }
+
+    setLoading(btn, true);
+
+    const fd = new FormData();
+    fd.append("org_name", document.getElementById("org_name").value);
+    fd.append("org_slug", document.getElementById("org_slug").value || autoSlug(document.getElementById("org_name").value));
+    fd.append("org_type", document.getElementById("org_type").value);
+    fd.append("org_description", document.getElementById("org_description").value);
+    fd.append("org_country", document.getElementById("org_country").value);
+    fd.append("org_address", document.getElementById("org_address").value);
+    fd.append("org_email", document.getElementById("org_email").value);
+    fd.append("authorization_document", document.getElementById("auth_doc").files[0]);
+
+    const justDoc = document.getElementById("just_doc").files[0];
+    if (justDoc) fd.append("justification_document", justDoc);
+
+    fd.append("email", document.getElementById("user_email").value);
+    fd.append("full_name", document.getElementById("user_fullname").value);
+    fd.append("password", pw);
+    fd.append("phone", document.getElementById("user_phone").value);
+    fd.append("functions", document.getElementById("user_functions").value);
+
+    try {
+      await Auth.register(fd);
+      document.getElementById("step-2").classList.add("hidden");
+      document.getElementById("alert-box").innerHTML = "";
+      document.querySelectorAll(".steps").forEach(el => el.classList.add("hidden"));
+      document.getElementById("footer-link").classList.add("hidden");
+      document.getElementById("success-screen").classList.remove("hidden");
+    } catch (err) {
+      showAlert("alert-box", err.detail || "Registration failed.");
+    } finally {
+      setLoading(btn, false);
+    }
+  }
+</script>
+{% endblock %}

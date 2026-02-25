@@ -18,7 +18,7 @@ WSGI_APPLICATION = "src.wsgi.application"
 ASGI_APPLICATION = "src.asgi.application"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-#AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = "users.User"
 
 
 # ── Installed Apps ──────────────────────────────────────────────────────
@@ -37,9 +37,20 @@ THIRD_PARTY_APPS = [
     "django_celery_beat",
     "django_structlog",
     "django_extensions",
+    "ninja_extra",
+    "ninja_jwt",
+    "ninja_jwt.token_blacklist",
+    "django_htmx",
 ]
 
-LOCAL_APPS = []
+LOCAL_APPS = [
+    "src.apps.organizations",
+    "src.apps.users",
+    "src.apps.files",
+    "src.apps.emails",
+    "src.apps.frontend",
+    "src.seeders",
+]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -47,6 +58,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -108,7 +120,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # ── i18n ────────────────────────────────────────────────────────────────
 
-LANGUAGE_CODE = 'en-us'
+# LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
@@ -116,7 +129,8 @@ USE_TZ = True
 # ── Split configs (imported from others/) ───────────────────────────────
 # Each file exports top-level Django settings variables.
 
-from src.config.others.session import *  # noqa: E402, F401, F403
+from src.config.others.jwt import *  # noqa: E402, F401, F403
+#from src.config.others.session import *  # noqa: E402, F401, F403
 from src.config.others.cors import *  # noqa: E402, F401, F403
 from src.config.others.celery_conf import *  # noqa: E402, F401, F403
 from src.config.others.files_and_storages import *  # noqa: E402, F401, F403

@@ -60,7 +60,7 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-static
+src/apps/frontend/static
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
@@ -119,3 +119,4 @@ README.md
 .ruff_cache/
 rav.yaml
 /mediafiles
+/staticfiles

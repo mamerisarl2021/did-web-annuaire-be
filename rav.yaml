@@ -1,0 +1,22 @@
+scripts:
+
+  serve:
+    export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage runserver
+
+  migrations:
+    export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage makemigrations
+
+  migrate:
+      export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage migrate
+
+  collectstatic:
+    export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage collectstatic
+
+  createsuperuser:
+    export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage createsuperuser
+
+  createsuperadmin:
+    export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage createsuperadmin --email admin@didannuaire.com --full-name admin --password password
+
+  reset_db:
+    export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage reset_db --no-input

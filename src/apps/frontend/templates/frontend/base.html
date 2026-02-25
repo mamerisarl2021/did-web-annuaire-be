@@ -1,0 +1,16 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AnnuaireDID{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'frontend/css/main.css' %}">
+  <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+</head>
+<body>
+  {% block body %}{% endblock %}
+  <script src="{% static 'frontend/js/auth.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,57 +1,58 @@
 """
 Root URL configuration.
 
-The NinjaAPI instance mounts all app routers.
-Superadmin gets a completely separate NinjaAPI instance.
+- /api/v2/          → NinjaExtraAPI (JWT auth, REST endpoints)
+- /superadmin/api/v2/ → Superadmin API
+- /login/, /register/, etc. → Django Templates + HTMX frontend
+- /admin/           → Django admin
 """
 
 from django.contrib import admin
-from django.urls import path
-from ninja import NinjaAPI
+from django.urls import include, path
+from ninja_extra import NinjaExtraAPI
+from ninja_jwt.controller import NinjaJWTDefaultController
 
-#from src.common.exceptions import configure_exception_handlers
+from src.apps.authentication.apis import router as auth_router
+from src.common.exceptions import configure_exception_handlers
 
-# ── Main API (org-scoped + auth) ────────────────────────────────────────
+# ── Main API ────────────────────────────────────────────────────────────
 
-api = NinjaAPI(
+api = NinjaExtraAPI(
     title="Annuaire DID API",
     version="1.0.0",
     description="DID Directory — decentralized identity management",
     urls_namespace="api",
-    csrf=True,  # Required for httpOnly cookie auth
 )
 
-#configure_exception_handlers(api)
+configure_exception_handlers(api)
 
-# Routers will be added as apps are built:
-# from src.apps.authentication.apis import router as auth_router
-# from src.apps.organizations.apis import router as orgs_router
-# from src.apps.certificates.apis import router as certs_router
-# from src.apps.documents.apis import router as docs_router
-# from src.apps.audits.apis import router as audits_router
-#
-# api.add_router("/auth", auth_router, tags=["Authentication"])
-# api.add_router("/organizations", orgs_router, tags=["Organizations"])
+# ninja_jwt: /api/v2/token/pair, /api/v2/token/refresh, /api/v2/token/verify
+api.register_controllers(NinjaJWTDefaultController)
 
-# ── Superadmin API (separate instance, separate prefix) ─────────────────
+# Custom auth: /api/v2/auth/register, /auth/activate/..., /auth/logout, /auth/me, etc.
+api.add_router("/auth", auth_router)
 
-superadmin_api = NinjaAPI(
+# ── Superadmin API ──────────────────────────────────────────────────────
+
+superadmin_api = NinjaExtraAPI(
     title="Annuaire DID Superadmin API",
     version="1.0.0",
     urls_namespace="superadmin_api",
-    csrf=True,
     docs_url="/docs",
 )
 
-#configure_exception_handlers(superadmin_api)
-
-# from src.apps.superadmin.apis import router as superadmin_router
-# superadmin_api.add_router("/", superadmin_router, tags=["Superadmin"])
+configure_exception_handlers(superadmin_api)
 
 # ── URL patterns ────────────────────────────────────────────────────────
 
 urlpatterns = [
+    # API
+    path("api/v2/", api.urls),
+    path("superadmin/api/v2/", superadmin_api.urls),
+
+    # Django admin
     path("admin/", admin.site.urls),
-    path("api/", api.urls),
-    #path("superadmin/api/", superadmin_api.urls),
+
+    # Frontend (templates + HTMX)
+    path("", include("src.apps.frontend.urls")),
 ]

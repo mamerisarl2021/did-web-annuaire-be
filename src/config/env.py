@@ -81,16 +81,26 @@ class AppSettings(BaseSettings):
     def CACHE_REDIS_URL(self) -> str:
         return f"{self.REDIS_URL}/2"
 
-    @property
-    def SESSION_REDIS_URL(self) -> str:
-        return f"{self.REDIS_URL}/3"
+    #@property
+    #def SESSION_REDIS_URL(self) -> str:
+    #    return f"{self.REDIS_URL}/3"
 
     # ── Session / Cookies ───────────────────────────────────────────────
-    SESSION_COOKIE_NAME: str = "annuaire_session"
-    SESSION_COOKIE_AGE: int = 86400  # 24h
-    SESSION_COOKIE_SECURE: bool = False
-    SESSION_COOKIE_DOMAIN: str = ""
-    CSRF_COOKIE_SECURE: bool = False
+    # SESSION_COOKIE_NAME: str = "annuaire_session"
+    # SESSION_COOKIE_AGE: int = 86400  # 24h
+    # SESSION_COOKIE_SECURE: bool = False
+    # SESSION_COOKIE_DOMAIN: str = ""
+    # CSRF_COOKIE_SECURE: bool = False
+
+    # ── JWT ─────────────────────────────────────────────────────────────
+
+    JWT_ACCESS_TOKEN_LIFETIME_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_LIFETIME_DAYS: int = 7
+    JWT_SIGNING_KEY: str = ""
+
+    @property
+    def jwt_signing_key(self) -> str:
+        return self.JWT_SIGNING_KEY or self.SECRET_KEY
 
     # ── External services ───────────────────────────────────────────────
     UNIVERSAL_REGISTRAR_URL: str = "http://uni-registrar-web:9080"
