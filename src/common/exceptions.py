@@ -1,92 +1,53 @@
 """
-Application exceptions and django-ninja error handlers.
-
-Services raise these exceptions; the API layer catches them
-via ninja's exception handlers and returns proper HTTP responses.
+Shared exception classes and Ninja exception handler configuration.
 """
 
 import structlog
-from django.http import HttpRequest, HttpResponse
-from ninja import NinjaAPI
-from ninja.errors import HttpError
+from django.http import JsonResponse
 
 logger = structlog.get_logger(__name__)
 
 
 class ApplicationError(Exception):
-    """Base for all business-logic errors."""
+    """Base exception for all application-level errors."""
 
-    def __init__(self, message: str, extra: dict | None = None):
-        super().__init__(message)
+    def __init__(self, message: str = "An error occurred.", status_code: int = 400):
         self.message = message
-        self.extra = extra or {}
-
-
-class NotFoundError(ApplicationError):
-    """Resource not found."""
-    pass
-
-
-class PermissionDeniedError(ApplicationError):
-    """User lacks required permissions."""
-    pass
+        self.status_code = status_code
+        super().__init__(message)
 
 
 class ValidationError(ApplicationError):
-    """Business rule validation failed."""
-    pass
+    def __init__(self, message: str = "Validation error."):
+        super().__init__(message=message, status_code=400)
+
+
+class NotFoundError(ApplicationError):
+    def __init__(self, message: str = "Resource not found."):
+        super().__init__(message=message, status_code=404)
 
 
 class ConflictError(ApplicationError):
-    """Resource already exists or state conflict."""
-    pass
+    def __init__(self, message: str = "Resource conflict."):
+        super().__init__(message=message, status_code=409)
 
 
-class ExternalServiceError(ApplicationError):
-    """An external service (registrar, signserver, cert service) failed."""
-    pass
+class PermissionDeniedError(ApplicationError):
+    def __init__(self, message: str = "Permission denied."):
+        super().__init__(message=message, status_code=403)
 
 
-def configure_exception_handlers(api: NinjaAPI) -> None:
-    """Register custom exception handlers on a NinjaAPI instance."""
+def configure_exception_handlers(api):
+    """Register exception handlers on a NinjaExtraAPI instance."""
 
-    @api.exception_handler(NotFoundError)
-    def handle_not_found(request: HttpRequest, exc: NotFoundError) -> HttpResponse:
-        return api.create_response(
-            request,
-            {"detail": exc.message, **exc.extra},
-            status=404,
-        )
+    @api.exception_handler(ApplicationError)
+    def handle_application_error(request, exc: ApplicationError):
+        return JsonResponse({"detail": exc.message}, status=exc.status_code)
 
-    @api.exception_handler(PermissionDeniedError)
-    def handle_permission_denied(request: HttpRequest, exc: PermissionDeniedError) -> HttpResponse:
-        return api.create_response(
-            request,
-            {"detail": exc.message},
-            status=403,
-        )
-
-    @api.exception_handler(ValidationError)
-    def handle_validation(request: HttpRequest, exc: ValidationError) -> HttpResponse:
-        return api.create_response(
-            request,
-            {"detail": exc.message, **exc.extra},
-            status=400,
-        )
-
-    @api.exception_handler(ConflictError)
-    def handle_conflict(request: HttpRequest, exc: ConflictError) -> HttpResponse:
-        return api.create_response(
-            request,
-            {"detail": exc.message, **exc.extra},
-            status=409,
-        )
-
-    @api.exception_handler(ExternalServiceError)
-    def handle_external_service(request: HttpRequest, exc: ExternalServiceError) -> HttpResponse:
-        logger.error("external_service_error", message=exc.message, **exc.extra)
-        return api.create_response(
-            request,
-            {"detail": "An external service is unavailable. Please try again."},
-            status=502,
+    @api.exception_handler(Exception)
+    def handle_unexpected_error(request, exc: Exception):
+        logger.exception("unhandled_error", error=str(exc))
+        return JsonResponse(
+            {"detail": "An unexpected error occurred."},
+            status=500,
         )

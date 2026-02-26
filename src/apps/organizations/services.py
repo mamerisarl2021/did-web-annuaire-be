@@ -165,8 +165,6 @@ def invite_member(
         user=user, organization=organization, role=role,
         status=MembershipStatus.INVITED, invited_by=invited_by,
     )
-
-    # TODO: Celery task to send invitation email
     return membership
 
 @transaction.atomic

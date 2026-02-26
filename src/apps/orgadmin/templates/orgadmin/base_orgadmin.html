@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} — AnnuaireDID</title>
+  <link rel="stylesheet" href="{% static 'orgadmin/css/orgadmin.css' %}">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body class="oa-body">
+  <div class="oa-shell">
+
+    <!-- ── Sidebar ──────────────────────────────────────────────── -->
+    <aside class="oa-sidebar">
+      <div class="oa-sidebar-brand">
+        <h1><span>Annuaire</span>DID</h1>
+      </div>
+
+      <div class="oa-sidebar-org">
+        <div class="org-name" id="sidebar-org-name">—</div>
+        <div class="org-slug" id="sidebar-org-slug">—</div>
+        <div class="org-badge" id="sidebar-org-badge">—</div>
+      </div>
+
+      <ul class="oa-nav">
+        <li>
+          <a href="/workspace/" class="{% if active_page == 'dashboard' %}active{% endif %}">
+            <span class="icon">📊</span> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/workspace/members/" class="{% if active_page == 'members' %}active{% endif %}">
+            <span class="icon">👥</span> Members
+            <span class="oa-nav-count" id="nav-member-count">—</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="{% if active_page == 'documents' %}active{% endif %}">
+            <span class="icon">📄</span> DID Documents
+            <span class="oa-nav-count">0</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="{% if active_page == 'certificates' %}active{% endif %}">
+            <span class="icon">🔐</span> Certificates
+            <span class="oa-nav-count">0</span>
+          </a>
+        </li>
+        <li>
+          <a href="/workspace/settings/" class="{% if active_page == 'settings' %}active{% endif %}">
+            <span class="icon">⚙️</span> Settings
+          </a>
+        </li>
+      </ul>
+
+      <div class="oa-sidebar-footer">
+        <div class="oa-user-name" id="sidebar-user-name">—</div>
+        <div class="oa-user-role" id="sidebar-user-role">—</div>
+        <button class="oa-btn-logout" onclick="handleOALogout()">Logout</button>
+      </div>
+    </aside>
+
+    <!-- ── Main ─────────────────────────────────────────────────── -->
+    <main class="oa-main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="{% static 'frontend/js/auth.js' %}"></script>
+  <script src="{% static 'orgadmin/js/orgadmin.js' %}"></script>
+  <script>
+    // Guard
+    if (!Auth.isLoggedIn()) {
+      window.location.href = "/login/";
+    }
+
+    // Load sidebar context
+    (async function initSidebar() {
+      try {
+        const user = await Auth.me();
+
+        // Superadmin redirect
+        if (user.is_superadmin && !getCurrentOrg()) {
+          // Superadmins without an org go to the admin console
+        }
+
+        document.getElementById("sidebar-user-name").textContent = user.full_name || "User";
+
+        // Load orgs and pick the first (or current)
+        const orgs = await OA.listOrgs();
+
+        if (orgs.length === 0) {
+          document.getElementById("sidebar-org-name").textContent = "No organization";
+          document.getElementById("sidebar-org-slug").textContent = "—";
+          return;
+        }
+
+        let org = getCurrentOrg();
+        if (!org || !orgs.find(o => o.id === org.id)) {
+          org = orgs[0];
+          setCurrentOrg(org);
+        }
+
+        document.getElementById("sidebar-org-name").textContent = org.name;
+        document.getElementById("sidebar-org-slug").textContent = org.slug;
+        document.getElementById("sidebar-org-badge").textContent = org.status === "APPROVED" ? "Active" : org.status;
+        document.getElementById("sidebar-user-role").textContent =
+          org.member_count !== undefined ? `${org.member_count} members` : "";
+
+        if (org.member_count !== undefined) {
+          document.getElementById("nav-member-count").textContent = org.member_count;
+        }
+
+      } catch (err) {
+        if (err && err.status === 401) {
+          Auth.clearTokens();
+          window.location.href = "/login/";
+        }
+      }
+    })();
+
+    async function handleOALogout() {
+      try { await Auth.logout(); } catch {}
+      sessionStorage.removeItem("current_org");
+      window.location.href = "/login/";
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

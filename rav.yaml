@@ -16,7 +16,7 @@ scripts:
     export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage createsuperuser
 
   createsuperadmin:
-    export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage createsuperadmin --email admin@didannuaire.com --full-name admin --password password
+    export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage createsuperadmin --email princedavealex.20@gmail.com --full-name admin --password password
 
   reset_db:
     export PYTHONDONTWRITEBYTECODE=1 && export PYTHONBUFFERED=1 && python -m src.manage reset_db --no-input

@@ -2,10 +2,12 @@
 Root URL configuration.
 
 - /api/v2/              → Main NinjaExtraAPI (JWT auth, REST endpoints)
+- /api/v2/org/          → Org Admin API (scoped to user's orgs)
 - /superadmin/api/v2/   → Superadmin API
 - /superadmin/          → Superadmin frontend (Django templates)
+- /workspace/           → Org admin frontend (Django templates)
 - /login/, /register/   → Public frontend (Django templates)
-- /admin/               → Django admin
+- /admin/
 """
 
 from django.contrib import admin
@@ -14,6 +16,7 @@ from ninja_extra import NinjaExtraAPI
 from ninja_jwt.controller import NinjaJWTDefaultController
 
 from src.apps.authentication.apis import router as auth_router
+from src.apps.orgadmin.apis import router as orgadmin_router
 from src.apps.superadmin.apis import router as superadmin_router
 from src.common.exceptions import configure_exception_handlers
 
@@ -31,8 +34,11 @@ configure_exception_handlers(api)
 # ninja_jwt: /api/v2/token/pair, /api/v2/token/refresh, /api/v2/token/verify
 api.register_controllers(NinjaJWTDefaultController)
 
-# Custom auth: /api/v2/auth/register, /auth/activate/..., /auth/logout, /auth/me, etc.
+# Custom auth: /api/v2/auth/...
 api.add_router("/auth", auth_router)
+
+# Org admin: /api/v2/org/...
+api.add_router("/org", orgadmin_router)
 
 # ── Superadmin API ──────────────────────────────────────────────────────
 
@@ -58,6 +64,9 @@ urlpatterns = [
 
     # Superadmin frontend (templates)
     path("superadmin/", include("src.apps.superadmin.urls")),
+
+    # Org admin frontend (templates)
+    path("workspace/", include("src.apps.orgadmin.urls")),
 
     # Public frontend (templates) — must be last (catch-all paths)
     path("", include("src.apps.frontend.urls")),

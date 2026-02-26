@@ -153,7 +153,9 @@ def verify_otp_and_activate(*, user: User, otp_code: str) -> User:
         raise ValidationError("Invalid OTP code.")
 
     user = activate_user(user=user)
-    logger.info("otp_verified", user_id=str(user.id))
+    user.otp_secret = ""
+    user.save(update_fields=["otp_secret", "updated_at"])
+    logger.info("otp_verified_and_secret_cleared", user_id=str(user.id))
     return user
 
 
@@ -203,7 +205,8 @@ def request_password_reset(*, email: str) -> None:
     cache_key = f"{RESET_TOKEN_PREFIX}{token}"
     cache.set(cache_key, str(user.id), timeout=int(RESET_TOKEN_TTL.total_seconds()))
 
-    # TODO: Celery task — send password reset email
+    from src.apps.emails.tasks import send_password_reset_email
+    send_password_reset_email.delay(user_id=str(user.id), reset_token=token)
     logger.info("password_reset_token_generated", user_id=str(user.id), token=token)
 
 @transaction.atomic

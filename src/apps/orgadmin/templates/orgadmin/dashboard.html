@@ -1,0 +1,122 @@
+{% extends "orgadmin/base_orgadmin.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="oa-page-header">
+  <div>
+    <h2>Dashboard</h2>
+    <p>Organization overview</p>
+  </div>
+</div>
+
+<div id="alert-box"></div>
+
+<!-- Stats -->
+<div class="oa-stats" id="stats-grid">
+  <div class="oa-stat"><div class="label">Loading...</div><div class="value">—</div></div>
+</div>
+
+<!-- Quick actions -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:2rem;" id="quick-actions">
+</div>
+
+<!-- Recent members -->
+<div id="recent-members"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function loadDashboard() {
+  const org = getCurrentOrg();
+  if (!org) {
+    oaAlert("alert-box", "No organization found. Please contact support.");
+    return;
+  }
+
+  try {
+    const [stats, members] = await Promise.all([
+      OA.getStats(org.id),
+      OA.listMembers(org.id),
+    ]);
+
+    // Stats
+    document.getElementById("stats-grid").innerHTML = `
+      <div class="oa-stat">
+        <div class="label">Active Members</div>
+        <div class="value accent">${stats.active_members}</div>
+      </div>
+      <div class="oa-stat">
+        <div class="label">Pending Invites</div>
+        <div class="value warn">${stats.invited_members}</div>
+      </div>
+      <div class="oa-stat">
+        <div class="label">DID Documents</div>
+        <div class="value">${stats.total_documents}</div>
+      </div>
+      <div class="oa-stat">
+        <div class="label">Certificates</div>
+        <div class="value">${stats.total_certificates}</div>
+      </div>
+    `;
+
+    // Quick actions
+    document.getElementById("quick-actions").innerHTML = `
+      <a href="/workspace/members/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
+         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">👥</div>
+        <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">Manage Members</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Invite, roles & access</div>
+      </a>
+      <div class="oa-card" style="opacity:0.6;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">📄</div>
+        <div style="font-weight:600;font-size:0.9375rem;">DID Documents</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Coming soon</div>
+      </div>
+      <div class="oa-card" style="opacity:0.6;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">🔐</div>
+        <div style="font-weight:600;font-size:0.9375rem;">Certificates</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Coming soon</div>
+      </div>
+      <a href="/workspace/settings/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
+         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚙️</div>
+        <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">Organization Settings</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Details & configuration</div>
+      </a>
+    `;
+
+    // Recent members
+    const activeMembers = members.filter(m => m.status !== "DEACTIVATED").slice(0, 5);
+    if (activeMembers.length > 0) {
+      const rows = activeMembers.map(m => `
+        <tr>
+          <td>
+            <div class="member-name">${m.full_name || "—"}</div>
+            <div class="member-email">${m.email}</div>
+          </td>
+          <td>${roleBadge(m.role)}</td>
+          <td>${statusBadge(m.status)}</td>
+          <td>${oaFormatDate(m.created_at)}</td>
+        </tr>
+      `).join("");
+
+      document.getElementById("recent-members").innerHTML = `
+        <div class="oa-table-wrap">
+          <div class="oa-table-header">
+            <h3>Team Members</h3>
+            <a href="/workspace/members/" class="oa-btn oa-btn-ghost oa-btn-sm">View all →</a>
+          </div>
+          <table class="oa-table">
+            <thead><tr><th>Member</th><th>Role</th><th>Status</th><th>Joined</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to load dashboard.", "error");
+  }
+})();
+</script>
+{% endblock %}

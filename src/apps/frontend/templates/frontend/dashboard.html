@@ -2,193 +2,33 @@
 {% block title %}Dashboard — AnnuaireDID{% endblock %}
 
 {% block body %}
-<div class="auth-page" style="align-items: flex-start; padding-top: 3rem;">
-  <div class="card" style="max-width: 38rem;">
-
-    <!-- ── Header ───────────────────────────────────────────────── -->
-    <div class="dash-header">
-      <div class="brand-sm"><span>Annuaire</span>DID</div>
-      <button id="logout-btn" class="btn btn-ghost" style="width: auto; padding: 0.5rem 1.25rem; font-size: 0.8125rem;" onclick="handleLogout()">
-        <span class="btn-label">Logout</span>
-        <span class="htmx-indicator spinner"></span>
-      </button>
+<div class="auth-page">
+  <div class="card" style="max-width: 28rem;">
+    <div class="brand">
+      <h1><span>Annuaire</span>DID</h1>
+      <p>Redirecting...</p>
     </div>
-
     <div id="alert-box"></div>
-
-    <!-- ── Loading ──────────────────────────────────────────────── -->
-    <div id="loading-section" class="text-center">
-      <p style="color: var(--text-muted);">Loading profile...</p>
-    </div>
-
-    <!-- ── Profile content (filled by JS) ───────────────────────── -->
-    <div id="profile-section" class="hidden">
-
-      <div class="profile-card">
-        <div class="profile-top">
-          <div class="avatar" id="avatar-initial">U</div>
-          <div>
-            <h3 id="user-name">—</h3>
-            <p id="user-email" class="mono">—</p>
-          </div>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="label">Status</div>
-            <div class="value active" id="user-status">—</div>
-          </div>
-          <div class="stat-item">
-            <div class="label">Role</div>
-            <div class="value role" id="user-role">—</div>
-          </div>
-          <div class="stat-item">
-            <div class="label">Phone</div>
-            <div class="value" id="user-phone">—</div>
-          </div>
-          <div class="stat-item">
-            <div class="label">Function</div>
-            <div class="value" id="user-functions">—</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Quick Actions ──────────────────────────────────────── -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
-        <a href="#" class="action-card"
-           style="display: block; padding: 1rem; background: var(--bg-input); border-radius: 0.75rem; border: 1px solid var(--border); text-decoration: none; transition: border-color 0.2s;"
-           onmouseover="this.style.borderColor='var(--light)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="font-size: 1.25rem; margin-bottom: 0.375rem;">📄</div>
-          <div style="color: var(--text); font-size: 0.875rem; font-weight: 600;">DID Documents</div>
-          <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.125rem;">Create & manage</div>
-        </a>
-        <a href="#" class="action-card"
-           style="display: block; padding: 1rem; background: var(--bg-input); border-radius: 0.75rem; border: 1px solid var(--border); text-decoration: none; transition: border-color 0.2s;"
-           onmouseover="this.style.borderColor='var(--light)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="font-size: 1.25rem; margin-bottom: 0.375rem;">🔐</div>
-          <div style="color: var(--text); font-size: 0.875rem; font-weight: 600;">Certificates</div>
-          <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.125rem;">Upload & rotate</div>
-        </a>
-        <a href="#" class="action-card"
-           style="display: block; padding: 1rem; background: var(--bg-input); border-radius: 0.75rem; border: 1px solid var(--border); text-decoration: none; transition: border-color 0.2s;"
-           onmouseover="this.style.borderColor='var(--light)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="font-size: 1.25rem; margin-bottom: 0.375rem;">👥</div>
-          <div style="color: var(--text); font-size: 0.875rem; font-weight: 600;">Members</div>
-          <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.125rem;">Invite & manage</div>
-        </a>
-        <a href="#" class="action-card"
-           style="display: block; padding: 1rem; background: var(--bg-input); border-radius: 0.75rem; border: 1px solid var(--border); text-decoration: none; transition: border-color 0.2s;"
-           onmouseover="this.style.borderColor='var(--light)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="font-size: 1.25rem; margin-bottom: 0.375rem;">📋</div>
-          <div style="color: var(--text); font-size: 0.875rem; font-weight: 600;">Audit Log</div>
-          <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.125rem;">Activity trail</div>
-        </a>
-      </div>
-
-      <!-- ── Password Change (expandable) ───────────────────────── -->
-      <details style="margin-bottom: 1.25rem;">
-        <summary style="color: var(--mid); font-size: 0.875rem; cursor: pointer; font-weight: 500; padding: 0.75rem 0;">
-          🔑 Change Password
-        </summary>
-        <div style="padding: 1rem; background: var(--bg-input); border-radius: 0.75rem; margin-top: 0.5rem;">
-          <div id="pw-alert"></div>
-          <div class="form-group">
-            <label for="old_pw">Current Password</label>
-            <input id="old_pw" type="password" class="form-input" placeholder="Current password">
-          </div>
-          <div class="form-group">
-            <label for="new_pw">New Password</label>
-            <input id="new_pw" type="password" class="form-input" placeholder="Minimum 8 characters">
-          </div>
-          <div class="form-group">
-            <label for="confirm_pw">Confirm New Password</label>
-            <input id="confirm_pw" type="password" class="form-input" placeholder="Repeat new password">
-          </div>
-          <button id="pw-btn" class="btn btn-primary" onclick="handlePasswordChange()" style="font-size: 0.8125rem;">
-            <span class="btn-label">Update Password</span>
-            <span class="htmx-indicator spinner"></span>
-          </button>
-        </div>
-      </details>
-
-      <div class="notice">
-        <strong>🚧 Dashboard under construction</strong>
-        <p>DID documents, certificates, and organization management will be built in upcoming iterations.
-           This view confirms JWT authentication is working end-to-end.</p>
-      </div>
-    </div>
-
+    <p id="loading-msg" style="text-align:center;color:var(--text-muted);">Loading your workspace...</p>
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // Guard: redirect to login if no token
   if (!Auth.isLoggedIn()) {
     window.location.href = "{% url 'frontend:login' %}";
-  }
-
-  (async function loadProfile() {
-    try {
-      const user = await Auth.me();
-
-      document.getElementById("avatar-initial").textContent =
-        (user.full_name || "U").charAt(0).toUpperCase();
-      document.getElementById("user-name").textContent = user.full_name || "—";
-      document.getElementById("user-email").textContent = user.email || "—";
-      document.getElementById("user-status").textContent = user.is_active ? "Active" : "Inactive";
-      document.getElementById("user-role").textContent = user.is_superadmin ? "Superadmin" : "Member";
-      document.getElementById("user-phone").textContent = user.phone || "—";
-      document.getElementById("user-functions").textContent = user.functions || "—";
-
-      document.getElementById("loading-section").classList.add("hidden");
-      document.getElementById("profile-section").classList.remove("hidden");
-    } catch (err) {
-      if (err.status === 401) {
-        Auth.clearTokens();
-        window.location.href = "{% url 'frontend:login' %}";
-        return;
+  } else {
+    Auth.me().then(user => {
+      if (user.is_superadmin) {
+        window.location.href = "/superadmin/";
+      } else {
+        window.location.href = "/workspace/";
       }
-      document.getElementById("loading-section").classList.add("hidden");
-      showAlert("alert-box", "Failed to load profile. " + (err.detail || ""));
-    }
-  })();
-
-  async function handleLogout() {
-    const btn = document.getElementById("logout-btn");
-    setLoading(btn, true);
-    try {
-      await Auth.logout();
-    } catch {}
-    window.location.href = "{% url 'frontend:login' %}";
-  }
-
-  async function handlePasswordChange() {
-    const btn = document.getElementById("pw-btn");
-    const oldPw = document.getElementById("old_pw").value;
-    const newPw = document.getElementById("new_pw").value;
-    const confirmPw = document.getElementById("confirm_pw").value;
-
-    clearAlert("pw-alert");
-
-    if (!oldPw) { showAlert("pw-alert", "Enter your current password."); return; }
-    if (newPw.length < 8) { showAlert("pw-alert", "New password must be at least 8 characters."); return; }
-    if (newPw !== confirmPw) { showAlert("pw-alert", "Passwords do not match."); return; }
-
-    setLoading(btn, true);
-
-    try {
-      await Auth.passwordChange(oldPw, newPw);
-      showAlert("pw-alert", "Password changed successfully.", "success");
-      document.getElementById("old_pw").value = "";
-      document.getElementById("new_pw").value = "";
-      document.getElementById("confirm_pw").value = "";
-    } catch (err) {
-      showAlert("pw-alert", err.detail || "Failed to change password.");
-    } finally {
-      setLoading(btn, false);
-    }
+    }).catch(() => {
+      Auth.clearTokens();
+      window.location.href = "{% url 'frontend:login' %}";
+    });
   }
 </script>
 {% endblock %}

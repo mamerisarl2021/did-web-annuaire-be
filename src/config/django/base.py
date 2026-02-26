@@ -54,6 +54,7 @@ LOCAL_APPS = [
     "src.apps.emails",
     "src.apps.frontend",
     "src.apps.superadmin",
+    "src.apps.orgadmin",
     "src.seeders",
 ]
 

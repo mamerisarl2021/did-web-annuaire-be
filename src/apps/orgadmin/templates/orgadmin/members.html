@@ -1,0 +1,311 @@
+{% extends "orgadmin/base_orgadmin.html" %}
+{% block title %}Members{% endblock %}
+
+{% block content %}
+<div class="oa-page-header">
+  <div>
+    <h2>Members</h2>
+    <p>Manage your organization's team</p>
+  </div>
+  <button class="oa-btn oa-btn-primary" onclick="openInviteModal()" id="invite-btn">
+    + Invite Member
+  </button>
+</div>
+
+<div id="alert-box"></div>
+
+<div id="members-content">
+  <div class="oa-empty"><p>Loading members...</p></div>
+</div>
+
+<!-- ── Invite Modal ─────────────────────────────────────────────── -->
+<div class="oa-modal-overlay hidden" id="invite-overlay" onclick="closeInvite(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()">
+    <h3>Invite a Member</h3>
+    <p class="desc">They'll receive an email to activate their account.</p>
+
+    <div id="invite-alert"></div>
+
+    <div class="oa-form-group">
+      <label>Email <span class="req">*</span></label>
+      <input id="inv-email" type="email" class="oa-input" placeholder="colleague@company.com">
+    </div>
+    <div class="oa-form-group">
+      <label>Full Name</label>
+      <input id="inv-name" class="oa-input" placeholder="Jean Dupont">
+    </div>
+    <div class="oa-form-group">
+      <label>Role <span class="req">*</span></label>
+      <select id="inv-role" class="oa-select">
+        <option value="ORG_MEMBER">Member — can manage documents & certificates</option>
+        <option value="AUDITOR">Auditor — read-only access</option>
+      </select>
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('invite-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn oa-btn-primary" id="invite-submit" onclick="handleInvite()">
+        <span class="btn-label">Send Invite</span>
+        <span class="oa-spinner hidden" id="invite-spinner"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Role Change Modal ────────────────────────────────────────── -->
+<div class="oa-modal-overlay hidden" id="role-overlay" onclick="closeRole(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()">
+    <h3>Change Role</h3>
+    <p class="desc" id="role-desc">Update role for this member.</p>
+
+    <div id="role-alert"></div>
+
+    <div class="oa-form-group">
+      <label>New Role</label>
+      <select id="role-select" class="oa-select">
+        <option value="ORG_ADMIN">Admin — full access</option>
+        <option value="ORG_MEMBER">Member — documents & certificates</option>
+        <option value="AUDITOR">Auditor — read-only</option>
+      </select>
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('role-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn oa-btn-primary" onclick="handleRoleChange()">Update Role</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allMembers = [];
+let currentMembershipId = null;
+let openMenuId = null;
+
+const org = getCurrentOrg();
+if (!org) window.location.href = "/login/";
+
+// ── Load members ────────────────────────────────────────────────
+
+async function loadMembers() {
+  try {
+    allMembers = await OA.listMembers(org.id);
+    renderMembers();
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to load members.", "error");
+  }
+}
+
+function renderMembers() {
+  const active = allMembers.filter(m => m.status !== "DEACTIVATED");
+  const deactivated = allMembers.filter(m => m.status === "DEACTIVATED");
+
+  if (active.length === 0 && deactivated.length === 0) {
+    document.getElementById("members-content").innerHTML = `
+      <div class="oa-empty">
+        <div class="icon">👥</div>
+        <p>No members yet. Invite your first team member.</p>
+      </div>`;
+    return;
+  }
+
+  let html = `
+    <div class="oa-table-wrap">
+      <div class="oa-table-header">
+        <h3>Active Members (${active.length})</h3>
+      </div>
+      <table class="oa-table">
+        <thead><tr>
+          <th>Member</th><th>Role</th><th>Status</th><th>Function</th><th>Joined</th><th style="width:60px;"></th>
+        </tr></thead>
+        <tbody>
+  `;
+
+  active.forEach(m => {
+    html += `
+      <tr>
+        <td>
+          <div class="member-name">${m.full_name || "—"}</div>
+          <div class="member-email">${m.email}</div>
+        </td>
+        <td>${roleBadge(m.role)}</td>
+        <td>${statusBadge(m.status)}</td>
+        <td style="font-size:0.8125rem;color:var(--oa-text-muted);">${m.functions || "—"}</td>
+        <td style="font-size:0.8125rem;">${oaFormatDate(m.created_at)}</td>
+        <td class="oa-actions-cell">
+          <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="toggleMenu('${m.id}', event)"
+                  style="padding:0.25rem 0.5rem;font-size:0.75rem;">⋯</button>
+          <div class="oa-action-menu hidden" id="menu-${m.id}">
+            <button onclick="openRoleModal('${m.id}', '${m.email}', '${m.role}')">Change role</button>
+            <button class="danger" onclick="handleDeactivate('${m.id}', '${m.email}')">Deactivate</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table></div>`;
+
+  // Deactivated section
+  if (deactivated.length > 0) {
+    html += `
+      <details style="margin-top:1.5rem;">
+        <summary style="cursor:pointer;color:var(--oa-text-muted);font-size:0.875rem;font-weight:500;padding:0.5rem 0;">
+          Deactivated Members (${deactivated.length})
+        </summary>
+        <div class="oa-table-wrap" style="margin-top:0.75rem;">
+          <table class="oa-table">
+            <thead><tr><th>Member</th><th>Role</th><th>Status</th><th>Joined</th></tr></thead>
+            <tbody>
+    `;
+    deactivated.forEach(m => {
+      html += `
+        <tr style="opacity:0.6;">
+          <td><div class="member-name">${m.full_name || "—"}</div><div class="member-email">${m.email}</div></td>
+          <td>${roleBadge(m.role)}</td>
+          <td>${statusBadge(m.status)}</td>
+          <td style="font-size:0.8125rem;">${oaFormatDate(m.created_at)}</td>
+        </tr>
+      `;
+    });
+    html += `</tbody></table></div></details>`;
+  }
+
+  document.getElementById("members-content").innerHTML = html;
+}
+
+// ── Action menu ─────────────────────────────────────────────────
+
+function toggleMenu(id, e) {
+  e.stopPropagation();
+  // Close any open menu
+  if (openMenuId && openMenuId !== id) {
+    document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+  }
+  const menu = document.getElementById(`menu-${id}`);
+  menu.classList.toggle("hidden");
+  openMenuId = menu.classList.contains("hidden") ? null : id;
+}
+
+// Close menus on outside click
+document.addEventListener("click", () => {
+  if (openMenuId) {
+    document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+    openMenuId = null;
+  }
+});
+
+// ── Invite ──────────────────────────────────────────────────────
+
+function openInviteModal() {
+  document.getElementById("inv-email").value = "";
+  document.getElementById("inv-name").value = "";
+  document.getElementById("inv-role").value = "ORG_MEMBER";
+  oaClearAlert("invite-alert");
+  document.getElementById("invite-overlay").classList.remove("hidden");
+  document.getElementById("inv-email").focus();
+}
+
+function closeInvite(e) {
+  if (e.target === e.currentTarget) {
+    document.getElementById("invite-overlay").classList.add("hidden");
+  }
+}
+
+async function handleInvite() {
+  const email = document.getElementById("inv-email").value.trim();
+  const fullName = document.getElementById("inv-name").value.trim();
+  const role = document.getElementById("inv-role").value;
+
+  oaClearAlert("invite-alert");
+
+  if (!email) { oaAlert("invite-alert", "Email is required."); return; }
+
+  const btn = document.getElementById("invite-submit");
+  const spinner = document.getElementById("invite-spinner");
+  const label = btn.querySelector(".btn-label");
+
+  btn.disabled = true;
+  spinner.classList.remove("hidden");
+  if (label) label.style.display = "none";
+
+  try {
+    await OA.inviteMember(org.id, { email, full_name: fullName, role });
+    document.getElementById("invite-overlay").classList.add("hidden");
+    oaAlert("alert-box", `Invitation sent to ${email}.`, "success");
+    await loadMembers();
+
+    // Update sidebar count
+    const stats = await OA.getStats(org.id);
+    document.getElementById("nav-member-count").textContent = stats.total_members;
+  } catch (err) {
+    oaAlert("invite-alert", err.detail || "Failed to invite member.");
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add("hidden");
+    if (label) label.style.display = "inline";
+  }
+}
+
+// ── Role change ─────────────────────────────────────────────────
+
+function openRoleModal(membershipId, email, currentRole) {
+  // Close action menu
+  if (openMenuId) {
+    document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+    openMenuId = null;
+  }
+
+  currentMembershipId = membershipId;
+  document.getElementById("role-desc").textContent = `Update role for ${email}`;
+  document.getElementById("role-select").value = currentRole;
+  oaClearAlert("role-alert");
+  document.getElementById("role-overlay").classList.remove("hidden");
+}
+
+function closeRole(e) {
+  if (e.target === e.currentTarget) {
+    document.getElementById("role-overlay").classList.add("hidden");
+  }
+}
+
+async function handleRoleChange() {
+  const newRole = document.getElementById("role-select").value;
+  oaClearAlert("role-alert");
+
+  try {
+    await OA.changeRole(org.id, currentMembershipId, newRole);
+    document.getElementById("role-overlay").classList.add("hidden");
+    oaAlert("alert-box", "Role updated.", "success");
+    await loadMembers();
+  } catch (err) {
+    oaAlert("role-alert", err.detail || "Failed to change role.");
+  }
+}
+
+// ── Deactivate ──────────────────────────────────────────────────
+
+async function handleDeactivate(membershipId, email) {
+  // Close action menu
+  if (openMenuId) {
+    document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+    openMenuId = null;
+  }
+
+  if (!confirm(`Deactivate ${email}?\n\nThey will lose access to this organization.`)) return;
+
+  try {
+    const res = await OA.deactivateMember(org.id, membershipId);
+    oaAlert("alert-box", res.message, "success");
+    await loadMembers();
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to deactivate member.", "error");
+  }
+}
+
+// ── Init ────────────────────────────────────────────────────────
+
+loadMembers();
+</script>
+{% endblock %}

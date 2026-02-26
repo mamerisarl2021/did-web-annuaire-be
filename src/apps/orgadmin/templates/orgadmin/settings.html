@@ -1,0 +1,92 @@
+{% extends "orgadmin/base_orgadmin.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="oa-page-header">
+  <div>
+    <h2>Organization Settings</h2>
+    <p>View and manage your organization details</p>
+  </div>
+</div>
+
+<div id="alert-box"></div>
+
+<div class="oa-detail-grid" id="settings-content">
+  <div class="oa-empty" style="grid-column:1/-1;"><p>Loading...</p></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const org = getCurrentOrg();
+if (!org) window.location.href = "/login/";
+
+(async function loadSettings() {
+  try {
+    const detail = await OA.getOrg(org.id);
+
+    document.getElementById("settings-content").innerHTML = `
+      <!-- Left: org info -->
+      <div class="oa-card">
+        <h3>Organization Information</h3>
+        ${field("Name", detail.name)}
+        ${field("Slug (DID path)", detail.slug, true)}
+        ${field("Type", detail.type)}
+        ${field("Email", detail.email)}
+        ${field("Country", detail.country)}
+        ${field("Status", detail.status)}
+        ${field("Registered", oaFormatDate(detail.created_at))}
+
+        ${detail.address ? `
+          <div class="oa-field">
+            <div class="label">Address</div>
+            <div class="value">${detail.address}</div>
+          </div>
+        ` : ""}
+
+        ${detail.description ? `
+          <div class="oa-field">
+            <div class="label">Description</div>
+            <div class="value">${detail.description}</div>
+          </div>
+        ` : ""}
+      </div>
+
+      <!-- Right: stats + DID info -->
+      <div>
+        <div class="oa-card" style="margin-bottom:1.5rem;">
+          <h3>Statistics</h3>
+          ${field("Members", detail.member_count)}
+          ${field("DID Documents", detail.document_count)}
+          ${field("Certificates", detail.certificate_count)}
+        </div>
+
+        <div class="oa-card">
+          <h3>DID Configuration</h3>
+          <div class="oa-field">
+            <div class="label">DID URI Pattern</div>
+            <div class="value mono">did:web:&lt;host&gt;:${detail.slug}:&lt;label&gt;</div>
+          </div>
+          <div class="oa-field">
+            <div class="label">Resolution Path</div>
+            <div class="value mono">/.well-known/${detail.slug}/&lt;label&gt;/did.json</div>
+          </div>
+          <p style="font-size:0.8125rem;color:var(--oa-text-light);margin-top:0.5rem;">
+            DID documents created under this organization will use the slug
+            "<strong style="color:var(--oa-text);">${detail.slug}</strong>" in their URI.
+          </p>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to load settings.", "error");
+  }
+})();
+
+function field(label, value, mono = false) {
+  const cls = !value && value !== 0 ? "value empty" : (mono ? "value mono" : "value");
+  const display = value === 0 ? "0" : (value || "—");
+  return `<div class="oa-field"><div class="label">${label}</div><div class="${cls}">${display}</div></div>`;
+}
+</script>
+{% endblock %}

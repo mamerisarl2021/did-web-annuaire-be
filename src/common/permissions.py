@@ -1,49 +1,44 @@
 """
-RBAC permission system for django-ninja.
+RBAC permission system.
 
-Usage in apis.py:
-    from ninja_jwt.authentication import JWTAuth
-    from src.common.permissions import require_permission, Permission
-
-    @router.get("/documents", auth=JWTAuth())
-    def list_documents(request, org_id: UUID):
-        membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
-        ...
-
-Note: With JWTAuth, `request.auth` is the User instance (not `request.user`).
+Roles: SUPERADMIN (platform), ORG_ADMIN, ORG_MEMBER, AUDITOR (per-org).
+Permissions are derived from role — no separate permission table.
 """
 
-from enum import StrEnum
-from uuid import UUID
+import enum
 
-import structlog
-
-from .exceptions import NotFoundError, PermissionDeniedError
-from .types import Role
-
-logger = structlog.get_logger(__name__)
+from src.common.exceptions import PermissionDeniedError
+from src.common.types import Role
 
 
-# ── Permissions ─────────────────────────────────────────────────────────
+class Permission(str, enum.Enum):
+    VIEW_DOCUMENTS = "VIEW_DOCUMENTS"
+    MUTATE_DOCUMENTS = "MUTATE_DOCUMENTS"
+    VIEW_CERTIFICATES = "VIEW_CERTIFICATES"
+    MUTATE_CERTIFICATES = "MUTATE_CERTIFICATES"
+    REVOKE_CERTIFICATES = "REVOKE_CERTIFICATES"
+    MANAGE_MEMBERS = "MANAGE_MEMBERS"
+    VIEW_AUDITS = "VIEW_AUDITS"
 
 
-class Permission(StrEnum):
-    VIEW_DOCUMENTS = "view_documents"
-    MUTATE_DOCUMENTS = "mutate_documents"
-    VIEW_CERTIFICATES = "view_certificates"
-    MUTATE_CERTIFICATES = "mutate_certificates"
-    REVOKE_CERTIFICATES = "revoke_certificates"
-    MANAGE_MEMBERS = "manage_members"
-    VIEW_AUDITS = "view_audits"
+# ── Role → Permission mapping ───────────────────────────────────────────
 
-
-ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
-    Role.ORG_ADMIN: {p for p in Permission},
+ROLE_PERMISSIONS: dict[str, set[Permission]] = {
+    Role.ORG_ADMIN: {
+        Permission.VIEW_DOCUMENTS,
+        Permission.MUTATE_DOCUMENTS,
+        Permission.VIEW_CERTIFICATES,
+        Permission.MUTATE_CERTIFICATES,
+        Permission.REVOKE_CERTIFICATES,
+        Permission.MANAGE_MEMBERS,
+        Permission.VIEW_AUDITS,
+    },
     Role.ORG_MEMBER: {
         Permission.VIEW_DOCUMENTS,
         Permission.MUTATE_DOCUMENTS,
         Permission.VIEW_CERTIFICATES,
         Permission.MUTATE_CERTIFICATES,
+        Permission.VIEW_AUDITS,
     },
     Role.AUDITOR: {
         Permission.VIEW_DOCUMENTS,
@@ -53,50 +48,85 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
 }
 
 
-# ── Permission checks ──────────────────────────────────────────────────
+# ── Guards ───────────────────────────────────────────────────────────────
 
 
 def require_superadmin(user) -> None:
-    """
-    Raise if user is not a superadmin.
-    `user` is request.auth from JWTAuth.
-    """
-    if not user or not user.is_superadmin:
+    """Raise PermissionDeniedError if user is not a superadmin."""
+    if not getattr(user, "is_superadmin", False):
         raise PermissionDeniedError("Superadmin access required.")
 
 
-def require_role(user, org_id: UUID, roles: list[Role]):
+def require_permission(user, org_id, permission: Permission):
     """
-    Check that user has one of the required roles in the given org.
-    Returns the Membership instance.
+    Verify the user has the given permission in the specified organization.
+
+    Returns the active Membership instance so callers can use it
+    (e.g., to get the org object).
+
+    Superadmins bypass org membership checks.
     """
-    from src.apps.organizations.selectors import get_active_membership
+    from src.apps.organizations.models import Membership
+    from src.common.types import MembershipStatus
 
-    membership = get_active_membership(user=user, organization_id=org_id)
-    if membership is None:
-        raise NotFoundError("Organization not found or you are not an active member.")
-
-    if Role(membership.role) not in roles:
-        raise PermissionDeniedError(
-            f"Requires one of {[r.value for r in roles]}, you have {membership.role}."
+    # Superadmins have all permissions everywhere
+    if getattr(user, "is_superadmin", False):
+        # Return a fake-ish membership for superadmins
+        membership = (
+            Membership.objects
+            .filter(organization_id=org_id)
+            .select_related("organization", "user")
+            .first()
         )
+        if membership:
+            return membership
+        # Superadmin accessing org with no memberships — still allow
+        # but return None; callers must handle this
+        return None
+
+    membership = (
+        Membership.objects
+        .filter(
+            user=user,
+            organization_id=org_id,
+            status=MembershipStatus.ACTIVE,
+        )
+        .select_related("organization", "user")
+        .first()
+    )
+
+    if membership is None:
+        raise PermissionDeniedError("You are not an active member of this organization.")
+
+    role_perms = ROLE_PERMISSIONS.get(membership.role, set())
+    if permission not in role_perms:
+        raise PermissionDeniedError(
+            f"Your role ({membership.role}) does not have {permission.value} permission."
+        )
+
     return membership
 
 
-def require_permission(user, org_id: UUID, permission: Permission):
-    """
-    Check that user's role in the org grants the specified permission.
-    Returns the Membership instance.
-    """
-    from src.apps.organizations.selectors import get_active_membership
+def require_role(user, org_id, role: Role):
+    """Verify the user has at least the specified role in the org."""
+    from src.apps.organizations.models import Membership
+    from src.common.types import MembershipStatus
 
-    membership = get_active_membership(user=user, organization_id=org_id)
-    if membership is None:
-        raise NotFoundError("Organization not found or you are not an active member.")
+    if getattr(user, "is_superadmin", False):
+        return
 
-    role = Role(membership.role)
-    if permission not in ROLE_PERMISSIONS.get(role, set()):
-        raise PermissionDeniedError(
-            f"Permission '{permission}' not granted for role '{role}'."
+    membership = (
+        Membership.objects
+        .filter(
+            user=user,
+            organization_id=org_id,
+            status=MembershipStatus.ACTIVE,
         )
-    return membership
+        .first()
+    )
+
+    if membership is None:
+        raise PermissionDeniedError("You are not an active member of this organization.")
+
+    if membership.role != role:
+        raise PermissionDeniedError(f"Role {role} required, you have {membership.role}.")
