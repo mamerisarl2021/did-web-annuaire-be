@@ -117,26 +117,6 @@ def list_certificates(request: HttpRequest, org_id: UUID):
     certs = cert_selectors.get_org_certificates(organization_id=org_id)
     return [_cert_list_item(c) for c in certs]
 
-
-# ── Certificate detail ───────────────────────────────────────────────────
-
-
-@router.get(
-    f"{_P}/{{cert_id}}",
-    response={200: CertDetailSchema, 404: ErrorSchema},
-    auth=JWTAuth(),
-    summary="Get certificate detail",
-)
-def get_certificate(request: HttpRequest, org_id: UUID, cert_id: UUID):
-    require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
-
-    cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
-    if cert is None or str(cert.organization_id) != str(org_id):
-        raise NotFoundError("Certificate not found.")
-
-    return _cert_detail(cert)
-
-
 # ── Upload certificate ───────────────────────────────────────────────────
 
 
@@ -166,6 +146,25 @@ def upload_certificate(
     # Reload with relations
     cert = cert_selectors.get_certificate_by_id(cert_id=cert.id)
     return 201, _cert_detail(cert)
+
+
+# ── Certificate detail ───────────────────────────────────────────────────
+
+
+@router.get(
+    f"{_P}/{{cert_id}}",
+    response={200: CertDetailSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Get certificate detail",
+)
+def get_certificate(request: HttpRequest, org_id: UUID, cert_id: UUID):
+    require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
+
+    cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
+    if cert is None or str(cert.organization_id) != str(org_id):
+        raise NotFoundError("Certificate not found.")
+
+    return _cert_detail(cert)
 
 
 # ── Rotate certificate ──────────────────────────────────────────────────

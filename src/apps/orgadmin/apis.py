@@ -123,8 +123,8 @@ def get_organization_detail(request: HttpRequest, org_id: UUID):
         "status": org.status,
         "created_at": org.created_at.isoformat(),
         "member_count": member_count,
-        "document_count": 0,
-        "certificate_count": 0,
+        "document_count": DIDDocument.objects.filter(organization_id=org.id ).count(),
+        "certificate_count": Certificate.objects.filter(organization_id=org.id).count(),
     }
 
 
@@ -146,8 +146,8 @@ def get_organization_stats(request: HttpRequest, org_id: UUID):
         "total_members": members.exclude(status=MembershipStatus.DEACTIVATED).count(),
         "active_members": members.filter(status=MembershipStatus.ACTIVE).count(),
         "invited_members": members.filter(status=MembershipStatus.INVITED).count(),
-        "total_documents": 0,
-        "total_certificates": 0,
+        "total_documents": DIDDocument.objects.filter(organization_id=org_id ).count(),
+        "total_certificates": Certificate.objects.filter(organization_id=org_id).count(),
     }
 
 
