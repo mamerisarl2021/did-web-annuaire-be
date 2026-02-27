@@ -1,1 +1,1 @@
-# # Celery app import alias
+# Celery app import alias

@@ -150,3 +150,56 @@ def send_superadmin_new_registration_email(self, org_name: str, org_slug: str, a
     except Exception as exc:
         logger.error("superadmin_notification_failed", error=str(exc))
         raise self.retry(exc=exc)
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_member_invitation_email(
+    self,
+    user_id: str,
+    invitation_token: str,
+    org_name: str,
+    role: str,
+    invited_by_name: str,
+):
+    """
+    Send invitation email to a newly invited org member.
+    Distinct from send_activation_email — this makes it clear the user
+    was invited by someone, shows their role, and uses 'Accept Invitation' CTA.
+    """
+    from src.apps.users.selectors import get_user_by_id
+
+    try:
+        user = get_user_by_id(user_id=user_id)
+        if user is None:
+            logger.warning("invitation_email_user_not_found", user_id=user_id)
+            return
+
+        platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
+        scheme = "https" if "localhost" not in platform_domain else "http"
+        activation_url = f"{scheme}://{platform_domain}/activate/{invitation_token}/"
+
+        role_display = {
+            "ORG_MEMBER": "Member — can manage documents & certificates",
+            "AUDITOR": "Auditor — read-only access",
+            "ORG_ADMIN": "Admin — full access",
+        }.get(role, role)
+
+        html = render_to_string("emails/member_invitation.html", {
+            "user_name": user.full_name or None,
+            "org_name": org_name,
+            "role": role,
+            "role_display": role_display,
+            "invited_by": invited_by_name,
+            "activation_url": activation_url,
+        })
+
+        email_send(
+            to=[user.email],
+            subject=f"You've been invited to {org_name} on AnnuaireDID",
+            html=html,
+        )
+
+        logger.info("invitation_email_sent", user_id=user_id, email=user.email, org=org_name)
+
+    except Exception as exc:
+        logger.error("invitation_email_failed", user_id=user_id, error=str(exc))
+        raise self.retry(exc=exc)

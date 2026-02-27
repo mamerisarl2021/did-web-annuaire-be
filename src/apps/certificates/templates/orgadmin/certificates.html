@@ -1,0 +1,191 @@
+{% extends "orgadmin/base_orgadmin.html" %}
+{% load static %}
+{% block title %}Certificates{% endblock %}
+
+{% block content %}
+<div class="oa-page-header">
+  <div>
+    <h2>Certificates</h2>
+    <p>Manage X.509 certificates for DID verification methods</p>
+  </div>
+  <button class="oa-btn oa-btn-primary" onclick="openUploadModal()">
+    + Upload Certificate
+  </button>
+</div>
+
+<div id="alert-box"></div>
+
+<div id="certs-content">
+  <div class="oa-empty"><p>Loading certificates...</p></div>
+</div>
+
+<!-- ── Upload Modal ──────────────────────────────────────────── -->
+<div class="oa-modal-overlay hidden" id="upload-overlay" onclick="closeUpload(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()">
+    <h3>Upload Certificate</h3>
+    <p class="desc">Upload a PEM, DER, or PKCS#12 (.p12) certificate file.</p>
+
+    <div id="upload-alert"></div>
+
+    <div class="oa-form-group">
+      <label>Label <span class="req">*</span></label>
+      <input id="cert-label" class="oa-input" placeholder="e.g. prod-signing-2025">
+    </div>
+    <div class="oa-form-group">
+      <label>Certificate File <span class="req">*</span></label>
+      <input id="cert-file" type="file" accept=".pem,.cer,.crt,.der,.p12,.pfx" class="oa-input"
+             style="padding:0.5rem;">
+      <div style="margin-top:0.25rem;font-size:0.75rem;color:var(--oa-text-light);">
+        Accepted: .pem, .cer, .crt, .der, .p12, .pfx
+      </div>
+    </div>
+    <div class="oa-form-group" id="p12-pwd-group" style="display:none;">
+      <label>PKCS#12 Password</label>
+      <input id="cert-p12-pwd" type="password" class="oa-input" placeholder="Keystore password">
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('upload-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn oa-btn-primary" id="upload-btn" onclick="handleUpload()">
+        <span class="btn-label">Upload</span>
+        <span class="oa-spinner hidden" id="upload-spinner"></span>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'orgadmin/js/certificates.js' %}"></script>
+<script>
+const org = getCurrentOrg();
+if (!org) window.location.href = "/login/";
+
+// Show password field for p12 files
+document.getElementById("cert-file").addEventListener("change", function() {
+  const name = this.files?.[0]?.name?.toLowerCase() || "";
+  document.getElementById("p12-pwd-group").style.display =
+    (name.endsWith(".p12") || name.endsWith(".pfx")) ? "block" : "none";
+});
+
+// ── Load certificates ───────────────────────────────────────
+
+async function loadCerts() {
+  try {
+    const certs = await CertAPI.list(org.id);
+    renderCerts(certs);
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to load certificates.", "error");
+  }
+}
+
+function renderCerts(certs) {
+  if (certs.length === 0) {
+    document.getElementById("certs-content").innerHTML = `
+      <div class="oa-empty">
+        <div class="icon">🔐</div>
+        <p>No certificates yet. Upload your first certificate to start building DID documents.</p>
+      </div>`;
+    return;
+  }
+
+  const active = certs.filter(c => c.status === "ACTIVE");
+  const revoked = certs.filter(c => c.status !== "ACTIVE");
+
+  let html = `
+    <div class="oa-table-wrap">
+      <div class="oa-table-header">
+        <h3>Certificates (${certs.length})</h3>
+      </div>
+      <table class="oa-table">
+        <thead><tr>
+          <th>Label</th><th>Key</th><th>Subject</th><th>Status</th>
+          <th>Expires</th><th>Uploaded</th><th></th>
+        </tr></thead>
+        <tbody>`;
+
+  certs.forEach(c => {
+    const expired = isExpired(c.not_valid_after);
+    const days = daysUntilExpiry(c.not_valid_after);
+    let expiryHtml = oaFormatDate(c.not_valid_after);
+    if (expired) {
+      expiryHtml = `<span style="color:var(--oa-error);font-weight:500;">Expired</span>`;
+    } else if (days !== null && days <= 30) {
+      expiryHtml = `<span style="color:var(--oa-warn);font-weight:500;">${days}d left</span>`;
+    }
+
+    html += `
+      <tr style="cursor:pointer;" onclick="window.location.href='/workspace/certificates/${c.id}/'">
+        <td><span class="member-name">${c.label}</span></td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.8125rem;">${keyLabel(c.key_type, c.key_curve)}</span></td>
+        <td style="font-size:0.8125rem;color:var(--oa-text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.subject_dn}">${truncateDN(c.subject_dn)}</td>
+        <td>${certStatusBadge(c.status)}</td>
+        <td style="font-size:0.8125rem;">${expiryHtml}</td>
+        <td style="font-size:0.8125rem;">${oaFormatDate(c.created_at)}</td>
+        <td><span style="color:var(--oa-text-light);font-size:0.75rem;">View →</span></td>
+      </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  document.getElementById("certs-content").innerHTML = html;
+}
+
+// ── Upload ──────────────────────────────────────────────────
+
+function openUploadModal() {
+  document.getElementById("cert-label").value = "";
+  document.getElementById("cert-file").value = "";
+  document.getElementById("cert-p12-pwd").value = "";
+  document.getElementById("p12-pwd-group").style.display = "none";
+  oaClearAlert("upload-alert");
+  document.getElementById("upload-overlay").classList.remove("hidden");
+  document.getElementById("cert-label").focus();
+}
+
+function closeUpload(e) {
+  if (e.target === e.currentTarget)
+    document.getElementById("upload-overlay").classList.add("hidden");
+}
+
+async function handleUpload() {
+  const label = document.getElementById("cert-label").value.trim();
+  const fileInput = document.getElementById("cert-file");
+  const p12Pwd = document.getElementById("cert-p12-pwd").value;
+
+  oaClearAlert("upload-alert");
+
+  if (!label) { oaAlert("upload-alert", "Label is required."); return; }
+  if (!fileInput.files.length) { oaAlert("upload-alert", "Please select a certificate file."); return; }
+
+  const btn = document.getElementById("upload-btn");
+  const spinner = document.getElementById("upload-spinner");
+  const lbl = btn.querySelector(".btn-label");
+
+  btn.disabled = true;
+  spinner.classList.remove("hidden");
+  if (lbl) lbl.style.display = "none";
+
+  const fd = new FormData();
+  fd.append("label", label);
+  fd.append("file", fileInput.files[0]);
+  if (p12Pwd) fd.append("p12_password", p12Pwd);
+
+  try {
+    await CertAPI.upload(org.id, fd);
+    document.getElementById("upload-overlay").classList.add("hidden");
+    oaAlert("alert-box", `Certificate "${label}" uploaded successfully.`, "success");
+    await loadCerts();
+  } catch (err) {
+    oaAlert("upload-alert", err.detail || "Upload failed.");
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add("hidden");
+    if (lbl) lbl.style.display = "inline";
+  }
+}
+
+// ── Init ────────────────────────────────────────────────────
+
+loadCerts();
+</script>
+{% endblock %}

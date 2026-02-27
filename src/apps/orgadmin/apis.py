@@ -7,10 +7,13 @@ Permission checks use the RBAC system from common/permissions.py.
 
 from uuid import UUID
 
+from django.db import transaction
 from django.http import HttpRequest
 from ninja import Router
 from ninja_jwt.authentication import JWTAuth
 
+from src.apps.certificates.models import Certificate
+from src.apps.documents.models import DIDDocument
 from src.apps.organizations.models import Membership, Organization
 from src.apps.organizations.selectors import (
     get_active_membership,
@@ -50,8 +53,8 @@ def _org_summary(org: Organization) -> dict:
         "type": org.type,
         "status": org.status,
         "member_count": member_count,
-        "document_count": 0,  # TODO: wire when documents app is built
-        "certificate_count": 0,  # TODO: wire when certificates app is built
+        "document_count": DIDDocument.objects.filter(organization_id=org.id ).count(),
+        "certificate_count": Certificate.objects.filter(organization_id=org.id).count(),
     }
 
 
@@ -196,11 +199,13 @@ def invite_member(request: HttpRequest, org_id: UUID, payload: InviteMemberSchem
         update_user_profile(user=new_membership.user, full_name=payload.full_name)
         new_membership.user.refresh_from_db()
 
-    from src.apps.emails.tasks import send_activation_email
-    send_activation_email.delay(
+    from src.apps.emails.tasks import send_member_invitation_email
+    send_member_invitation_email.delay(
         user_id=str(new_membership.user.id),
         invitation_token=str(new_membership.invitation_token),
         org_name=org.name,
+        role=payload.role,
+        invited_by_name=request.auth.full_name or request.auth.email,
     )
 
     return 201, _member_dict(new_membership)

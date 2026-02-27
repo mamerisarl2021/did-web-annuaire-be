@@ -7,7 +7,7 @@ Root URL configuration.
 - /superadmin/          → Superadmin frontend (Django templates)
 - /workspace/           → Org admin frontend (Django templates)
 - /login/, /register/   → Public frontend (Django templates)
-- /admin/
+- /admin/               → Django admin
 """
 
 from django.contrib import admin
@@ -16,6 +16,7 @@ from ninja_extra import NinjaExtraAPI
 from ninja_jwt.controller import NinjaJWTDefaultController
 
 from src.apps.authentication.apis import router as auth_router
+from src.apps.certificates.apis import router as cert_router
 from src.apps.orgadmin.apis import router as orgadmin_router
 from src.apps.superadmin.apis import router as superadmin_router
 from src.common.exceptions import configure_exception_handlers
@@ -24,7 +25,7 @@ from src.common.exceptions import configure_exception_handlers
 
 api = NinjaExtraAPI(
     title="Annuaire DID API",
-    version="1.0.1",
+    version="1.0.0",
     description="DID Directory — decentralized identity management",
     urls_namespace="api",
 )
@@ -40,11 +41,16 @@ api.add_router("/auth", auth_router)
 # Org admin: /api/v2/org/...
 api.add_router("/org", orgadmin_router)
 
+# Certificates: /api/v2/org/organizations/{org_id}/certificates/...
+# NOTE: {org_id} is in the endpoint paths, NOT in the router prefix.
+# NinjaExtraAPI does not reliably propagate path params from add_router prefixes.
+api.add_router("/org", cert_router)
+
 # ── Superadmin API ──────────────────────────────────────────────────────
 
 superadmin_api = NinjaExtraAPI(
     title="Annuaire DID Superadmin API",
-    version="1.0.1",
+    version="1.0.0",
     urls_namespace="superadmin_api",
     docs_url="/docs",
 )
@@ -55,7 +61,7 @@ superadmin_api.add_router("/", superadmin_router)
 # ── URL patterns ────────────────────────────────────────────────────────
 
 urlpatterns = [
-    # API
+    # APIs
     path("api/v2/", api.urls),
     path("superadmin/api/v2/", superadmin_api.urls),
 

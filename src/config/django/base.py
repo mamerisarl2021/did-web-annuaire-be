@@ -23,6 +23,8 @@ AUTH_USER_MODEL = "users.User"
 # ── Others ──────────────────────────────────────────────────────
 
 PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
+JWK_EXTRACTOR_JAR = "/opt/ecdsa-extractor.jar"
+JWK_EXTRACTOR_JAVA = "java"
 
 
 # ── Installed Apps ──────────────────────────────────────────────────────
@@ -55,6 +57,8 @@ LOCAL_APPS = [
     "src.apps.frontend",
     "src.apps.superadmin",
     "src.apps.orgadmin",
+    "src.apps.certificates",
+    "src.apps.documents",
     "src.seeders",
 ]
 

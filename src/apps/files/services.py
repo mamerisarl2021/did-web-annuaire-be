@@ -4,7 +4,6 @@ File services — handles upload, validation, and deletion.
 
 import structlog
 from django.core.files.uploadedfile import UploadedFile
-from django.db import transaction
 from django.utils import timezone
 
 from src.apps.files.models import File
@@ -26,10 +25,18 @@ ALLOWED_IMAGE_TYPES = {
 }
 
 ALLOWED_CERTIFICATE_TYPES = {
+    # PEM / DER / X.509
     "application/x-pem-file",
     "application/x-x509-ca-cert",
     "application/pkix-cert",
-    "text/plain",
+    "text/plain",                       # PEM files sometimes detected as text
+    # PKCS#12 (.p12, .pfx)
+    "application/x-pkcs12",             # standard PKCS#12 MIME
+    "application/pkcs12",               # alternative without x- prefix
+    # PKCS#7 (.p7b, .p7c)
+    "application/x-pkcs7-certificates",
+    # Fallback — some browsers/OS send generic binary
+    "application/octet-stream",
 }
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -73,7 +80,7 @@ def _validate_file(
 
     return content_type
 
-@transaction.atomic
+
 def upload_file(
     *,
     file: UploadedFile,
@@ -109,7 +116,7 @@ def upload_file(
     )
     return file_instance
 
-@transaction.atomic
+
 def upload_document(*, file: UploadedFile, uploaded_by=None) -> File:
     """Upload a document file (PDF only)."""
     return upload_file(
@@ -118,16 +125,16 @@ def upload_document(*, file: UploadedFile, uploaded_by=None) -> File:
         allowed_types=ALLOWED_DOCUMENT_TYPES,
     )
 
-@transaction.atomic
+
 def upload_certificate_file(*, file: UploadedFile, uploaded_by=None) -> File:
-    """Upload a certificate file (PEM/DER)."""
+    """Upload a certificate file (PEM/DER/PKCS#12)."""
     return upload_file(
         file=file,
         uploaded_by=uploaded_by,
         allowed_types=ALLOWED_CERTIFICATE_TYPES,
     )
 
-@transaction.atomic
+
 def delete_file(*, file_instance: File) -> None:
     """Delete a file from storage and the database."""
     file_id = str(file_instance.id)
