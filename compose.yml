@@ -1,0 +1,168 @@
+###############################################################################
+# Annuaire DID Backend Stack
+# Location on VPS: ~/app/did-web-annuaire-backend/staging/
+#
+# This stack owns the shared network and named volumes.
+# Keyfactor (~/app/keyfactor/) and DIF (~/DIF/) stacks join the same network.
+#
+# CI/CD only restarts THIS stack. Keyfactor/DIF stacks stay running.
+###############################################################################
+
+services:
+
+  # ── Reverse proxy ─────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.28-alpine
+    container_name: annuaire-nginx
+    restart: unless-stopped
+    ports:
+      - "8086:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/static:ro
+      - media_volume:/media:ro
+      - dids_volume:/app/data/dids:ro
+    depends_on:
+      - annuaire-backend
+    networks:
+      - annuaire_staging_net
+
+  # ── Django backend ────────────────────────────────────────────────────────
+  annuaire-backend:
+    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
+    container_name: annuaire-backend
+    restart: unless-stopped
+    user: "0"
+    env_file:
+      - .env.backend
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+      - dids_volume:/app/data/dids
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    networks:
+      - annuaire_staging_net
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:18
+    container_name: annuaire-db
+    restart: unless-stopped
+    env_file:
+      - .env.backend
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d annuaire_did"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    networks:
+      - annuaire_staging_net
+
+  # ── Redis (replaces RabbitMQ) ─────────────────────────────────────────────
+  redis:
+    image: redis:8.4.1-alpine
+    container_name: annuaire-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-changeme_redis}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - annuaire_staging_net
+
+  # ── Celery worker ─────────────────────────────────────────────────────────
+  celery:
+    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
+    container_name: annuaire-celery
+    restart: unless-stopped
+    command: celery -A src.config.celery_app worker -l info --without-gossip --without-mingle --without-heartbeat
+    user: "0"
+    env_file:
+      - .env.backend
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "170m"
+        max-file: "5"
+    networks:
+      - annuaire_staging_net
+
+  # ── Celery beat scheduler ─────────────────────────────────────────────────
+  celery-beat:
+    image: ctrldaviddee/annuaire_did_be:staging-latest
+    container_name: annuaire-celery-beat
+    restart: unless-stopped
+    command: celery -A src.tasks beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    user: "0"
+    env_file:
+      - .env.backend
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "170m"
+        max-file: "5"
+    networks:
+      - annuaire_staging_net
+
+# ── Named volumes (shared with Keyfactor & DIF stacks) ─────────────────────
+volumes:
+  postgres_data:
+    name: annuaire_postgres_data
+  redis_data:
+    name: annuaire_redis_data
+  static_volume:
+    name: annuaire_static_volume
+  media_volume:
+    name: annuaire_media_volume
+  dids_volume:
+    name: annuaire_dids_volume
+
+networks:
+  annuaire_staging_net:
+    external: true

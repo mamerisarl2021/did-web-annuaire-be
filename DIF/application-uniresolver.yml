@@ -1,0 +1,64 @@
+server:
+  servlet:
+    contextPath: /
+    mappings:
+      properties: "/1.0/properties"
+      resolve: "/1.0/identifiers"
+      methods: "/1.0/methods"
+      testIdentifiers: "/1.0/testIdentifiers"
+      traits: "/1.0/traits"
+  port: "8080"
+
+spring:
+  profiles:
+    active: ${uniresolver_web_spring_profiles_active:default}
+
+uniresolver:
+  drivers:
+
+    # ── did:web ─────────────────────────────────────────────────────────────
+    - pattern: "^(did:web:.+)$"
+      url: http://uni-resolver-driver-did-uport:8081/
+      testIdentifiers:
+        - did:web:identity.foundation
+        - did:web:danubetech.com
+      traits:
+        deactivatable: true
+        enumerable: false
+        historyAvailable: false
+        humanReadable: true
+
+    # ── did:ethr ────────────────────────────────────────────────────────────
+    - pattern: "^(did:ethr:.+)$"
+      url: http://uni-resolver-driver-did-uport:8081/
+      testIdentifiers:
+        - did:ethr:0x3b0BC51Ab9De1e5B7B6E34E5b960285805C41736
+
+    # ── did:key ─────────────────────────────────────────────────────────────
+    - pattern: "^(did:key:.+)$"
+      url: http://uni-resolver-driver-did-key:8080/
+      testIdentifiers:
+        - did:key:z6Mkfriq1MqLBoPWecGoDLjguo1sB9brj6wT3qZ5BxkKpuP6
+        - did:key:z6MksQ35B5bwZDQq4QKuhQW2Sv6dcqwg4PqcSFf67hgSmGry
+      traits:
+        deactivatable: false
+        enumerable: false
+        historyAvailable: false
+        humanReadable: false
+
+    # ── did:jwk ─────────────────────────────────────────────────────────────
+    - pattern: "^(did:jwk:.+)$"
+      url: http://uni-resolver-driver-did-jwk:8080/
+      testIdentifiers:
+        - did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5IiwieCI6IlVNcWRxOEdLSlE0elNkNktNX0d0UTNMZ0Joa0dka1N6Z2l1SUFqYkFmREkifQ
+      traits:
+        deactivatable: false
+        enumerable: false
+        historyAvailable: false
+        humanReadable: false
+
+    # ── did:peer ────────────────────────────────────────────────────────────
+    - pattern: "^(did:peer:.+)$"
+      url: http://uni-resolver-driver-did-uport:8081/
+      testIdentifiers:
+        - did:peer:2.Ez6LSghwSE437wnDE1pt3X6hVDUQzSjsHzinpX3XFvMjRAm7y.Vz6Mkhh1e5CEYYq6JBUcTZ6Cp2ranCWRrv7Yax3Le4N59R6dd.SeyJ0IjoiZG0iLCJzIjoiaHR0cHM6Ly9hbGljZS5kaWQuZm1ncC5hcHAvIiwiciI6W10sImEiOlsiZGlkY29tbS92MiJdfQ

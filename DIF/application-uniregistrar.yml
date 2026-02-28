@@ -1,0 +1,43 @@
+server:
+  servlet:
+    contextPath: /
+    mappings:
+      properties: "/1.0/properties"
+      create: "/1.0/create"
+      update: "/1.0/update"
+      deactivate: "/1.0/deactivate"
+      execute: "/1.0/execute"
+      createResource: "/1.0/createResource"
+      updateResource: "/1.0/updateResource"
+      deactivateResource: "/1.0/deactivateResource"
+      methods: "/1.0/methods"
+      traits: "/1.0/traits"
+  port: '9080'
+
+spring:
+  profiles:
+    active: ${uniregistrar_web_spring_profiles_active:default}
+
+uniregistrar:
+  drivers:
+
+    # ── did:web ─────────────────────────────────────────────────────────────
+    - method: web
+      url: http://uni-registrar-driver-did-web:9080/
+      propertiesEndpoint: 'true'
+      traits:
+        updatable: true
+        deactivatable: true
+        enumerable: false
+        historyAvailable: false
+        humanReadable: true
+
+    # ── did:key ─────────────────────────────────────────────────────────────
+    - method: key
+      url: http://uni-registrar-driver-did-key:9080/
+      traits:
+        updatable: false
+        deactivatable: false
+        enumerable: false
+        historyAvailable: false
+        humanReadable: false

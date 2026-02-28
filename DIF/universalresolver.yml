@@ -1,0 +1,82 @@
+###############################################################################
+# Universal Resolver – trimmed for did:web focus
+# Location on VPS: ~/DIF/universalresolver.yml
+#
+# NOT restarted by CI/CD — stays running independently.
+###############################################################################
+
+networks:
+  annuaire_staging_net:
+    external: true
+
+services:
+  uni-resolver-web:
+    image: universalresolver/uni-resolver-web:latest
+    container_name: uni-resolver-web
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./application-uniresolver.yml:/opt/uni-resolver-java/uni-resolver-web/application.yml:ro
+    networks:
+      - annuaire_staging_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # did:web + did:ethr + did:ens + did:peer (uPort/Veramo driver)
+  uni-resolver-driver-did-uport:
+    image: uport/uni-resolver-driver-did-uport:5.0.3
+    container_name: uni-resolver-driver-did-uport
+    restart: unless-stopped
+    networks:
+      - annuaire_staging_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # did:key
+  driver-did-key:
+    image: universalresolver/driver-did-key:latest
+    container_name: uni-resolver-driver-did-key
+    restart: unless-stopped
+    networks:
+      - annuaire_staging_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # did:jwk
+  did-jwk-driver:
+    image: transmute/restricted-resolver:latest
+    container_name: uni-resolver-driver-did-jwk
+    restart: unless-stopped
+    networks:
+      - annuaire_staging_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # didkit fallback (did:web, did:key, did:tz, did:pkh, did:jwk)
+  driver-didkit:
+    image: ghcr.io/spruceid/didkit-http:202402050910243f0642d
+    container_name: uni-resolver-driver-didkit
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+    networks:
+      - annuaire_staging_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"

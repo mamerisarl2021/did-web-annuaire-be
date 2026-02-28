@@ -1,0 +1,65 @@
+###############################################################################
+# Universal Registrar – trimmed for did:web focus
+# Location on VPS: ~/DIF/universalregistrar.yml
+#
+# NOT restarted by CI/CD — stays running independently.
+# driver-did-web writes DID docs to the shared dids_volume that nginx serves.
+###############################################################################
+
+networks:
+  annuaire_staging_net:
+    external: true
+
+services:
+  uni-registrar-web:
+    image: universalregistrar/uni-registrar-web:latest
+    container_name: uni-registrar-web
+    restart: unless-stopped
+    ports:
+      - "9080:9080"
+    volumes:
+      - ./application-uniregistrar.yml:/opt/uni-registrar-java/uni-registrar-web/application.yml:ro
+    networks:
+      - annuaire_staging_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # did:web driver — writes DID docs to the shared volume
+  driver-did-web:
+    image: universalregistrar/driver-did-web:latest
+    container_name: uni-registrar-driver-did-web
+    restart: unless-stopped
+    environment:
+      uniregistrar_driver_did_web_basePath: /app/data/dids
+      uniregistrar_driver_did_web_baseUrl: https://annuairedid-be.qcdigitalhub.com
+      uniregistrar_driver_did_web_generatedFolder: /generated
+    volumes:
+      - dids_volume:/app/data/dids
+    networks:
+      - annuaire_staging_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # did:key driver
+  driver-did-key:
+    image: universalregistrar/driver-did-key:latest
+    container_name: uni-registrar-driver-did-key
+    restart: unless-stopped
+    networks:
+      - annuaire_staging_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+volumes:
+  dids_volume:
+    external: true
+    name: annuaire_dids_volume
