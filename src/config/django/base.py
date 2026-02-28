@@ -26,7 +26,6 @@ PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
 JWK_EXTRACTOR_JAR = "/home/davieddee/WORKSPACE/did-web-annuaire-be/artifacts/ecdsa-extractor.jar"
 JWK_EXTRACTOR_JAVA = "java"
 
-
 # ── Installed Apps ──────────────────────────────────────────────────────
 
 DJANGO_APPS = [
@@ -80,13 +79,11 @@ MIDDLEWARE = [
     "django_structlog.middlewares.RequestMiddleware",
 ]
 
-
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
-        #"DIRS": [os.path.join(APPS_DIR, "templates")],
+        # "DIRS": [os.path.join(APPS_DIR, "templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -113,7 +110,7 @@ DATABASES = {
         "OPTIONS": {
             "connect_timeout": 10,
         },
-      "ATOMIC_REQUESTS": True,
+        "ATOMIC_REQUESTS": True,
     },
 }
 
@@ -128,42 +125,38 @@ CACHES = {
     },
 }
 
-
-
-
 # ── Auth ────────────────────────────────────────────────────────────────
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
-
 
 # ── i18n ────────────────────────────────────────────────────────────────
 
-# LANGUAGE_CODE = 'en-us'
-LANGUAGE_CODE = 'fr-fr'
+LANGUAGE_CODE = 'en-us'
+# LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-#ADMIN_USER_NAME = "david"
-#ADMIN_USER_EMAIL = "princedavealex.20@gmail.com"
+# ADMIN_USER_NAME = "david"
+# ADMIN_USER_EMAIL = "princedavealex.20@gmail.com"
 
-#ADMINS = []
+# ADMINS = []
 
-#if ADMIN_USER_NAME and ADMIN_USER_EMAIL:
+# if ADMIN_USER_NAME and ADMIN_USER_EMAIL:
 #    ADMINS.append((ADMIN_USER_NAME, ADMIN_USER_EMAIL))
 
-#MANAGERS = ADMINS
+# MANAGERS = ADMINS
 
 # ── Split configs (imported from others/) ───────────────────────────────
 # Each file exports top-level Django settings variables.
 
 from src.config.others.jwt import *  # noqa: E402, F401, F403
-#from src.config.others.session import *  # noqa: E402, F401, F403
+# from src.config.others.session import *  # noqa: E402, F401, F403
 from src.config.others.cors import *  # noqa: E402, F401, F403
 from src.config.others.celery_conf import *  # noqa: E402, F401, F403
 from src.config.others.files_and_storages import *  # noqa: E402, F401, F403

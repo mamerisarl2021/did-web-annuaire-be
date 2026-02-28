@@ -7,6 +7,7 @@
     <title>{% block title %}Dashboard{% endblock %} — AnnuaireDID</title>
     <link rel="stylesheet" href="{% static 'orgadmin/css/orgadmin.css' %}">
     <link rel="stylesheet" href="{% static 'orgadmin/css/certificates.css' %}">
+    <link rel="stylesheet" href="{% static 'orgadmin/css/documents.css' %}">
     <script src="https://unpkg.com/htmx.org@2.0.8"></script>
 </head>
 <body class="oa-body">
@@ -37,17 +38,16 @@
                 </a>
             </li>
             <li>
-                <a href="#" class="{% if active_page == 'documents' %}active{% endif %}">
-                    <span class="icon">📜</span> DID Documents
-                    <span class="oa-nav-count">0</span>
+                <a href="/workspace/documents/" class="{% if active_page == 'documents' %}active{% endif %}">
+                    <span class="icon">📄</span> DID Documents
+                    <span class="oa-nav-count" id="nav-doc-count">—</span>
                 </a>
             </li>
 
             <li>
-                <a href="/workspace/certificates/"
-                   class="{% if request.resolver_match.url_name == 'certificates' or request.resolver_match.url_name == 'certificate_detail' %}active{% endif %}">
+                <a href="/workspace/certificates/" class="{% if active_page == 'certificates' %}active{% endif %}">
                     <span class="icon">🔐</span> Certificates
-                    <span class="oa-nav-count">0</span>
+                    <span class="oa-nav-count" id="nav-cert-count">—</span>
                 </a>
             </li>
 
@@ -84,10 +84,6 @@
         try {
             const user = await Auth.me();
 
-            // Superadmin redirect
-            if (user.is_superadmin && !getCurrentOrg()) {
-                // Superadmins without an org go to the admin console
-            }
 
             document.getElementById("sidebar-user-name").textContent = user.full_name || "User";
 
@@ -112,8 +108,15 @@
             document.getElementById("sidebar-user-role").textContent =
                 org.member_count !== undefined ? `${org.member_count} members` : "";
 
+            // Nav counts
             if (org.member_count !== undefined) {
                 document.getElementById("nav-member-count").textContent = org.member_count;
+            }
+            if (org.document_count !== undefined) {
+                document.getElementById("nav-doc-count").textContent = org.document_count;
+            }
+            if (org.certificate_count !== undefined) {
+                document.getElementById("nav-cert-count").textContent = org.certificate_count;
             }
 
         } catch (err) {
