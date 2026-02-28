@@ -131,14 +131,14 @@ def require_role(user, org_id, role: Role):
 
 def require_document_owner(user, document) -> None:
     """
-    Verify the user is the creator of the DID document.
+    Verify the user is the owner of the DID document.
 
+    Uses owner_id (the canonical owner field), not created_by_id.
     Even org admins CANNOT edit documents they didn't create.
-    They can only review (approve/reject).
     """
-    if document.created_by_id != user.id:
+    if document.owner_id != user.id:
         raise PermissionDeniedError(
-            "Only the document creator can modify this document."
+            "Only the document owner can modify this document."
         )
 
 
@@ -147,11 +147,11 @@ def require_document_reviewer(user, org_id, document) -> None:
     Verify the user can review (approve/reject) the DID document.
     Requirements:
       1. User must be an ORG_ADMIN in the organization.
-      2. User must NOT be the document creator (can't review your own work).
+      2. User must NOT be the document owner (can't review your own work).
     """
     require_permission(user, org_id, Permission.MANAGE_MEMBERS)
 
-    if document.created_by_id == user.id:
+    if document.owner_id == user.id:
         raise PermissionDeniedError(
             "You cannot review your own document."
         )

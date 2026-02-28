@@ -4,15 +4,10 @@ DID Document assembler.
 Builds a W3C DID Core v1.0 compliant JSON document from the
 verification methods attached to a DIDDocument model instance.
 
-Output:
-{
-  "@context": ["https://www.w3.org/ns/did/v1", ...],
-  "id": "did:web:example.com:acme-corp:corporate-auth",
-  "verificationMethod": [...],
-  "authentication": [...],
-  ...
-}
+DID URI format: did:web:<host>:<org_slug>:<owner_identifier>:<label>
 """
+
+import datetime
 
 from django.conf import settings
 
@@ -25,18 +20,28 @@ RELATIONSHIP_TYPES = [
     "capabilityDelegation",
 ]
 
+# Map (kty, crv) → alg per RFC 7518 / DID spec conventions
+_ALG_MAP = {
+    ("EC", "P-256"):   "ES256",
+    ("EC", "P-384"):   "ES384",
+    ("EC", "P-521"):   "ES512",
+    ("EC", "secp256k1"): "ES256K",
+    ("OKP", "Ed25519"): "EdDSA",
+    ("OKP", "X25519"):  "ECDH-ES",
+    ("RSA", None):      "RS256",
+}
 
-def build_did_uri(org_slug: str, label: str) -> str:
+
+def build_did_uri(org_slug: str, owner_identifier: str, label: str) -> str:
     """
     Build the full DID URI for a did:web document.
 
-    did:web uses colons as path separators:
-      did:web:example.com:acme-corp:corporate-auth
+    Format: did:web:<domain>:<org_slug>:<owner_identifier>:<label>
     Port colons become %3A per did:web spec.
     """
     domain = getattr(settings, "PLATFORM_DOMAIN", "localhost")
     encoded_domain = domain.replace(":", "%3A")
-    return f"did:web:{encoded_domain}:{org_slug}:{label}"
+    return f"did:web:{encoded_domain}:{org_slug}:{owner_identifier}:{label}"
 
 
 def assemble_did_document(
@@ -79,11 +84,17 @@ def assemble_did_document(
 
         method_full_id = f"{did_uri}#{vm.method_id_fragment}"
 
+        # Enrich JWK with alg and use
+        jwk = _enrich_jwk(
+            cert_version.public_key_jwk or {},
+            vm.relationship_list,
+        )
+
         vm_entry = {
             "id": method_full_id,
             "type": vm.method_type,
             "controller": did_uri,
-            "publicKeyJwk": cert_version.public_key_jwk or {},
+            "publicKeyJwk": jwk,
         }
         vm_entries.append(vm_entry)
 
@@ -106,6 +117,36 @@ def assemble_did_document(
     return doc
 
 
+def _enrich_jwk(jwk: dict, relationships: list[str]) -> dict:
+    """
+    Add 'alg' and 'use' to a JWK if not already present.
+
+    - alg: inferred from (kty, crv) per RFC 7518
+    - use: 'enc' if only keyAgreement, else 'sig'
+    """
+    enriched = dict(jwk)
+
+    # Determine alg from key type and curve
+    if "alg" not in enriched:
+        kty = enriched.get("kty", "")
+        crv = enriched.get("crv")
+        alg = _ALG_MAP.get((kty, crv))
+        if alg is None and kty == "RSA":
+            alg = _ALG_MAP.get(("RSA", None))
+        if alg:
+            enriched["alg"] = alg
+
+    # Determine use from relationships
+    if "use" not in enriched:
+        only_key_agreement = (
+            relationships == ["keyAgreement"]
+            or set(relationships) == {"keyAgreement"}
+        )
+        enriched["use"] = "enc" if only_key_agreement else "sig"
+
+    return enriched
+
+
 def _build_service_endpoints(did_uri: str, endpoints: list[dict]) -> list[dict]:
     services = []
     for ep in endpoints:
@@ -120,8 +161,6 @@ def _build_service_endpoints(did_uri: str, endpoints: list[dict]) -> list[dict]:
 
 def add_proof_to_document(did_document: dict, *, jws_signature: str) -> dict:
     """Attach a proof block to a DID document after signing."""
-    import datetime
-
     doc = dict(did_document)
     doc["proof"] = {
         "type": "JsonWebSignature2020",
@@ -135,3 +174,60 @@ def add_proof_to_document(did_document: dict, *, jws_signature: str) -> dict:
         doc["proof"]["verificationMethod"] = vm_list[0]["id"]
 
     return doc
+
+
+def build_verifiable_credential(
+    *,
+    did_uri: str,
+    did_document: dict,
+    org_name: str,
+    owner_name: str,
+    label: str,
+    version: int,
+    published_at: str,
+) -> dict:
+    """
+    Build a W3C Verifiable Credential (VC) for a published DID document.
+
+    The VC attests that the organization has published this DID document
+    through the AnnuaireDID platform.
+    """
+    domain = getattr(settings, "PLATFORM_DOMAIN", "localhost")
+
+    vc = {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/ns/did/v1",
+        ],
+        "type": ["VerifiableCredential", "DIDPublicationCredential"],
+        "issuer": {
+            "id": f"did:web:{domain.replace(':', '%3A')}",
+            "name": "AnnuaireDID Platform",
+        },
+        "issuanceDate": published_at,
+        "credentialSubject": {
+            "id": did_uri,
+            "type": "DIDDocument",
+            "organization": org_name,
+            "owner": owner_name,
+            "label": label,
+            "version": version,
+            "verificationMethodCount": len(
+                did_document.get("verificationMethod", [])
+            ),
+            "publicationStatus": "published",
+        },
+    }
+
+    # Add proof reference if the DID document has one
+    proof = did_document.get("proof")
+    if proof:
+        vc["proof"] = {
+            "type": proof.get("type", "JsonWebSignature2020"),
+            "created": proof.get("created", published_at),
+            "proofPurpose": "assertionMethod",
+            "verificationMethod": proof.get("verificationMethod", ""),
+            "jws": proof.get("jws", ""),
+        }
+
+    return vc

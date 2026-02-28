@@ -5,14 +5,13 @@ Mounted at: /api/v2/org/   (alongside orgadmin and cert routers)
 Full paths:  /api/v2/org/organizations/{org_id}/documents/...
 
 Scoping:
-  - ORG_ADMIN:  sees all org documents, can review, publish, deactivate.
-                Edits only own documents.
-  - ORG_MEMBER: sees/edits only own documents. Can submit for review.
-  - AUDITOR:    sees all org documents (read-only).
+  - ORG_ADMIN:  sees all, reviews others', publishes directly from DRAFT
+  - ORG_MEMBER: sees/edits own, submits for review, publishes/deactivates own
+  - AUDITOR:    sees all (read-only)
 
 Lifecycle:
-  DRAFT → PENDING_REVIEW → APPROVED → SIGNED → PUBLISHED → DEACTIVATED
-                         → REJECTED (→ re-edit → re-submit)
+  ORG_MEMBER: DRAFT → PENDING_REVIEW → APPROVED → PUBLISHED → DEACTIVATED
+  ORG_ADMIN:  DRAFT → PUBLISHED (direct, skips review)
 """
 
 from uuid import UUID
@@ -54,29 +53,40 @@ def _can_view_all(membership) -> bool:
     return membership.role in (Role.ORG_ADMIN, Role.AUDITOR)
 
 
+def _is_admin(membership) -> bool:
+    return membership.role == Role.ORG_ADMIN
+
+
 def _require_doc_owner(doc, user, membership, action="access"):
-    if doc.created_by_id == user.id:
+    if doc.owner_id == user.id:
         return
-    raise PermissionDeniedError(f"Only the document creator can {action} this document.")
+    raise PermissionDeniedError(f"Only the document owner can {action} this document.")
 
 
 def _require_owner_or_admin(doc, user, membership, action="access"):
-    """Owner can act on own doc; ORG_ADMIN can act on any doc."""
-    if doc.created_by_id == user.id:
+    if doc.owner_id == user.id:
         return
     if membership.role == Role.ORG_ADMIN:
         return
-    raise PermissionDeniedError(f"Only the document creator or an admin can {action} this document.")
+    raise PermissionDeniedError(f"Only the document owner or an admin can {action} this document.")
 
 
 def _require_reviewer(doc, user, membership):
     if membership.role != Role.ORG_ADMIN:
         raise PermissionDeniedError("Only organization admins can review documents.")
-    if doc.created_by_id == user.id:
+    if doc.owner_id == user.id:
         raise PermissionDeniedError("You cannot review your own document.")
 
 
 # ── Serialization helpers ────────────────────────────────────────────────
+
+
+def _did_uri(doc) -> str:
+    return build_did_uri(
+        org_slug=doc.organization.slug,
+        owner_identifier=doc.owner_identifier,
+        label=doc.label,
+    )
 
 
 def _vm_response(vm: DocumentVerificationMethod) -> dict:
@@ -99,7 +109,9 @@ def _doc_list_item(doc) -> dict:
         "id": doc.id,
         "label": doc.label,
         "status": doc.status,
-        "did_uri": build_did_uri(org_slug=doc.organization.slug, label=doc.label),
+        "did_uri": _did_uri(doc),
+        "owner_email": doc.owner.email if doc.owner else "",
+        "owner_identifier": doc.owner_identifier,
         "created_by_email": doc.created_by.email if doc.created_by else "",
         "vm_count": doc.verification_methods.filter(is_active=True).count(),
         "current_version_number": (
@@ -112,11 +124,18 @@ def _doc_list_item(doc) -> dict:
 
 def _doc_detail(doc) -> dict:
     vms = doc_selectors.get_document_verification_methods(document_id=doc.id)
+
+    # Build VC for published docs
+    vc = doc_services.get_verifiable_credential(doc)
+
     return {
         "id": doc.id,
         "label": doc.label,
         "status": doc.status,
-        "did_uri": build_did_uri(org_slug=doc.organization.slug, label=doc.label),
+        "did_uri": _did_uri(doc),
+        "owner_email": doc.owner.email if doc.owner else "",
+        "owner_identifier": doc.owner_identifier,
+        "owner_id": doc.owner_id,
         "draft_content": doc.draft_content,
         "content": doc.content,
         "created_by_email": doc.created_by.email if doc.created_by else "",
@@ -130,6 +149,7 @@ def _doc_detail(doc) -> dict:
             doc.current_version.version_number if doc.current_version else None
         ),
         "verification_methods": [_vm_response(vm) for vm in vms],
+        "verifiable_credential": vc,
         "created_at": doc.created_at.isoformat(),
         "updated_at": doc.updated_at.isoformat(),
     }
@@ -155,7 +175,6 @@ def _get_doc_or_404(doc_id: UUID, org_id: UUID):
 
 # ═════════════════════════════════════════════════════════════════════════
 # IMPORTANT: literal paths (pending-review) BEFORE parameterized ({doc_id})
-# to avoid Django Ninja matching "pending-review" as a UUID.
 # ═════════════════════════════════════════════════════════════════════════
 
 
@@ -239,7 +258,7 @@ def get_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
 
-    if not _can_view_all(membership) and doc.created_by_id != request.auth.id:
+    if not _can_view_all(membership) and doc.owner_id != request.auth.id:
         raise NotFoundError("Document not found.")
 
     return _doc_detail(doc)
@@ -271,10 +290,8 @@ def update_draft(
     )
 
     doc = doc_services.update_draft(
-        document=doc,
-        updated_by=request.auth,
-        verification_methods=vm_specs,
-        service_endpoints=svc_specs,
+        document=doc, updated_by=request.auth,
+        verification_methods=vm_specs, service_endpoints=svc_specs,
     )
 
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
@@ -294,9 +311,7 @@ def update_draft(
     summary="Add a verification method to a draft document",
 )
 def add_verification_method(
-    request: HttpRequest,
-    org_id: UUID,
-    doc_id: UUID,
+    request: HttpRequest, org_id: UUID, doc_id: UUID,
     payload: AddVerificationMethodSchema,
 ):
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
@@ -338,11 +353,10 @@ def remove_verification_method(
     doc_services.remove_verification_method(
         document=doc, vm_id=vm_id, removed_by=request.auth,
     )
-
     return {"message": "Verification method removed."}
 
 
-# ── Submit for review ────────────────────────────────────────────────────
+# ── Submit for review (ORG_MEMBER only — admins publish directly) ──────
 
 
 @router.post(
@@ -417,14 +431,23 @@ def reject_document(
     f"{_P}/{{doc_id}}/publish",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Sign and publish document (APPROVED → PUBLISHED)",
+    summary="Sign and publish document",
 )
 def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
+    """
+    ORG_ADMIN: can publish from DRAFT (direct) or APPROVED
+    ORG_MEMBER: can publish only from APPROVED (after review)
+    """
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
     _require_owner_or_admin(doc, request.auth, membership, action="publish")
 
-    doc = doc_services.sign_and_publish(document=doc, published_by=request.auth)
+    # ORG_ADMIN can skip review and publish directly from DRAFT
+    skip_review = _is_admin(membership) and doc.status == "DRAFT"
+
+    doc = doc_services.sign_and_publish(
+        document=doc, published_by=request.auth, skip_review=skip_review,
+    )
 
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
     return _doc_detail(doc)
@@ -449,7 +472,6 @@ def deactivate_document(
     doc_services.deactivate_document(
         document=doc, deactivated_by=request.auth, reason=payload.reason,
     )
-
     return {"message": f"Document '{doc.label}' has been deactivated."}
 
 
@@ -466,7 +488,7 @@ def list_versions(request: HttpRequest, org_id: UUID, doc_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
 
-    if not _can_view_all(membership) and doc.created_by_id != request.auth.id:
+    if not _can_view_all(membership) and doc.owner_id != request.auth.id:
         raise NotFoundError("Document not found.")
 
     versions = doc_selectors.get_document_versions(document_id=doc_id)
@@ -482,11 +504,28 @@ def list_versions(request: HttpRequest, org_id: UUID, doc_id: UUID):
     summary="Resolve published DID document (public, no auth)",
 )
 def resolve_did_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
-    """Returns the published DID document JSON. Only for PUBLISHED documents."""
     doc = doc_selectors.get_document_by_id(doc_id=doc_id)
     if doc is None or str(doc.organization_id) != str(org_id):
         raise NotFoundError("DID document not found.")
     if doc.status != "PUBLISHED" or not doc.content:
         raise NotFoundError("DID document not published.")
-
     return doc.content
+
+
+# ── Verifiable Credential (no auth) ─────────────────────────────────────
+
+
+@router.get(
+    f"{_P}/{{doc_id}}/vc.json",
+    response={200: dict, 404: ErrorSchema},
+    summary="Get Verifiable Credential for a published document",
+)
+def get_verifiable_credential(request: HttpRequest, org_id: UUID, doc_id: UUID):
+    doc = doc_selectors.get_document_by_id(doc_id=doc_id)
+    if doc is None or str(doc.organization_id) != str(org_id):
+        raise NotFoundError("Document not found.")
+
+    vc = doc_services.get_verifiable_credential(doc)
+    if vc is None:
+        raise NotFoundError("Verifiable Credential not available. Document must be published.")
+    return vc

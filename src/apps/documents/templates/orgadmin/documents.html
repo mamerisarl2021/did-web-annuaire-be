@@ -3,8 +3,6 @@
 {% block title %}DID Documents{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'orgadmin/css/documents.css' %}">
-
 <div class="oa-page-header">
   <div>
     <h2>DID Documents</h2>
@@ -91,7 +89,7 @@ function renderDocs() {
   if (filtered.length === 0) {
     const msg = currentFilter === "ALL"
       ? "No documents yet. Create your first DID document to get started."
-      : `No ${currentFilter.replace("_", " ").toLowerCase()} documents.`;
+      : `No ${currentFilter.replace(/_/g, " ").toLowerCase()} documents.`;
     document.getElementById("docs-content").innerHTML = `
       <div class="oa-empty">
         <div class="icon">📄</div>
@@ -104,8 +102,8 @@ function renderDocs() {
     <div class="oa-table-wrap">
       <table class="oa-table">
         <thead><tr>
-          <th>Label</th><th>Status</th><th>Methods</th>
-          <th>Version</th><th>Created by</th><th>Updated</th><th></th>
+          <th>Label</th><th>Status</th><th>Owner</th><th>Methods</th>
+          <th>Version</th><th>Updated</th><th></th>
         </tr></thead>
         <tbody>`;
 
@@ -117,9 +115,9 @@ function renderDocs() {
           <div style="font-size:0.7rem;color:var(--oa-text-light);font-family:'IBM Plex Mono',monospace;margin-top:0.125rem;">${d.did_uri}</div>
         </td>
         <td>${docStatusBadge(d.status)}</td>
+        <td style="font-size:0.8125rem;">${d.owner_email}</td>
         <td style="text-align:center;">${d.vm_count}</td>
         <td style="text-align:center;">${d.current_version_number ? 'v' + d.current_version_number : '—'}</td>
-        <td style="font-size:0.8125rem;">${d.created_by_email}</td>
         <td style="font-size:0.8125rem;">${oaFormatDate(d.updated_at)}</td>
         <td><span style="color:var(--oa-text-light);font-size:0.75rem;">View →</span></td>
       </tr>`;
@@ -159,7 +157,6 @@ async function handleCreate() {
   try {
     const doc = await DocAPI.create(org.id, { label });
     document.getElementById("create-overlay").classList.add("hidden");
-    // Navigate to the new document's detail page
     window.location.href = `/workspace/documents/${doc.id}/`;
   } catch (err) {
     oaAlert("create-alert", err.detail || "Creation failed.");

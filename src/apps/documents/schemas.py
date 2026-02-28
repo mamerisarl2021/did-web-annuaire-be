@@ -70,6 +70,8 @@ class DocListItemSchema(Schema):
     label: str
     status: str
     did_uri: str
+    owner_email: str
+    owner_identifier: str
     created_by_email: str
     vm_count: int
     current_version_number: int | None
@@ -82,6 +84,9 @@ class DocDetailSchema(Schema):
     label: str
     status: str
     did_uri: str
+    owner_email: str
+    owner_identifier: str
+    owner_id: UUID | None
     draft_content: Any | None
     content: Any | None
     created_by_email: str
@@ -93,6 +98,7 @@ class DocDetailSchema(Schema):
     review_comment: str
     current_version_number: int | None
     verification_methods: list[VerificationMethodResponse]
+    verifiable_credential: Any | None
     created_at: str
     updated_at: str
 

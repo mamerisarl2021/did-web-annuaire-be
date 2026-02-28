@@ -2,14 +2,10 @@
 DID Document services (write operations).
 
 Lifecycle:
-  DRAFT → PENDING_REVIEW → APPROVED → SIGNED → PUBLISHED → DEACTIVATED
-                         → REJECTED (→ re-edit → re-submit)
-
-Scoping:
-  - Only the document creator can edit / submit
-  - Only ORG_ADMIN (who is NOT the creator) can approve / reject
-  - Sign + publish runs after approval
-  - Deactivation requires ORG_ADMIN
+  ORG_MEMBER: DRAFT → PENDING_REVIEW → APPROVED → PUBLISHED → DEACTIVATED
+                                      → REJECTED → re-edit → DRAFT
+  ORG_ADMIN:  DRAFT → PUBLISHED (direct, skips review)
+              DRAFT → DEACTIVATED (if published)
 """
 
 import json
@@ -23,6 +19,7 @@ from src.apps.documents.assembler import (
     add_proof_to_document,
     assemble_did_document,
     build_did_uri,
+    build_verifiable_credential,
 )
 from src.apps.documents.models import (
     DIDDocument,
@@ -37,6 +34,15 @@ from src.common.exceptions import ConflictError, NotFoundError, ValidationError
 logger = structlog.get_logger(__name__)
 
 LABEL_RE = re.compile(r"^[a-z0-9][a-z0-9\-]{0,118}[a-z0-9]$")
+
+
+def _did_uri_for(doc: DIDDocument) -> str:
+    """Build the DID URI from a document's relations."""
+    return build_did_uri(
+        org_slug=doc.organization.slug,
+        owner_identifier=doc.owner_identifier,
+        label=doc.label,
+    )
 
 
 # ── Create ───────────────────────────────────────────────────────────────
@@ -61,17 +67,17 @@ def create_document(
             "Label must be 2-120 chars, lowercase alphanumeric and hyphens, "
             "starting and ending with a letter or digit."
         )
-    if document_label_exists(organization_id=organization.id, owner_id=created_by.id, label=label):
-        raise ConflictError(f"Document Label '{label}' already exists in this organization.")
-
-    did_uri = build_did_uri(org_slug=organization.slug, label=label)
+    if document_label_exists(
+        organization_id=organization.id, owner_id=created_by.id, label=label,
+    ):
+        raise ConflictError(f"Label '{label}' already exists for you in this organization.")
 
     doc = DIDDocument.objects.create(
         organization=organization,
         label=label,
         status=DocumentStatus.DRAFT,
-        created_by=created_by,
         owner=created_by,
+        created_by=created_by,
     )
 
     if verification_methods:
@@ -80,6 +86,7 @@ def create_document(
             vm_specs=verification_methods, user=created_by,
         )
 
+    did_uri = _did_uri_for(doc)
     did_json = _assemble_from_db(doc, did_uri, service_endpoints)
     doc.draft_content = did_json
     doc.save(update_fields=["draft_content", "updated_at"])
@@ -119,7 +126,7 @@ def update_draft(
             vm_specs=verification_methods, user=updated_by,
         )
 
-    did_uri = build_did_uri(org_slug=document.organization.slug, label=document.label)
+    did_uri = _did_uri_for(document)
     did_json = _assemble_from_db(document, did_uri, service_endpoints)
     document.draft_content = did_json
 
@@ -131,7 +138,6 @@ def update_draft(
     _log("DOC_DRAFT_UPDATED", updated_by, document,
          f"Draft updated for '{document.label}'.")
 
-    logger.info("document_draft_updated", doc_id=str(document.id))
     return document
 
 
@@ -180,12 +186,10 @@ def add_verification_method(
 @transaction.atomic
 def remove_verification_method(*, document: DIDDocument, vm_id, removed_by: User):
     _require_editable(document)
-
     try:
         vm = DocumentVerificationMethod.objects.get(id=vm_id, document=document)
     except DocumentVerificationMethod.DoesNotExist:
         raise NotFoundError("Verification method not found.")
-
     vm.delete()
     _reassemble_draft(document)
 
@@ -209,9 +213,8 @@ def submit_for_review(*, document: DIDDocument, submitted_by: User) -> DIDDocume
     document.submitted_at = timezone.now()
     document.save(update_fields=["status", "submitted_by", "submitted_at", "updated_at"])
 
-    _log("DOC_CREATED", submitted_by, document,
+    _log("DOC_SUBMITTED", submitted_by, document,
          f"Document '{document.label}' submitted for review.")
-
     return document
 
 
@@ -223,8 +226,8 @@ def approve_document(
     *, document: DIDDocument, approved_by: User, comment: str = "",
 ) -> DIDDocument:
     if document.status != DocumentStatus.PENDING_REVIEW:
-        raise ValidationError(f"Only PENDING_REVIEW documents can be approved. Status: {document.status}.")
-    if document.created_by_id == approved_by.id:
+        raise ValidationError(f"Only PENDING_REVIEW documents can be approved.")
+    if document.owner_id == approved_by.id:
         raise ValidationError("You cannot approve your own document.")
 
     document.status = DocumentStatus.APPROVED
@@ -235,9 +238,8 @@ def approve_document(
         "status", "reviewed_by", "reviewed_at", "review_comment", "updated_at",
     ])
 
-    _log("DOC_DRAFT_UPDATED", approved_by, document,
+    _log("DOC_APPROVED", approved_by, document,
          f"Document '{document.label}' approved.{f' Comment: {comment}' if comment else ''}")
-
     return document
 
 
@@ -246,8 +248,8 @@ def reject_document(
     *, document: DIDDocument, rejected_by: User, reason: str = "",
 ) -> DIDDocument:
     if document.status != DocumentStatus.PENDING_REVIEW:
-        raise ValidationError(f"Only PENDING_REVIEW documents can be rejected. Status: {document.status}.")
-    if document.created_by_id == rejected_by.id:
+        raise ValidationError(f"Only PENDING_REVIEW documents can be rejected.")
+    if document.owner_id == rejected_by.id:
         raise ValidationError("You cannot reject your own document.")
 
     document.status = DocumentStatus.REJECTED
@@ -258,9 +260,8 @@ def reject_document(
         "status", "reviewed_by", "reviewed_at", "review_comment", "updated_at",
     ])
 
-    _log("DOC_DRAFT_UPDATED", rejected_by, document,
+    _log("DOC_REJECTED", rejected_by, document,
          f"Document '{document.label}' rejected.{f' Reason: {reason}' if reason else ''}")
-
     return document
 
 
@@ -268,15 +269,44 @@ def reject_document(
 
 
 @transaction.atomic
-def sign_and_publish(*, document: DIDDocument, published_by: User) -> DIDDocument:
-    if document.status != DocumentStatus.APPROVED:
-        raise ValidationError(f"Only APPROVED documents can be published. Status: {document.status}.")
+def sign_and_publish(
+    *,
+    document: DIDDocument,
+    published_by: User,
+    skip_review: bool = False,
+) -> DIDDocument:
+    """
+    Sign via SignServer, publish via Universal Registrar.
 
+    Allowed source statuses:
+      - APPROVED (normal flow after review)
+      - DRAFT    (ORG_ADMIN direct publish, set skip_review=True)
+    """
+    allowed = {DocumentStatus.APPROVED}
+    if skip_review:
+        allowed.add(DocumentStatus.DRAFT)
+
+    if document.status not in allowed:
+        if skip_review:
+            raise ValidationError(
+                f"Only DRAFT or APPROVED documents can be published. Status: {document.status}."
+            )
+        raise ValidationError(
+            f"Only APPROVED documents can be published. Status: {document.status}."
+        )
+
+    # Validate VMs
     revoked = DocumentVerificationMethod.objects.filter(
         document=document, is_active=True, certificate__status="REVOKED"
     ).count()
     if revoked > 0:
         raise ValidationError(f"{revoked} verification method(s) reference revoked certificates.")
+
+    active_vms = DocumentVerificationMethod.objects.filter(
+        document=document, is_active=True
+    ).count()
+    if active_vms == 0:
+        raise ValidationError("Add at least one verification method before publishing.")
 
     content = document.draft_content
     if not content:
@@ -335,9 +365,9 @@ def deactivate_document(
     *, document: DIDDocument, deactivated_by: User, reason: str = "",
 ) -> DIDDocument:
     if document.status != DocumentStatus.PUBLISHED:
-        raise ValidationError(f"Only PUBLISHED documents can be deactivated. Status: {document.status}.")
+        raise ValidationError(f"Only PUBLISHED documents can be deactivated.")
 
-    did_uri = build_did_uri(org_slug=document.organization.slug, label=document.label)
+    did_uri = _did_uri_for(document)
     _call_registrar_deactivate(did_uri)
 
     document.status = DocumentStatus.DEACTIVATED
@@ -346,8 +376,41 @@ def deactivate_document(
     _log("DOC_DEACTIVATED", deactivated_by, document,
          f"Document '{document.label}' deactivated.{f' Reason: {reason}' if reason else ''}",
          {"reason": reason})
-
     return document
+
+
+# ── VC builder ───────────────────────────────────────────────────────────
+
+
+def get_verifiable_credential(document: DIDDocument) -> dict | None:
+    """Build a VC for a published document. Returns None if not published."""
+    if document.status != DocumentStatus.PUBLISHED or not document.content:
+        return None
+
+    did_uri = _did_uri_for(document)
+    published_at = ""
+    version = 0
+    if document.current_version:
+        published_at = (
+            document.current_version.published_at.isoformat()
+            if document.current_version.published_at
+            else timezone.now().isoformat()
+        )
+        version = document.current_version.version_number
+
+    owner_name = ""
+    if document.owner:
+        owner_name = getattr(document.owner, "full_name", "") or document.owner.email
+
+    return build_verifiable_credential(
+        did_uri=did_uri,
+        did_document=document.content,
+        org_name=document.organization.name,
+        owner_name=owner_name,
+        label=document.label,
+        version=version,
+        published_at=published_at,
+    )
 
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -412,7 +475,7 @@ def _assemble_from_db(document, did_uri, service_endpoints=None):
 
 
 def _reassemble_draft(document):
-    did_uri = build_did_uri(org_slug=document.organization.slug, label=document.label)
+    did_uri = _did_uri_for(document)
     did_json = _assemble_from_db(document, did_uri)
     document.draft_content = did_json
     document.save(update_fields=["draft_content", "updated_at"])

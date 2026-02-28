@@ -31,7 +31,6 @@ const DocAPI = (() => {
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    // DELETE with 204 has no body
     if (res.status === 204) return {};
 
     const data = await res.json().catch(() => ({}));
@@ -61,6 +60,7 @@ const DocAPI = (() => {
     pendingReview: (orgId) => apiCall(`/${orgId}/documents/pending-review`),
     versions:      (orgId, docId) => apiCall(`/${orgId}/documents/${docId}/versions`),
     didJson:       (orgId, docId) => apiCall(`/${orgId}/documents/${docId}/did.json`),
+    vcJson:        (orgId, docId) => apiCall(`/${orgId}/documents/${docId}/vc.json`),
   };
 })();
 
@@ -102,11 +102,9 @@ function vmStatusDot(isActive) {
 }
 
 /**
- * Generate a QR code as a canvas element using a minimal QR library.
- * Falls back to a Google Charts API URL if canvas is not available.
+ * Generate a QR code URL using Google Charts API.
  */
 function generateQRCodeURL(text, size = 256) {
-  // Use Google Charts QR API as a simple, no-dependency solution
   return `https://chart.googleapis.com/chart?cht=qr&chs=${size}x${size}&chl=${encodeURIComponent(text)}&choe=UTF-8`;
 }
 
