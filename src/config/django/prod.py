@@ -24,7 +24,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 # ── Cookies (stricter in production) ────────────────────────────────────
 
 SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_DOMAIN = env.SESSION_COOKIE_DOMAIN or None
+#SESSION_COOKIE_DOMAIN = env.SESSION_COOKIE_DOMAIN or None
 CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
     f"https://{host}" for host in env.ALLOWED_HOSTS if host != "*"
