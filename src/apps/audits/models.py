@@ -30,6 +30,9 @@ class AuditAction(models.TextChoices):
 
     # DID Documents
     DOC_CREATED = "DOC_CREATED", "Document created"
+    DOC_DRAFT_UPDATED = "DOC_DRAFT_UPDATED", "Document draft updated"
+    DOC_VM_ADDED = "DOC_VM_ADDED", "Verification method added"
+    DOC_VM_REMOVED = "DOC_VM_REMOVED", "Verification method removed"
     DOC_SUBMITTED = "DOC_SUBMITTED", "Document submitted for review"
     DOC_APPROVED = "DOC_APPROVED", "Document approved"
     DOC_REJECTED = "DOC_REJECTED", "Document rejected"
@@ -41,6 +44,10 @@ class AuditAction(models.TextChoices):
     USER_LOGIN = "USER_LOGIN", "User login"
     USER_PASSWORD_CHANGED = "USER_PASSWORD_CHANGED", "Password changed"
     USER_PASSWORD_RESET = "USER_PASSWORD_RESET", "Password reset"
+
+    # Resolve (public)
+    DID_RESOLVED = "DID_RESOLVED", "DID document resolved"
+    DID_SEARCHED = "DID_SEARCHED", "DID search performed"
 
 
 class ResourceType(models.TextChoices):

@@ -65,7 +65,7 @@ LOCAL_APPS = [
     "src.apps.certificates",
     "src.apps.documents",
     "src.apps.audits",
-    "src.seeders",
+    "src.bootstrap",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
