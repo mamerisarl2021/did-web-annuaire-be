@@ -78,7 +78,8 @@ class AppSettings(BaseSettings):
 
     @property
     def CELERY_RESULT_BACKEND(self) -> str:
-        return f"{self.REDIS_URL}/1"
+        return 'django-db'
+        #return f"{self.REDIS_URL}/1"
 
     @property
     def CACHE_REDIS_URL(self) -> str:
