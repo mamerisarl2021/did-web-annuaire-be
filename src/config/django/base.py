@@ -38,6 +38,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "corsheaders",
     "django_celery_beat",
+    "django_celery_results",
     "django_structlog",
     "django_extensions",
     "ninja_extra",
