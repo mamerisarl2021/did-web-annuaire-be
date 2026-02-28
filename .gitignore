@@ -209,6 +209,5 @@ staticfiles
 mediafiles
 django-registration.backends.activation
 README.md
-plan.md
 .idea
 did-directory-design-final.md

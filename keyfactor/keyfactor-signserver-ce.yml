@@ -1,0 +1,92 @@
+###############################################################################
+# Keyfactor SignServer Community Edition
+# Used to sign DID documents (JWS / JSON-LD proofs) produced by the registrar.
+#
+# Admin UI:  https://<host>:8443/signserver/
+# HTTP API:  http://<host>:8080/signserver/process  (or via nginx proxy)
+#
+# First-run setup:
+#   1. Wait ~90s for the container to initialise its CA and TLS keystore.
+#   2. Access the Admin UI at https://<host>:8443/signserver/
+#   3. Create a CryptoToken  → type "Soft Crypto Token"
+#   4. Create a Signer worker → type "PlainSigner" or "JArchiveSigner"
+#      and link it to the CryptoToken.
+#   5. For DID-document signing you typically want a **PlainSigner** with
+#      key algorithm ECDSA (P-256) so you can produce JWS / Ed25519 proofs.
+#
+# The annuaire backend calls SignServer's REST process endpoint to sign
+# canonical DID document bytes before publishing them via did:web.
+###############################################################################
+
+###############################################################################
+# Keyfactor SignServer Community Edition
+# Location on VPS: ~/app/keyfactor/keyfactor-signserver-ce.yml
+#
+# NOT restarted by CI/CD — stays running independently.
+# Joins annuaire_staging_net so nginx and the backend can reach it.
+#
+# First run:
+#   docker compose -f keyfactor-signserver-ce.yml up -d
+#   # Wait ~90s, then access https://<host>:8443/signserver/
+###############################################################################
+
+networks:
+  annuaire_staging_net:
+    external: true
+  signserver_internal:
+    driver: bridge
+
+volumes:
+  signserver_db_data:
+
+services:
+  signserver-database:
+    image: mariadb:lts-ubi9
+    container_name: signserver-database
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${SIGNSERVER_DB_ROOT_PASSWORD:-signserver_root_secret}
+      MARIADB_DATABASE: signserver
+      MARIADB_USER: signserver
+      MARIADB_PASSWORD: ${SIGNSERVER_DB_PASSWORD:-signserver_secret}
+    volumes:
+      - signserver_db_data:/var/lib/mysql
+    networks:
+      - signserver_internal
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  signserver-node:
+    image: keyfactor/signserver-ce:latest
+    container_name: signserver
+    hostname: signserver-node
+    restart: unless-stopped
+    depends_on:
+      signserver-database:
+        condition: service_healthy
+    environment:
+      DATABASE_JDBC_URL: "jdbc:mariadb://signserver-database:3306/signserver?characterEncoding=UTF-8"
+      DATABASE_USER: signserver
+      DATABASE_PASSWORD: ${SIGNSERVER_DB_PASSWORD:-signserver_secret}
+      LOG_LEVEL: INFO
+      LOG_LEVEL_SETUP: INFO
+      TLS_SETUP_ENABLED: simple
+    ports:
+      - "8880:8080"
+      - "8443:8443"
+    networks:
+      - annuaire_staging_net
+      - signserver_internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
