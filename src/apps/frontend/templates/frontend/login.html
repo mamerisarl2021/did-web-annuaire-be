@@ -1,0 +1,65 @@
+{% extends "frontend/base.html" %}
+{% block title %}Sign In — AnnuaireDID{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <div class="card">
+    <div class="brand">
+      <h1><span>Annuaire</span>DID</h1>
+      <p>Sign in to your account</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" class="form-input" placeholder="you@organization.com" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" class="form-input" placeholder="••••••••" required>
+      </div>
+      <button type="submit" id="submit-btn" class="btn btn-primary">
+        <span class="btn-label">Sign In</span>
+        <span class="htmx-indicator spinner"></span>
+      </button>
+    </form>
+
+    <div class="text-center mt-2">
+      <a href="{% url 'frontend:forgot_password' %}" class="link-muted" style="font-size: 0.8125rem;">Forgot password?</a>
+    </div>
+
+    <div class="footer-link">
+      Don't have an account?
+      <a href="{% url 'frontend:register' %}" class="link">Register your organization</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Redirect if already logged in
+  if (Auth.isLoggedIn()) window.location.href = "{% url 'frontend:dashboard' %}";
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById("submit-btn");
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    clearAlert("alert-box");
+    setLoading(btn, true);
+
+    try {
+      await Auth.login(email, password);
+      window.location.href = "{% url 'frontend:dashboard' %}";
+    } catch (err) {
+      showAlert("alert-box", err.detail || "Invalid credentials.");
+    } finally {
+      setLoading(btn, false);
+    }
+  }
+</script>
+{% endblock %}

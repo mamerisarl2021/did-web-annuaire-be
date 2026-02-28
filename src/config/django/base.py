@@ -18,8 +18,11 @@ WSGI_APPLICATION = "src.wsgi.application"
 ASGI_APPLICATION = "src.asgi.application"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-#AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = "users.User"
 
+# ── Others ──────────────────────────────────────────────────────
+
+PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
 
 # ── Installed Apps ──────────────────────────────────────────────────────
 
@@ -37,9 +40,25 @@ THIRD_PARTY_APPS = [
     "django_celery_beat",
     "django_structlog",
     "django_extensions",
+    "ninja_extra",
+    "ninja_jwt",
+    "ninja_jwt.token_blacklist",
+    "django_htmx",
 ]
 
-LOCAL_APPS = []
+LOCAL_APPS = [
+    "src.apps.organizations",
+    "src.apps.users",
+    "src.apps.files",
+    "src.apps.emails",
+    "src.apps.frontend",
+    "src.apps.superadmin",
+    "src.apps.orgadmin",
+    "src.apps.certificates",
+    "src.apps.documents",
+    "src.apps.audits",
+    "src.seeders",
+]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -47,6 +66,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -57,12 +77,11 @@ MIDDLEWARE = [
     "django_structlog.middlewares.RequestMiddleware",
 ]
 
-
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
+        # "DIRS": [os.path.join(APPS_DIR, "templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,34 +108,53 @@ DATABASES = {
         "OPTIONS": {
             "connect_timeout": 10,
         },
-      "ATOMIC_REQUESTS": True,
+        "ATOMIC_REQUESTS": True,
     },
 }
 
-
-
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env.CACHE_REDIS_URL,
+        "OPTIONS": {
+            "socket_connect_timeout": 5,
+            "socket_timeout": 5,
+        },
+    },
+}
 
 # ── Auth ────────────────────────────────────────────────────────────────
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
-
 
 # ── i18n ────────────────────────────────────────────────────────────────
 
 LANGUAGE_CODE = 'en-us'
+# LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# ADMIN_USER_NAME = "david"
+# ADMIN_USER_EMAIL = "princedavealex.20@gmail.com"
+
+# ADMINS = []
+
+# if ADMIN_USER_NAME and ADMIN_USER_EMAIL:
+#    ADMINS.append((ADMIN_USER_NAME, ADMIN_USER_EMAIL))
+
+# MANAGERS = ADMINS
+
 # ── Split configs (imported from others/) ───────────────────────────────
 # Each file exports top-level Django settings variables.
 
-from src.config.others.session import *  # noqa: E402, F401, F403
+from src.config.others.jwt import *  # noqa: E402, F401, F403
+# from src.config.others.session import *  # noqa: E402, F401, F403
 from src.config.others.cors import *  # noqa: E402, F401, F403
 from src.config.others.celery_conf import *  # noqa: E402, F401, F403
 from src.config.others.files_and_storages import *  # noqa: E402, F401, F403

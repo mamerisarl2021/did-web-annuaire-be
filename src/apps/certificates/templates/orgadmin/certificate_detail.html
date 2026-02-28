@@ -1,0 +1,301 @@
+{% extends "orgadmin/base_orgadmin.html" %}
+{% load static %}
+{% block title %}Certificate Detail{% endblock %}
+
+{% block content %}
+<div id="cert-header" style="margin-bottom:1.75rem;">
+  <a href="/workspace/certificates/" style="font-size:0.8125rem;color:var(--oa-text-muted);text-decoration:none;">← Back to Certificates</a>
+</div>
+
+<div id="alert-box"></div>
+
+<div id="cert-content">
+  <div class="oa-empty"><p>Loading certificate...</p></div>
+</div>
+
+<!-- ── Rotate Modal ──────────────────────────────────────────── -->
+<div class="oa-modal-overlay hidden" id="rotate-overlay" onclick="closeRotate(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()">
+    <h3>Rotate Certificate</h3>
+    <p class="desc">Upload a new version. The current version will be archived.</p>
+
+    <div id="rotate-alert"></div>
+
+    <div class="oa-form-group">
+      <label>New Certificate File <span class="req">*</span></label>
+      <input id="rotate-file" type="file" accept=".pem,.cer,.crt,.der,.p12,.pfx" class="oa-input" style="padding:0.5rem;">
+    </div>
+    <div class="oa-form-group" id="rotate-p12-group" style="display:none;">
+      <label>PKCS#12 Password</label>
+      <input id="rotate-p12-pwd" type="password" class="oa-input" placeholder="Keystore password">
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('rotate-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn oa-btn-primary" id="rotate-btn" onclick="handleRotate()">
+        <span class="btn-label">Rotate</span>
+        <span class="oa-spinner hidden" id="rotate-spinner"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Revoke Modal ──────────────────────────────────────────── -->
+<div class="oa-modal-overlay hidden" id="revoke-overlay" onclick="closeRevoke(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()">
+    <h3 style="color:var(--oa-error);">Revoke Certificate</h3>
+    <p class="desc">This will permanently deactivate this certificate and all linked DID verification methods.</p>
+
+    <div id="revoke-alert"></div>
+
+    <div class="oa-form-group">
+      <label>Reason (optional)</label>
+      <textarea id="revoke-reason" class="oa-input" rows="3" placeholder="Reason for revocation..."></textarea>
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('revoke-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn oa-btn-danger" onclick="handleRevoke()">Revoke Certificate</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'orgadmin/js/certificates.js' %}"></script>
+<script>
+const org = getCurrentOrg();
+if (!org) window.location.href = "/login/";
+
+const certId = "{{ cert_id }}";
+let certData = null;
+
+// Show password field for p12 files
+document.getElementById("rotate-file").addEventListener("change", function() {
+  const name = this.files?.[0]?.name?.toLowerCase() || "";
+  document.getElementById("rotate-p12-group").style.display =
+    (name.endsWith(".p12") || name.endsWith(".pfx")) ? "block" : "none";
+});
+
+// ── Load ────────────────────────────────────────────────────
+
+async function loadCert() {
+  try {
+    certData = await CertAPI.get(org.id, certId);
+    renderCert();
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to load certificate.", "error");
+  }
+}
+
+function renderCert() {
+  const c = certData;
+  const v = c.current_version;
+  const isActive = c.status === "ACTIVE";
+
+  // Header with actions
+  let actionsHtml = "";
+  if (isActive) {
+    actionsHtml = `
+      <button class="oa-btn oa-btn-primary oa-btn-sm" onclick="openRotateModal()">Rotate</button>
+      <button class="oa-btn oa-btn-danger" onclick="openRevokeModal()">Revoke</button>
+    `;
+  }
+
+  let html = `
+    <div class="oa-page-header">
+      <div>
+        <h2 style="display:flex;align-items:center;gap:0.75rem;">
+          ${c.label} ${certStatusBadge(c.status)}
+        </h2>
+        <p>Uploaded by ${c.created_by_email} on ${oaFormatDate(c.created_at)}</p>
+      </div>
+      <div style="display:flex;gap:0.5rem;">${actionsHtml}</div>
+    </div>
+  `;
+
+  if (v) {
+    const expired = isExpired(v.not_valid_after);
+    const days = daysUntilExpiry(v.not_valid_after);
+    let expiryNote = "";
+    if (expired) expiryNote = `<span style="color:var(--oa-error);font-weight:600;margin-left:0.5rem;">EXPIRED</span>`;
+    else if (days !== null && days <= 30) expiryNote = `<span style="color:var(--oa-warn);font-weight:500;margin-left:0.5rem;">${days} days remaining</span>`;
+
+    html += `
+      <div class="oa-detail-grid">
+        <!-- Left: certificate info -->
+        <div class="oa-card">
+          <h3>Certificate Information</h3>
+          <div class="oa-field"><div class="label">Subject</div><div class="value" style="word-break:break-all;">${v.subject_dn || "—"}</div></div>
+          <div class="oa-field"><div class="label">Issuer</div><div class="value" style="word-break:break-all;">${v.issuer_dn || "—"}</div></div>
+          <div class="oa-field"><div class="label">Serial Number</div><div class="value mono">${v.serial_number || "—"}</div></div>
+          <div class="oa-field"><div class="label">Valid From</div><div class="value">${oaFormatDate(v.not_valid_before)}</div></div>
+          <div class="oa-field"><div class="label">Valid Until</div><div class="value">${oaFormatDate(v.not_valid_after)}${expiryNote}</div></div>
+          <div class="oa-field"><div class="label">SHA-256 Fingerprint</div><div class="value mono" style="word-break:break-all;font-size:0.75rem;">${v.fingerprint_sha256 || "—"}</div></div>
+          <div class="oa-field"><div class="label">Version</div><div class="value">v${v.version_number} ${v.is_current ? "(current)" : ""}</div></div>
+          <div class="oa-field"><div class="label">File</div><div class="value">${v.file_name || "—"}</div></div>
+        </div>
+
+        <!-- Right: key info + JWK -->
+        <div>
+          <div class="oa-card" style="margin-bottom:1.5rem;">
+            <h3>Key Information</h3>
+            <div class="oa-field"><div class="label">Key Type</div><div class="value">${v.key_type || "—"}</div></div>
+            ${v.key_curve ? `<div class="oa-field"><div class="label">Curve</div><div class="value">${v.key_curve}</div></div>` : ""}
+            ${v.key_size ? `<div class="oa-field"><div class="label">Key Size</div><div class="value">${v.key_size} bits</div></div>` : ""}
+          </div>
+
+          <div class="oa-card">
+            <h3 style="display:flex;justify-content:space-between;align-items:center;">
+              Public Key JWK
+              <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="copyJWK()" style="text-transform:none;font-size:0.6875rem;">Copy</button>
+            </h3>
+            <pre id="jwk-display" style="background:var(--oa-bg);padding:1rem;border-radius:0.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.75rem;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;line-height:1.5;margin:0;">${JSON.stringify(v.public_key_jwk, null, 2)}</pre>
+          </div>
+
+          ${c.linked_documents > 0 ? `
+          <div class="oa-card" style="margin-top:1.5rem;">
+            <h3>Usage</h3>
+            <div class="oa-field"><div class="label">Linked DID Documents</div><div class="value">${c.linked_documents}</div></div>
+          </div>
+          ` : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  // Version history
+  html += `
+    <div class="oa-table-wrap" style="margin-top:1.5rem;">
+      <div class="oa-table-header">
+        <h3>Version History (${c.version_count})</h3>
+      </div>
+      <div id="versions-table"><div style="padding:1rem;color:var(--oa-text-light);">Loading versions...</div></div>
+    </div>
+  `;
+
+  document.getElementById("cert-content").innerHTML = html;
+
+  // Load versions
+  loadVersions();
+}
+
+async function loadVersions() {
+  try {
+    const versions = await CertAPI.versions(org.id, certId);
+    if (versions.length === 0) {
+      document.getElementById("versions-table").innerHTML = `<p style="padding:1rem;color:var(--oa-text-light);">No versions.</p>`;
+      return;
+    }
+
+    let rows = versions.map(v => `
+      <tr>
+        <td><span class="member-name">v${v.version_number}</span></td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.8125rem;">${keyLabel(v.key_type, v.key_curve)}</td>
+        <td style="font-size:0.8125rem;">${truncateDN(v.subject_dn)}</td>
+        <td style="font-size:0.75rem;font-family:'IBM Plex Mono',monospace;">${formatFingerprint(v.fingerprint_sha256)}</td>
+        <td>${v.is_current ? '<span class="oa-badge active">Current</span>' : '<span class="oa-badge member">Archived</span>'}</td>
+        <td style="font-size:0.8125rem;">${oaFormatDate(v.created_at)}</td>
+      </tr>
+    `).join("");
+
+    document.getElementById("versions-table").innerHTML = `
+      <table class="oa-table">
+        <thead><tr><th>Version</th><th>Key</th><th>Subject</th><th>Fingerprint</th><th>Status</th><th>Uploaded</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch (err) {
+    document.getElementById("versions-table").innerHTML =
+      `<p style="padding:1rem;color:var(--oa-error);">Failed to load versions.</p>`;
+  }
+}
+
+function copyJWK() {
+  const jwk = certData?.current_version?.public_key_jwk;
+  if (jwk) {
+    navigator.clipboard.writeText(JSON.stringify(jwk, null, 2));
+    oaAlert("alert-box", "JWK copied to clipboard.", "success");
+    setTimeout(() => oaClearAlert("alert-box"), 2000);
+  }
+}
+
+// ── Rotate ──────────────────────────────────────────────────
+
+function openRotateModal() {
+  document.getElementById("rotate-file").value = "";
+  document.getElementById("rotate-p12-pwd").value = "";
+  document.getElementById("rotate-p12-group").style.display = "none";
+  oaClearAlert("rotate-alert");
+  document.getElementById("rotate-overlay").classList.remove("hidden");
+}
+
+function closeRotate(e) {
+  if (e.target === e.currentTarget)
+    document.getElementById("rotate-overlay").classList.add("hidden");
+}
+
+async function handleRotate() {
+  const fileInput = document.getElementById("rotate-file");
+  const p12Pwd = document.getElementById("rotate-p12-pwd").value;
+
+  oaClearAlert("rotate-alert");
+  if (!fileInput.files.length) { oaAlert("rotate-alert", "Please select a file."); return; }
+
+  const btn = document.getElementById("rotate-btn");
+  const spinner = document.getElementById("rotate-spinner");
+  const lbl = btn.querySelector(".btn-label");
+  btn.disabled = true;
+  spinner.classList.remove("hidden");
+  if (lbl) lbl.style.display = "none";
+
+  const fd = new FormData();
+  fd.append("file", fileInput.files[0]);
+  if (p12Pwd) fd.append("p12_password", p12Pwd);
+
+  try {
+    await CertAPI.rotate(org.id, certId, fd);
+    document.getElementById("rotate-overlay").classList.add("hidden");
+    oaAlert("alert-box", "Certificate rotated successfully.", "success");
+    await loadCert();
+  } catch (err) {
+    oaAlert("rotate-alert", err.detail || "Rotation failed.");
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add("hidden");
+    if (lbl) lbl.style.display = "inline";
+  }
+}
+
+// ── Revoke ──────────────────────────────────────────────────
+
+function openRevokeModal() {
+  document.getElementById("revoke-reason").value = "";
+  oaClearAlert("revoke-alert");
+  document.getElementById("revoke-overlay").classList.remove("hidden");
+}
+
+function closeRevoke(e) {
+  if (e.target === e.currentTarget)
+    document.getElementById("revoke-overlay").classList.add("hidden");
+}
+
+async function handleRevoke() {
+  const reason = document.getElementById("revoke-reason").value.trim();
+
+  if (!confirm("Are you sure you want to revoke this certificate? This action cannot be undone.")) return;
+
+  try {
+    await CertAPI.revoke(org.id, certId, reason);
+    document.getElementById("revoke-overlay").classList.add("hidden");
+    oaAlert("alert-box", "Certificate revoked.", "success");
+    await loadCert();
+  } catch (err) {
+    oaAlert("revoke-alert", err.detail || "Revocation failed.");
+  }
+}
+
+// ── Init ────────────────────────────────────────────────────
+
+loadCert();
+</script>
+{% endblock %}

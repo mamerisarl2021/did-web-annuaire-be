@@ -1,0 +1,174 @@
+{% extends "orgadmin/base_orgadmin.html" %}
+{% load static %}
+{% block title %}DID Documents{% endblock %}
+
+{% block content %}
+<div class="oa-page-header">
+  <div>
+    <h2>DID Documents</h2>
+    <p>Create and manage decentralized identity documents</p>
+  </div>
+  <button class="oa-btn oa-btn-primary" onclick="openCreateModal()">
+    + New Document
+  </button>
+</div>
+
+<div id="alert-box"></div>
+
+<!-- Status filter tabs -->
+<div class="doc-tabs" id="doc-tabs">
+  <button class="doc-tab active" data-status="ALL" onclick="filterDocs('ALL', this)">All</button>
+  <button class="doc-tab" data-status="DRAFT" onclick="filterDocs('DRAFT', this)">Drafts</button>
+  <button class="doc-tab" data-status="PENDING_REVIEW" onclick="filterDocs('PENDING_REVIEW', this)">Pending Review</button>
+  <button class="doc-tab" data-status="PUBLISHED" onclick="filterDocs('PUBLISHED', this)">Published</button>
+</div>
+
+<div id="docs-content">
+  <div class="oa-empty"><p>Loading documents...</p></div>
+</div>
+
+<!-- ── Create Document Modal ─────────────────────────────────── -->
+<div class="oa-modal-overlay hidden" id="create-overlay" onclick="closeCreate(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()">
+    <h3>Create DID Document</h3>
+    <p class="desc">Create a new document in draft status. You can add verification methods after creation.</p>
+
+    <div id="create-alert"></div>
+
+    <div class="oa-form-group">
+      <label>Label <span class="req">*</span></label>
+      <input id="doc-label" class="oa-input" placeholder="e.g. corporate-auth">
+      <div style="margin-top:0.25rem;font-size:0.75rem;color:var(--oa-text-light);">
+        Lowercase letters, digits, and hyphens. Used in the DID URI path.
+      </div>
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('create-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn oa-btn-primary" id="create-btn" onclick="handleCreate()">
+        <span class="btn-label">Create Draft</span>
+        <span class="oa-spinner hidden" id="create-spinner"></span>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'orgadmin/js/documents.js' %}"></script>
+<script>
+const org = getCurrentOrg();
+if (!org) window.location.href = "/login/";
+
+let allDocs = [];
+let currentFilter = "ALL";
+
+// ── Load documents ───────────────────────────────────────
+
+async function loadDocs() {
+  try {
+    allDocs = await DocAPI.list(org.id);
+    renderDocs();
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to load documents.", "error");
+  }
+}
+
+function filterDocs(status, tabEl) {
+  currentFilter = status;
+  document.querySelectorAll(".doc-tab").forEach(t => t.classList.remove("active"));
+  if (tabEl) tabEl.classList.add("active");
+  renderDocs();
+}
+
+function renderDocs() {
+  const filtered = currentFilter === "ALL"
+    ? allDocs
+    : allDocs.filter(d => d.status === currentFilter);
+
+  if (filtered.length === 0) {
+    const msg = currentFilter === "ALL"
+      ? "No documents yet. Create your first DID document to get started."
+      : `No ${currentFilter.replace(/_/g, " ").toLowerCase()} documents.`;
+    document.getElementById("docs-content").innerHTML = `
+      <div class="oa-empty">
+        <div class="icon">📄</div>
+        <p>${msg}</p>
+      </div>`;
+    return;
+  }
+
+  let html = `
+    <div class="oa-table-wrap">
+      <table class="oa-table">
+        <thead><tr>
+          <th>Label</th><th>Status</th><th>Owner</th><th>Methods</th>
+          <th>Version</th><th>Updated</th><th></th>
+        </tr></thead>
+        <tbody>`;
+
+  filtered.forEach(d => {
+    html += `
+      <tr style="cursor:pointer;" onclick="window.location.href='/workspace/documents/${d.id}/'">
+        <td>
+          <span class="member-name">${d.label}</span>
+          <div style="font-size:0.7rem;color:var(--oa-text-light);font-family:'IBM Plex Mono',monospace;margin-top:0.125rem;">${d.did_uri}</div>
+        </td>
+        <td>${docStatusBadge(d.status)}</td>
+        <td style="font-size:0.8125rem;">${d.owner_email}</td>
+        <td style="text-align:center;">${d.vm_count}</td>
+        <td style="text-align:center;">${d.current_version_number ? 'v' + d.current_version_number : '—'}</td>
+        <td style="font-size:0.8125rem;">${oaFormatDate(d.updated_at)}</td>
+        <td><span style="color:var(--oa-text-light);font-size:0.75rem;">View →</span></td>
+      </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  document.getElementById("docs-content").innerHTML = html;
+}
+
+// ── Create ──────────────────────────────────────────────
+
+function openCreateModal() {
+  document.getElementById("doc-label").value = "";
+  oaClearAlert("create-alert");
+  document.getElementById("create-overlay").classList.remove("hidden");
+  document.getElementById("doc-label").focus();
+}
+
+function closeCreate(e) {
+  if (e.target === e.currentTarget)
+    document.getElementById("create-overlay").classList.add("hidden");
+}
+
+async function handleCreate() {
+  const label = document.getElementById("doc-label").value.trim();
+  oaClearAlert("create-alert");
+
+  if (!label) { oaAlert("create-alert", "Label is required."); return; }
+
+  const btn = document.getElementById("create-btn");
+  const spinner = document.getElementById("create-spinner");
+  const lbl = btn.querySelector(".btn-label");
+  btn.disabled = true;
+  spinner.classList.remove("hidden");
+  if (lbl) lbl.style.display = "none";
+
+  try {
+    const doc = await DocAPI.create(org.id, { label });
+    document.getElementById("create-overlay").classList.add("hidden");
+    window.location.href = `/workspace/documents/${doc.id}/`;
+  } catch (err) {
+    oaAlert("create-alert", err.detail || "Creation failed.");
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add("hidden");
+    if (lbl) lbl.style.display = "inline";
+  }
+}
+
+// ── Init ────────────────────────────────────────────────
+
+loadDocs();
+</script>
+{% endblock %}

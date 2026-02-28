@@ -41,3 +41,7 @@ DATABASES["default"]["CONN_MAX_AGE"] = 600  # noqa: F405
 # ── Email ───────────────────────────────────────────────────────────────
 
 EMAIL_BACKEND = env.EMAIL_BACKEND
+
+# ── Others ───────────────────────────────────────────────────
+JWK_EXTRACTOR_JAR = "/opt/ecdsa-extractor.jar"
+JWK_EXTRACTOR_JAVA = "java"

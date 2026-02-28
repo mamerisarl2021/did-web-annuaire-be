@@ -205,6 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+staticfiles
+mediafiles
 django-registration.backends.activation
 README.md
-plan
+plan.md
+.idea
+did-directory-design-final.md

@@ -1,0 +1,245 @@
+{% extends "superadmin/base_superadmin.html" %}
+{% block title %}Organization Detail{% endblock %}
+
+{% block content %}
+<div id="alert-box"></div>
+
+<!-- Back link + header (filled by JS) -->
+<div style="margin-bottom:1.5rem;">
+  <a href="{% url 'superadmin:sa_organizations' %}" class="sa-btn sa-btn-back" style="display:inline-flex;margin-bottom:1rem;">
+    ← Back to Organizations
+  </a>
+  <div class="sa-page-header" style="margin-bottom:0;">
+    <div>
+      <h2 id="org-name">Loading...</h2>
+      <p id="org-slug" style="font-family:'IBM Plex Mono',monospace;">—</p>
+    </div>
+    <span class="sa-badge" id="org-badge">—</span>
+  </div>
+</div>
+
+<!-- Actions (shown only for appropriate statuses) -->
+<div class="sa-actions" id="action-buttons" style="display:none;"></div>
+
+<!-- Detail grid -->
+<div class="sa-detail-grid" id="detail-content">
+  <div class="sa-empty"><p>Loading details...</p></div>
+</div>
+
+<!-- Reject/Suspend modal -->
+<div class="sa-modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
+  <div class="sa-modal" onclick="event.stopPropagation()">
+    <h3 id="modal-title">Confirm Action</h3>
+    <p id="modal-description" style="color:var(--sa-text-muted);font-size:0.875rem;margin-bottom:1rem;"></p>
+    <textarea id="modal-reason" placeholder="Reason (optional)..."></textarea>
+    <div class="sa-modal-actions">
+      <button class="sa-btn sa-btn-back" onclick="document.getElementById('modal-overlay').classList.add('hidden')">Cancel</button>
+      <button class="sa-btn" id="modal-confirm-btn" onclick="confirmModalAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ORG_ID = "{{ org_id }}";
+let orgData = null;
+let modalAction = null;
+
+async function loadOrgDetail() {
+  try {
+    orgData = await SA.getOrg(ORG_ID);
+
+    // Header
+    document.getElementById("org-name").textContent = orgData.name;
+    document.getElementById("org-slug").textContent = orgData.slug;
+
+    const badge = document.getElementById("org-badge");
+    badge.textContent = badgeLabel(orgData.status);
+    badge.className = `sa-badge ${badgeClass(orgData.status)}`;
+
+    // Action buttons
+    renderActions();
+
+    // Detail content
+    renderDetail();
+
+  } catch (err) {
+    saShowAlert("alert-box", err.detail || "Failed to load organization.", "error");
+  }
+}
+
+function renderActions() {
+  const actions = document.getElementById("action-buttons");
+  let html = "";
+
+  if (orgData.status === "PENDING_REVIEW") {
+    html = `
+      <button class="sa-btn sa-btn-approve" onclick="handleApprove()">✓ Approve</button>
+      <button class="sa-btn sa-btn-reject" onclick="openModal('reject')">✕ Reject</button>
+    `;
+  } else if (orgData.status === "APPROVED") {
+    html = `
+      <button class="sa-btn sa-btn-suspend" onclick="openModal('suspend')">⏸ Suspend</button>
+    `;
+  }
+
+  if (html) {
+    actions.innerHTML = html;
+    actions.style.display = "flex";
+  }
+}
+
+function renderDetail() {
+  const admin = orgData.admin_user;
+  const authDoc = orgData.authorization_document;
+  const justDoc = orgData.justification_document;
+
+  document.getElementById("detail-content").innerHTML = `
+    <!-- Left column: org info -->
+    <div>
+      <div class="sa-detail-card" style="margin-bottom:1.5rem;">
+        <h3>Organization Information</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem 1.5rem;">
+          ${field("Name", orgData.name)}
+          ${field("Slug", orgData.slug, true)}
+          ${field("Type", orgData.type)}
+          ${field("Country", orgData.country)}
+          ${field("Email", orgData.email)}
+          ${field("Members", orgData.member_count)}
+          ${field("Submitted", formatDate(orgData.created_at))}
+          ${field("Reviewed", formatDate(orgData.reviewed_at))}
+        </div>
+
+        ${orgData.address ? `
+          <div class="sa-field" style="margin-top:0.75rem;">
+            <div class="label">Address</div>
+            <div class="value">${orgData.address}</div>
+          </div>
+        ` : ""}
+
+        ${orgData.description ? `
+          <div class="sa-field" style="margin-top:0.75rem;">
+            <div class="label">Description</div>
+            <div class="value">${orgData.description}</div>
+          </div>
+        ` : ""}
+
+        ${orgData.rejection_reason ? `
+          <div class="sa-field" style="margin-top:0.75rem;">
+            <div class="label">Rejection Reason</div>
+            <div class="value" style="color:var(--sa-red);">${orgData.rejection_reason}</div>
+          </div>
+        ` : ""}
+      </div>
+
+      <!-- Documents -->
+      <div class="sa-detail-card">
+        <h3>Documents</h3>
+        ${authDoc ? docLink(authDoc, "Authorization Document") : '<p style="color:var(--sa-text-light);font-size:0.875rem;">No authorization document</p>'}
+        ${justDoc ? docLink(justDoc, "Justification Document") : '<p style="color:var(--sa-text-light);font-size:0.875rem;margin-top:0.5rem;">No justification document</p>'}
+      </div>
+    </div>
+
+    <!-- Right column: admin user -->
+    <div>
+      <div class="sa-detail-card">
+        <h3>Organization Admin</h3>
+        ${admin ? `
+          <div class="sa-field"><div class="label">Name</div><div class="value">${admin.full_name || "—"}</div></div>
+          <div class="sa-field"><div class="label">Email</div><div class="value mono">${admin.email}</div></div>
+          <div class="sa-field"><div class="label">Phone</div><div class="value">${admin.phone || "—"}</div></div>
+          <div class="sa-field"><div class="label">Function</div><div class="value">${admin.functions || "—"}</div></div>
+          <div class="sa-field">
+            <div class="label">Account Status</div>
+            <div class="value">
+              <span class="sa-badge ${admin.is_active ? 'approved' : 'pending'}">${admin.is_active ? 'Active' : 'Inactive'}</span>
+            </div>
+          </div>
+        ` : '<p style="color:var(--sa-text-light);font-size:0.875rem;">No admin user found</p>'}
+      </div>
+    </div>
+  `;
+}
+
+function field(label, value, mono = false) {
+  const cls = !value || value === "—" ? "value empty" : (mono ? "value mono" : "value");
+  return `<div class="sa-field"><div class="label">${label}</div><div class="${cls}">${value || "—"}</div></div>`;
+}
+
+function docLink(doc, label) {
+  return `
+    <a class="sa-doc-link" href="${doc.url}" target="_blank" rel="noopener">
+      <span class="doc-icon">📄</span>
+      <div>
+        <div class="doc-name">${label}: ${doc.original_file_name}</div>
+        <div class="doc-size">${formatFileSize(doc.file_size)}</div>
+      </div>
+    </a>
+  `;
+}
+
+// ── Actions ─────────────────────────────────────────────────────────
+
+async function handleApprove() {
+  if (!confirm(`Approve "${orgData.name}"?\n\nThis will send an activation email to the organization admin.`)) return;
+
+  try {
+    const res = await SA.approveOrg(ORG_ID);
+    saShowAlert("alert-box", res.message, "success");
+    setTimeout(() => loadOrgDetail(), 800);
+  } catch (err) {
+    saShowAlert("alert-box", err.detail || "Failed to approve.", "error");
+  }
+}
+
+function openModal(action) {
+  modalAction = action;
+  const overlay = document.getElementById("modal-overlay");
+  const btn = document.getElementById("modal-confirm-btn");
+
+  if (action === "reject") {
+    document.getElementById("modal-title").textContent = "Reject Organization";
+    document.getElementById("modal-description").textContent =
+      `Reject "${orgData.name}"? A notification email will be sent to the admin.`;
+    btn.className = "sa-btn sa-btn-reject";
+    btn.textContent = "Reject";
+  } else {
+    document.getElementById("modal-title").textContent = "Suspend Organization";
+    document.getElementById("modal-description").textContent =
+      `Suspend "${orgData.name}"? All members will lose access.`;
+    btn.className = "sa-btn sa-btn-suspend";
+    btn.textContent = "Suspend";
+  }
+
+  document.getElementById("modal-reason").value = "";
+  overlay.classList.remove("hidden");
+}
+
+function closeModal(e) {
+  if (e.target === e.currentTarget) {
+    document.getElementById("modal-overlay").classList.add("hidden");
+  }
+}
+
+async function confirmModalAction() {
+  const reason = document.getElementById("modal-reason").value.trim();
+  document.getElementById("modal-overlay").classList.add("hidden");
+
+  try {
+    let res;
+    if (modalAction === "reject") {
+      res = await SA.rejectOrg(ORG_ID, reason);
+    } else {
+      res = await SA.suspendOrg(ORG_ID, reason);
+    }
+    saShowAlert("alert-box", res.message, "success");
+    setTimeout(() => loadOrgDetail(), 800);
+  } catch (err) {
+    saShowAlert("alert-box", err.detail || `Failed to ${modalAction}.`, "error");
+  }
+}
+
+loadOrgDetail();
+</script>
+{% endblock %}

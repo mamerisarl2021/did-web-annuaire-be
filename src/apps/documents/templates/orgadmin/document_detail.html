@@ -1,0 +1,551 @@
+{% extends "orgadmin/base_orgadmin.html" %}
+{% load static %}
+{% block title %}Document Detail{% endblock %}
+
+{% block content %}
+<div id="doc-header" style="margin-bottom:1.75rem;">
+  <a href="/workspace/documents/" style="font-size:0.8125rem;color:var(--oa-text-muted);text-decoration:none;">← Back to Documents</a>
+</div>
+
+<div id="alert-box"></div>
+
+<div id="doc-content">
+  <div class="oa-empty"><p>Loading document...</p></div>
+</div>
+
+<!-- ── Add Verification Method Modal ──────────────────────── -->
+<div class="oa-modal-overlay hidden" id="add-vm-overlay" onclick="closeAddVM(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()" style="max-width:520px;">
+    <h3>Add Verification Method</h3>
+    <p class="desc">Link a certificate to this document as a verification method.</p>
+
+    <div id="add-vm-alert"></div>
+
+    <div class="oa-form-group">
+      <label>Certificate <span class="req">*</span></label>
+      <select id="vm-cert-select" class="oa-input">
+        <option value="">Loading certificates...</option>
+      </select>
+    </div>
+    <div class="oa-form-group">
+      <label>Fragment ID <span class="req">*</span></label>
+      <input id="vm-fragment" class="oa-input" placeholder="e.g. key-1">
+      <div style="margin-top:0.25rem;font-size:0.75rem;color:var(--oa-text-light);">
+        Will appear as <code>#key-1</code> in the DID document
+      </div>
+    </div>
+    <div class="oa-form-group">
+      <label>Verification Relationships</label>
+      <div class="rel-checkbox-group">
+        <label><input type="checkbox" class="vm-rel-cb" value="authentication" checked> Authentication</label>
+        <label><input type="checkbox" class="vm-rel-cb" value="assertionMethod" checked> Assertion Method</label>
+        <label><input type="checkbox" class="vm-rel-cb" value="keyAgreement"> Key Agreement</label>
+        <label><input type="checkbox" class="vm-rel-cb" value="capabilityInvocation"> Capability Invocation</label>
+        <label><input type="checkbox" class="vm-rel-cb" value="capabilityDelegation"> Capability Delegation</label>
+      </div>
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('add-vm-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn oa-btn-primary" id="add-vm-btn" onclick="handleAddVM()">
+        <span class="btn-label">Add Method</span>
+        <span class="oa-spinner hidden" id="add-vm-spinner"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Review Modal (approve/reject) ─────────────────────── -->
+<div class="oa-modal-overlay hidden" id="review-overlay" onclick="closeReview(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()">
+    <h3 id="review-title">Review Document</h3>
+    <p class="desc" id="review-desc"></p>
+
+    <div id="review-alert"></div>
+
+    <div class="oa-form-group">
+      <label id="review-comment-label">Comment</label>
+      <textarea id="review-comment" class="oa-input" rows="3" placeholder="Optional comment..."></textarea>
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('review-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn" id="review-action-btn" onclick="handleReview()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Deactivate Modal ──────────────────────────────────── -->
+<div class="oa-modal-overlay hidden" id="deactivate-overlay" onclick="closeDeactivate(event)">
+  <div class="oa-modal" onclick="event.stopPropagation()">
+    <h3 style="color:var(--oa-error);">Deactivate Document</h3>
+    <p class="desc">This will permanently deactivate this DID document. The DID will no longer resolve.</p>
+
+    <div id="deactivate-alert"></div>
+
+    <div class="oa-form-group">
+      <label>Reason (optional)</label>
+      <textarea id="deactivate-reason" class="oa-input" rows="3" placeholder="Reason for deactivation..."></textarea>
+    </div>
+
+    <div class="oa-modal-actions">
+      <button class="oa-btn oa-btn-ghost" onclick="document.getElementById('deactivate-overlay').classList.add('hidden')">Cancel</button>
+      <button class="oa-btn oa-btn-danger" onclick="handleDeactivate()">Deactivate</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'orgadmin/js/certificates.js' %}"></script>
+<script src="{% static 'orgadmin/js/documents.js' %}"></script>
+<script>
+const org = getCurrentOrg();
+if (!org) window.location.href = "/login/";
+
+const docId = "{{ doc_id }}";
+let docData = null;
+let currentUserId = null;
+let currentUserRole = null;
+let reviewAction = null;
+
+// ── Init ──────────────────────────────────────────────────
+
+(async function init() {
+  try {
+    const user = await Auth.me();
+    currentUserId = user.id;
+
+    const members = await OA.listMembers(org.id);
+    const me = members.find(m => m.user_id === user.id);
+    currentUserRole = me ? me.role : null;
+  } catch {}
+  loadDoc();
+})();
+
+// ── Load & Render ─────────────────────────────────────────
+
+async function loadDoc() {
+  try {
+    docData = await DocAPI.get(org.id, docId);
+    renderDoc();
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to load document.", "error");
+  }
+}
+
+function renderDoc() {
+  const d = docData;
+  const isOwner = d.owner_id === currentUserId;
+  const isAdmin = currentUserRole === "ORG_ADMIN";
+
+  const canEdit = isOwner && ["DRAFT", "REJECTED", "PUBLISHED"].includes(d.status);
+  // ORG_MEMBER submits for review; ORG_ADMIN publishes directly
+  const canSubmit = isOwner && !isAdmin && d.status === "DRAFT";
+  const canDirectPublish = isAdmin && d.status === "DRAFT";
+  const canReview = isAdmin && !isOwner && d.status === "PENDING_REVIEW";
+  const canPublish = (isOwner || isAdmin) && d.status === "APPROVED";
+  const canDeactivate = (isOwner || isAdmin) && d.status === "PUBLISHED";
+
+  // ── Header + actions
+  let actionsHtml = '<div class="doc-actions-bar">';
+  if (canSubmit) {
+    actionsHtml += `<button class="oa-btn oa-btn-primary oa-btn-sm" onclick="handleSubmit()">Submit for Review</button>`;
+  }
+  if (canDirectPublish) {
+    actionsHtml += `<button class="oa-btn oa-btn-primary oa-btn-sm" onclick="handlePublish()">Sign & Publish</button>`;
+  }
+  if (canReview) {
+    actionsHtml += `<button class="oa-btn oa-btn-primary oa-btn-sm" onclick="openReviewModal('approve')">Approve</button>`;
+    actionsHtml += `<button class="oa-btn oa-btn-danger oa-btn-sm" onclick="openReviewModal('reject')">Reject</button>`;
+  }
+  if (canPublish) {
+    actionsHtml += `<button class="oa-btn oa-btn-primary oa-btn-sm" onclick="handlePublish()">Sign & Publish</button>`;
+  }
+  if (canDeactivate) {
+    actionsHtml += `<button class="oa-btn oa-btn-danger oa-btn-sm" onclick="openDeactivateModal()">Deactivate</button>`;
+  }
+  actionsHtml += '</div>';
+
+  let html = `
+    <div class="oa-page-header">
+      <div>
+        <h2 style="display:flex;align-items:center;gap:0.75rem;">
+          ${d.label} ${docStatusBadge(d.status)}
+        </h2>
+        <p>Owned by ${d.owner_email} · Created on ${oaFormatDate(d.created_at)}</p>
+      </div>
+      ${actionsHtml}
+    </div>
+
+    <div class="doc-did-uri" style="margin-bottom:1.5rem;">
+      ${d.did_uri}
+    </div>
+  `;
+
+  // ── Review info
+  if (d.status === "REJECTED" && d.review_comment) {
+    html += `
+      <div class="doc-review-box rejected">
+        <div class="review-label" style="color:var(--oa-error);">Rejected</div>
+        <div class="review-comment">${escHTML(d.review_comment)}</div>
+        <div class="review-meta">By ${d.reviewed_by_email || "—"} on ${oaFormatDate(d.reviewed_at)}</div>
+      </div>`;
+  } else if (d.status === "PENDING_REVIEW" && d.submitted_by_email) {
+    html += `
+      <div class="doc-review-box">
+        <div class="review-label" style="color:var(--oa-warn);">Awaiting Review</div>
+        <div class="review-meta">Submitted by ${d.submitted_by_email} on ${oaFormatDate(d.submitted_at)}</div>
+      </div>`;
+  } else if (d.status === "APPROVED" && d.reviewed_by_email) {
+    html += `
+      <div class="doc-review-box">
+        <div class="review-label" style="color:var(--oa-success);">Approved</div>
+        ${d.review_comment ? `<div class="review-comment">${escHTML(d.review_comment)}</div>` : ''}
+        <div class="review-meta">By ${d.reviewed_by_email} on ${oaFormatDate(d.reviewed_at)}</div>
+      </div>`;
+  }
+
+  html += `<div class="oa-detail-grid">`;
+
+  // ── Left column: VM list + JSON
+  html += `<div>`;
+
+  // Verification methods
+  html += `
+    <div class="oa-card" style="margin-bottom:1.5rem;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">
+        Verification Methods
+        ${canEdit ? `<button class="oa-btn oa-btn-primary oa-btn-sm" onclick="openAddVMModal()">+ Add</button>` : ''}
+      </h3>`;
+
+  if (d.verification_methods.length === 0) {
+    html += `<p style="color:var(--oa-text-light);font-size:0.875rem;">No verification methods. Add a certificate to build your DID document.</p>`;
+  } else {
+    d.verification_methods.forEach(vm => {
+      html += `
+        <div class="doc-vm-row">
+          <div class="doc-vm-info">
+            <div class="doc-vm-fragment">#${vm.method_id_fragment}</div>
+            <div class="doc-vm-cert">${vm.certificate_label} · ${vm.key_type}${vm.key_curve ? ' ' + vm.key_curve : ''} · ${vmStatusDot(vm.is_active)}</div>
+            <div class="doc-vm-rels">${relBadges(vm.relationships)}</div>
+          </div>
+          ${canEdit ? `<button class="oa-btn oa-btn-ghost oa-btn-sm" style="color:var(--oa-error);font-size:0.75rem;" onclick="handleRemoveVM('${vm.id}', '${vm.method_id_fragment}')">Remove</button>` : ''}
+        </div>`;
+    });
+  }
+  html += `</div>`;
+
+  // Draft/Published JSON
+  const jsonContent = d.draft_content || d.content;
+  if (jsonContent) {
+    const jsonLabel = d.draft_content ? "Draft Content (DID Document)" : "Published Content (DID Document)";
+    html += `
+      <div class="oa-card" style="margin-bottom:1.5rem;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+          ${jsonLabel}
+          <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="copyJSON('did')" style="text-transform:none;font-size:0.6875rem;">Copy JSON</button>
+        </h3>
+        <pre class="doc-json-viewer" id="did-json-display">${escHTML(JSON.stringify(jsonContent, null, 2))}</pre>
+      </div>`;
+  }
+
+  // VC JSON (only for published documents)
+  if (d.verifiable_credential) {
+    html += `
+      <div class="oa-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+          Verifiable Credential
+          <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="copyJSON('vc')" style="text-transform:none;font-size:0.6875rem;">Copy VC JSON</button>
+        </h3>
+        <pre class="doc-json-viewer" id="vc-json-display">${escHTML(JSON.stringify(d.verifiable_credential, null, 2))}</pre>
+      </div>`;
+  }
+
+  html += `</div>`; // end left column
+
+  // ── Right column: Info + QR + versions
+  html += `<div>`;
+
+  // Document info card
+  html += `
+    <div class="oa-card" style="margin-bottom:1.5rem;">
+      <h3>Document Information</h3>
+      <div class="oa-field"><div class="label">Status</div><div class="value">${docStatusBadge(d.status)}</div></div>
+      <div class="oa-field"><div class="label">Owner</div><div class="value">${d.owner_email}</div></div>
+      <div class="oa-field"><div class="label">Owner Identifier</div><div class="value mono">${d.owner_identifier}</div></div>
+      <div class="oa-field"><div class="label">Created</div><div class="value">${oaFormatDate(d.created_at)}</div></div>
+      <div class="oa-field"><div class="label">Updated</div><div class="value">${oaFormatDate(d.updated_at)}</div></div>
+      <div class="oa-field"><div class="label">Version</div><div class="value">${d.current_version_number ? 'v' + d.current_version_number : 'Not published'}</div></div>
+      <div class="oa-field"><div class="label">Methods</div><div class="value">${d.verification_methods.length} total (${d.verification_methods.filter(v => v.is_active).length} active)</div></div>
+    </div>`;
+
+  // QR code for published documents
+  if (d.status === "PUBLISHED" && d.content) {
+    html += `
+      <div class="oa-card doc-qr-section" style="margin-bottom:1.5rem;">
+        <h3 style="text-align:left;">DID QR Code</h3>
+        <img src="${generateQRCodeURL(d.did_uri, 200)}" alt="DID QR Code" width="200" height="200">
+        <div style="margin-top:0.75rem;">
+          <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="downloadQRCode('${d.did_uri}', '${d.label}')">
+            Download QR Code
+          </button>
+        </div>
+        <div style="margin-top:0.5rem;font-size:0.75rem;color:var(--oa-text-muted);">
+          Scan to resolve: ${d.did_uri}
+        </div>
+      </div>`;
+  }
+
+  // Version history
+  html += `
+    <div class="oa-card">
+      <h3>Version History</h3>
+      <div id="versions-list"><div style="padding:0.5rem 0;color:var(--oa-text-light);font-size:0.8125rem;">Loading...</div></div>
+    </div>`;
+
+  html += `</div>`; // end right column
+  html += `</div>`; // end grid
+
+  document.getElementById("doc-content").innerHTML = html;
+  loadVersions();
+}
+
+// ── Helpers ───────────────────────────────────────────────
+
+function escHTML(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ── Versions ──────────────────────────────────────────────
+
+async function loadVersions() {
+  try {
+    const versions = await DocAPI.versions(org.id, docId);
+    const el = document.getElementById("versions-list");
+    if (!versions.length) {
+      el.innerHTML = `<p style="color:var(--oa-text-light);font-size:0.8125rem;">No published versions yet.</p>`;
+      return;
+    }
+    el.innerHTML = versions.map(v => `
+      <div style="padding:0.5rem 0;border-bottom:1px solid var(--oa-border);font-size:0.8125rem;">
+        <span style="font-weight:600;">v${v.version_number}</span>
+        <span style="color:var(--oa-text-muted);margin-left:0.5rem;">${oaFormatDate(v.published_at)}</span>
+        <span style="color:var(--oa-text-light);margin-left:0.5rem;">by ${v.published_by_email}</span>
+      </div>
+    `).join("");
+  } catch {
+    document.getElementById("versions-list").innerHTML =
+      `<p style="color:var(--oa-error);font-size:0.8125rem;">Failed to load versions.</p>`;
+  }
+}
+
+// ── Copy JSON ─────────────────────────────────────────────
+
+function copyJSON(type) {
+  let data;
+  if (type === "vc") {
+    data = docData?.verifiable_credential;
+  } else {
+    data = docData?.draft_content || docData?.content;
+  }
+  if (data) {
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+    const label = type === "vc" ? "Verifiable Credential" : "DID document";
+    oaAlert("alert-box", `${label} JSON copied to clipboard.`, "success");
+    setTimeout(() => oaClearAlert("alert-box"), 2000);
+  }
+}
+
+// ── Add Verification Method ──────────────────────────────
+
+async function openAddVMModal() {
+  oaClearAlert("add-vm-alert");
+  document.getElementById("vm-fragment").value = "";
+  document.querySelectorAll(".vm-rel-cb").forEach((cb, i) => cb.checked = i < 2);
+
+  const select = document.getElementById("vm-cert-select");
+  select.innerHTML = '<option value="">Loading...</option>';
+
+  try {
+    const certs = await CertAPI.list(org.id);
+    const active = certs.filter(c => c.status === "ACTIVE");
+    if (active.length === 0) {
+      select.innerHTML = '<option value="">No active certificates available</option>';
+    } else {
+      select.innerHTML = '<option value="">Select a certificate...</option>' +
+        active.map(c => `<option value="${c.id}">${c.label} (${c.key_type}${c.key_curve ? ' ' + c.key_curve : ''})</option>`).join("");
+    }
+  } catch {
+    select.innerHTML = '<option value="">Failed to load certificates</option>';
+  }
+
+  // Auto-suggest fragment
+  const existingFragments = (docData?.verification_methods || []).map(v => v.method_id_fragment);
+  let nextNum = 1;
+  while (existingFragments.includes(`key-${nextNum}`)) nextNum++;
+  document.getElementById("vm-fragment").value = `key-${nextNum}`;
+
+  document.getElementById("add-vm-overlay").classList.remove("hidden");
+}
+
+function closeAddVM(e) {
+  if (e.target === e.currentTarget) document.getElementById("add-vm-overlay").classList.add("hidden");
+}
+
+async function handleAddVM() {
+  const certId = document.getElementById("vm-cert-select").value;
+  const fragment = document.getElementById("vm-fragment").value.trim();
+  const rels = Array.from(document.querySelectorAll(".vm-rel-cb:checked")).map(cb => cb.value);
+
+  oaClearAlert("add-vm-alert");
+  if (!certId) { oaAlert("add-vm-alert", "Please select a certificate."); return; }
+  if (!fragment) { oaAlert("add-vm-alert", "Fragment ID is required."); return; }
+  if (rels.length === 0) { oaAlert("add-vm-alert", "Select at least one verification relationship."); return; }
+
+  const btn = document.getElementById("add-vm-btn");
+  const spinner = document.getElementById("add-vm-spinner");
+  const lbl = btn.querySelector(".btn-label");
+  btn.disabled = true;
+  spinner.classList.remove("hidden");
+  if (lbl) lbl.style.display = "none";
+
+  try {
+    await DocAPI.addVM(org.id, docId, {
+      certificate_id: certId,
+      method_id_fragment: fragment,
+      relationships: rels,
+    });
+    document.getElementById("add-vm-overlay").classList.add("hidden");
+    oaAlert("alert-box", `Verification method #${fragment} added.`, "success");
+    await loadDoc();
+  } catch (err) {
+    oaAlert("add-vm-alert", err.detail || "Failed to add verification method.");
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add("hidden");
+    if (lbl) lbl.style.display = "inline";
+  }
+}
+
+// ── Remove VM ─────────────────────────────────────────────
+
+async function handleRemoveVM(vmId, fragment) {
+  if (!confirm(`Remove verification method #${fragment}?`)) return;
+  try {
+    await DocAPI.removeVM(org.id, docId, vmId);
+    oaAlert("alert-box", `Verification method #${fragment} removed.`, "success");
+    await loadDoc();
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Failed to remove.", "error");
+  }
+}
+
+// ── Submit for Review (ORG_MEMBER only) ──────────────────
+
+async function handleSubmit() {
+  if (!confirm("Submit this document for review?")) return;
+  try {
+    await DocAPI.submit(org.id, docId);
+    oaAlert("alert-box", "Document submitted for review.", "success");
+    await loadDoc();
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Submission failed.", "error");
+  }
+}
+
+// ── Review (approve/reject) ──────────────────────────────
+
+function openReviewModal(action) {
+  reviewAction = action;
+  document.getElementById("review-comment").value = "";
+  oaClearAlert("review-alert");
+
+  if (action === "approve") {
+    document.getElementById("review-title").textContent = "Approve Document";
+    document.getElementById("review-desc").textContent = "Approve this document for signing and publication.";
+    document.getElementById("review-comment-label").textContent = "Comment (optional)";
+    document.getElementById("review-action-btn").className = "oa-btn oa-btn-primary";
+    document.getElementById("review-action-btn").textContent = "Approve";
+  } else {
+    document.getElementById("review-title").textContent = "Reject Document";
+    document.getElementById("review-desc").textContent = "Reject this document. The owner will be able to edit and resubmit.";
+    document.getElementById("review-comment-label").textContent = "Reason for rejection";
+    document.getElementById("review-action-btn").className = "oa-btn oa-btn-danger";
+    document.getElementById("review-action-btn").textContent = "Reject";
+  }
+
+  document.getElementById("review-overlay").classList.remove("hidden");
+}
+
+function closeReview(e) {
+  if (e.target === e.currentTarget) document.getElementById("review-overlay").classList.add("hidden");
+}
+
+async function handleReview() {
+  const comment = document.getElementById("review-comment").value.trim();
+  oaClearAlert("review-alert");
+
+  try {
+    if (reviewAction === "approve") {
+      await DocAPI.approve(org.id, docId, comment);
+      document.getElementById("review-overlay").classList.add("hidden");
+      oaAlert("alert-box", "Document approved.", "success");
+    } else {
+      await DocAPI.reject(org.id, docId, comment);
+      document.getElementById("review-overlay").classList.add("hidden");
+      oaAlert("alert-box", "Document rejected.", "success");
+    }
+    await loadDoc();
+  } catch (err) {
+    oaAlert("review-alert", err.detail || "Review action failed.");
+  }
+}
+
+// ── Publish ──────────────────────────────────────────────
+
+async function handlePublish() {
+  const msg = currentUserRole === "ORG_ADMIN" && docData?.status === "DRAFT"
+    ? "Sign and publish this document directly? (Skipping review)"
+    : "Sign and publish this document? The DID will become publicly resolvable.";
+
+  if (!confirm(msg)) return;
+  try {
+    oaAlert("alert-box", "Signing and publishing... please wait.", "success");
+    await DocAPI.publish(org.id, docId);
+    oaAlert("alert-box", "Document signed and published!", "success");
+    await loadDoc();
+  } catch (err) {
+    oaAlert("alert-box", err.detail || "Publishing failed.", "error");
+  }
+}
+
+// ── Deactivate ──────────────────────────────────────────
+
+function openDeactivateModal() {
+  document.getElementById("deactivate-reason").value = "";
+  oaClearAlert("deactivate-alert");
+  document.getElementById("deactivate-overlay").classList.remove("hidden");
+}
+
+function closeDeactivate(e) {
+  if (e.target === e.currentTarget) document.getElementById("deactivate-overlay").classList.add("hidden");
+}
+
+async function handleDeactivate() {
+  const reason = document.getElementById("deactivate-reason").value.trim();
+  if (!confirm("Permanently deactivate this DID? This cannot be undone.")) return;
+
+  try {
+    await DocAPI.deactivate(org.id, docId, reason);
+    document.getElementById("deactivate-overlay").classList.add("hidden");
+    oaAlert("alert-box", "Document deactivated.", "success");
+    await loadDoc();
+  } catch (err) {
+    oaAlert("deactivate-alert", err.detail || "Deactivation failed.");
+  }
+}
+</script>
+{% endblock %}

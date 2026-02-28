@@ -1,0 +1,131 @@
+{% extends "frontend/base.html" %}
+{% block title %}Activate Account — AnnuaireDID{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <div class="card">
+    <div class="brand">
+      <h1><span>Annuaire</span>DID</h1>
+      <p>Activate your account</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <!-- ── Loading state ────────────────────────────────────────── -->
+    <div id="loading-section" class="text-center">
+      <p style="color: var(--text-muted);">Loading activation data...</p>
+    </div>
+
+    <!-- ── Error state ──────────────────────────────────────────── -->
+    <div id="error-section" class="hidden text-center">
+      <a href="{% url 'frontend:login' %}" class="btn btn-primary mt-2">Back to Sign In</a>
+    </div>
+
+    <!-- ── QR + OTP form ────────────────────────────────────────── -->
+    <div id="otp-section" class="hidden">
+      <p style="color: var(--text-muted); font-size: 0.875rem; text-align: center; line-height: 1.5; margin-bottom: 1.25rem;">
+        Scan this QR code with your authenticator app
+        (Google Authenticator, Authy, etc.), then enter the 6-digit code below.
+      </p>
+
+      <div class="qr-container">
+        <img id="qr-image" src="" alt="QR Code">
+      </div>
+
+      <form onsubmit="handleVerify(event)">
+        <div class="form-group">
+          <label for="otp_code">Verification Code</label>
+          <input
+            id="otp_code"
+            type="text"
+            class="form-input otp-input"
+            placeholder="000000"
+            maxlength="6"
+            autocomplete="one-time-code"
+            inputmode="numeric"
+            required
+            oninput="this.value = this.value.replace(/\D/g, '').slice(0, 6);"
+          >
+        </div>
+        <button type="submit" id="verify-btn" class="btn btn-primary">
+          <span class="btn-label">Activate Account</span>
+          <span class="htmx-indicator spinner"></span>
+        </button>
+      </form>
+
+      <details style="margin-top: 1.25rem;">
+        <summary style="color: var(--text-muted); font-size: 0.8125rem; cursor: pointer;">
+          Can't scan? Use manual entry
+        </summary>
+        <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-input); border-radius: 0.5rem;">
+          <p style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.375rem;">Enter this key in your authenticator app:</p>
+          <code id="otp-uri" class="mono" style="color: var(--light); font-size: 0.75rem; word-break: break-all;"></code>
+        </div>
+      </details>
+    </div>
+
+    <!-- ── Success state ────────────────────────────────────────── -->
+    <div id="success-section" class="hidden text-center">
+      <div class="success-icon">✓</div>
+      <h2>Account Activated!</h2>
+      <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.5rem;">
+        Redirecting to dashboard...
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const INVITATION_TOKEN = "{{ invitation_token|escapejs }}";
+
+  (async function init() {
+    try {
+      const data = await Auth.activateSetup(INVITATION_TOKEN);
+      document.getElementById("qr-image").src = data.qr_base64;
+      document.getElementById("otp-uri").textContent = data.otp_uri;
+
+      document.getElementById("loading-section").classList.add("hidden");
+      document.getElementById("otp-section").classList.remove("hidden");
+
+      // Auto-focus the OTP input
+      document.getElementById("otp_code").focus();
+    } catch (err) {
+      document.getElementById("loading-section").classList.add("hidden");
+      showAlert("alert-box", err.detail || "Invalid or expired activation link.", "error");
+      document.getElementById("error-section").classList.remove("hidden");
+    }
+  })();
+
+  async function handleVerify(e) {
+    e.preventDefault();
+    const btn = document.getElementById("verify-btn");
+    const code = document.getElementById("otp_code").value;
+
+    if (code.length !== 6) {
+      showAlert("alert-box", "Enter a 6-digit code.");
+      return;
+    }
+
+    clearAlert("alert-box");
+    setLoading(btn, true);
+
+    try {
+      const data = await Auth.activateVerify(INVITATION_TOKEN, code);
+
+      // Tokens are saved by Auth.activateVerify already
+      document.getElementById("otp-section").classList.add("hidden");
+      document.getElementById("success-section").classList.remove("hidden");
+
+      setTimeout(() => {
+        window.location.href = "{% url 'frontend:dashboard' %}";
+      }, 1500);
+    } catch (err) {
+      showAlert("alert-box", err.detail || "Invalid OTP code. Try again.");
+    } finally {
+      setLoading(btn, false);
+    }
+  }
+</script>
+{% endblock %}

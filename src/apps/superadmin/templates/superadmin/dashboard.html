@@ -1,0 +1,109 @@
+{% extends "superadmin/base_superadmin.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="sa-page-header">
+  <div>
+    <h2>Dashboard</h2>
+    <p>Platform overview</p>
+  </div>
+</div>
+
+<div id="alert-box"></div>
+
+<!-- Stats -->
+<div class="sa-stats" id="stats-grid">
+  <div class="sa-stat"><div class="label">Loading...</div><div class="value">—</div></div>
+</div>
+
+<!-- Recent pending -->
+<div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
+  <h3 style="font-size:1.125rem;">Pending Review</h3>
+  <a href="{% url 'superadmin:sa_organizations' %}?status=PENDING_REVIEW"
+     style="color:var(--sa-green);font-size:0.875rem;text-decoration:none;font-weight:500;">
+    View all →
+  </a>
+</div>
+
+<div id="pending-table">
+  <div class="sa-empty"><p>Loading...</p></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function loadDashboard() {
+  try {
+    const stats = await SA.dashboard();
+
+    document.getElementById("stats-grid").innerHTML = `
+      <div class="sa-stat">
+        <div class="label">Pending Review</div>
+        <div class="value pending">${stats.pending_count}</div>
+      </div>
+      <div class="sa-stat">
+        <div class="label">Approved</div>
+        <div class="value approved">${stats.approved_count}</div>
+      </div>
+      <div class="sa-stat">
+        <div class="label">Rejected</div>
+        <div class="value rejected">${stats.rejected_count}</div>
+      </div>
+      <div class="sa-stat">
+        <div class="label">Suspended</div>
+        <div class="value">${stats.suspended_count}</div>
+      </div>
+      <div class="sa-stat">
+        <div class="label">Total Users</div>
+        <div class="value">${stats.total_users}</div>
+      </div>
+      <div class="sa-stat">
+        <div class="label">Active Users</div>
+        <div class="value approved">${stats.active_users}</div>
+      </div>
+    `;
+
+    // Load pending orgs
+    const pending = await SA.listOrgs("PENDING_REVIEW");
+
+    if (pending.length === 0) {
+      document.getElementById("pending-table").innerHTML = `
+        <div class="sa-empty">
+          <div class="icon">✅</div>
+          <p>No organizations pending review</p>
+        </div>`;
+      return;
+    }
+
+    let rows = pending.slice(0, 5).map(org => `
+      <tr>
+        <td>
+          <div class="org-name">${org.name}</div>
+          <div class="org-slug">${org.slug}</div>
+        </td>
+        <td>${org.type || "—"}</td>
+        <td>${org.country || "—"}</td>
+        <td>${org.admin_email || "—"}</td>
+        <td>${formatDate(org.created_at)}</td>
+        <td>
+          <a class="view-link" href="{% url 'superadmin:sa_organizations' %}${org.id}/">Review →</a>
+        </td>
+      </tr>
+    `).join("");
+
+    document.getElementById("pending-table").innerHTML = `
+      <div class="sa-table-wrap">
+        <table class="sa-table">
+          <thead><tr>
+            <th>Organization</th><th>Type</th><th>Country</th><th>Admin</th><th>Submitted</th><th></th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+
+  } catch (err) {
+    saShowAlert("alert-box", err.detail || "Failed to load dashboard.", "error");
+  }
+})();
+</script>
+{% endblock %}

@@ -16,6 +16,7 @@ Environment switching:
 """
 
 from pathlib import Path
+from urllib.parse import quote
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -61,13 +62,15 @@ class AppSettings(BaseSettings):
         )
 
     # ── Redis ───────────────────────────────────────────────────────────
-    REDIS_PASSWORD: str = "changeme_redis"
+    #REDIS_PASSWORD: str = "changeme_redis"
+    REDIS_PASSWORD: str = "redisallow-alex@123"
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
 
     @property
     def REDIS_URL(self) -> str:
-        return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}"
+        password = quote(self.REDIS_PASSWORD)
+        return f"redis://:{password}@{self.REDIS_HOST}:{self.REDIS_PORT}"
 
     @property
     def CELERY_BROKER_URL(self) -> str:
@@ -81,26 +84,36 @@ class AppSettings(BaseSettings):
     def CACHE_REDIS_URL(self) -> str:
         return f"{self.REDIS_URL}/2"
 
-    @property
-    def SESSION_REDIS_URL(self) -> str:
-        return f"{self.REDIS_URL}/3"
+    #@property
+    #def SESSION_REDIS_URL(self) -> str:
+    #    return f"{self.REDIS_URL}/3"
 
     # ── Session / Cookies ───────────────────────────────────────────────
-    SESSION_COOKIE_NAME: str = "annuaire_session"
-    SESSION_COOKIE_AGE: int = 86400  # 24h
-    SESSION_COOKIE_SECURE: bool = False
-    SESSION_COOKIE_DOMAIN: str = ""
-    CSRF_COOKIE_SECURE: bool = False
+    # SESSION_COOKIE_NAME: str = "annuaire_session"
+    # SESSION_COOKIE_AGE: int = 86400  # 24h
+    # SESSION_COOKIE_SECURE: bool = False
+    # SESSION_COOKIE_DOMAIN: str = ""
+    # CSRF_COOKIE_SECURE: bool = False
+
+    # ── JWT ─────────────────────────────────────────────────────────────
+
+    JWT_ACCESS_TOKEN_LIFETIME_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_LIFETIME_DAYS: int = 7
+    JWT_SIGNING_KEY: str = ""
+
+    @property
+    def jwt_signing_key(self) -> str:
+        return self.JWT_SIGNING_KEY or self.SECRET_KEY
 
     # ── External services ───────────────────────────────────────────────
     UNIVERSAL_REGISTRAR_URL: str = "http://uni-registrar-web:9080"
     SIGNSERVER_URL: str = "http://signserver-node:8080/signserver/process"
     SIGNSERVER_WORKER_NAME: str = "DIDDocumentSigner"
-    CERT_SERVICE_JAR_PATH: str = "/app/bin/ecdsa-extractor.jar"
-    CERT_SERVICE_TIMEOUT: int = 10
+    JWK_EXTRACTOR_JAR = "/home/davieddee/WORKSPACE/did-web-annuaire-be/artifacts/ecdsa-extractor.jar"
+    JWK_EXTRACTOR_JAVA = "java"
 
     # ── Platform ────────────────────────────────────────────────────────
-    PLATFORM_DOMAIN: str = "annuairedid-be.qcdigitalhub.com"
+    PLATFORM_DOMAIN: str = "localhost:8000"
 
     @property
     def PLATFORM_DID(self) -> str:

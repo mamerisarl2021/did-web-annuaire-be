@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Superadmin{% endblock %} — AnnuaireDID</title>
+  <link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
+  <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+</head>
+<body class="sa-body">
+  <div class="sa-shell">
+
+    <!-- ── Sidebar ──────────────────────────────────────────────── -->
+    <aside class="sa-sidebar">
+      <div class="sa-sidebar-brand">
+        <h1><span>Annuaire</span>DID</h1>
+        <p>Admin Console</p>
+      </div>
+
+      <ul class="sa-nav">
+        <li>
+          <a href="{% url 'superadmin:sa_dashboard' %}" class="{% if active_page == 'dashboard' %}active{% endif %}">
+            <span class="icon">📊</span> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'superadmin:sa_organizations' %}" class="{% if active_page == 'organizations' %}active{% endif %}">
+            <span class="icon">🏢</span> Organizations
+            <span class="sa-nav-badge" id="pending-badge" style="display:none;"></span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="{% if active_page == 'users' %}active{% endif %}">
+            <span class="icon">👤</span> Users
+          </a>
+        </li>
+        <li>
+          <a href="#" class="{% if active_page == 'audits' %}active{% endif %}">
+            <span class="icon">📋</span> Audit Log
+          </a>
+        </li>
+      </ul>
+
+      <div class="sa-sidebar-footer">
+        <div class="sa-user-info" id="sa-user-name">—</div>
+        <div class="sa-user-email" id="sa-user-email">—</div>
+        <button class="sa-btn sa-btn-logout" onclick="handleSALogout()">Logout</button>
+      </div>
+    </aside>
+
+    <!-- ── Main content ─────────────────────────────────────────── -->
+    <main class="sa-main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Auth.js must load first (provides token management) -->
+  <script src="{% static 'frontend/js/auth.js' %}"></script>
+  <script src="{% static 'superadmin/js/superadmin.js' %}"></script>
+  <script>
+    // Guard: must be logged in and superadmin
+    if (!Auth.isLoggedIn()) {
+      window.location.href = "/login/";
+    } else {
+      Auth.me().then(user => {
+        if (!user.is_superadmin) {
+          window.location.href = "/dashboard/";
+          return;
+        }
+        document.getElementById("sa-user-name").textContent = user.full_name || "Admin";
+        document.getElementById("sa-user-email").textContent = user.email;
+      }).catch(() => {
+        Auth.clearTokens();
+        window.location.href = "/login/";
+      });
+
+      // Load pending badge count
+      SA.dashboard().then(stats => {
+        if (stats.pending_count > 0) {
+          const badge = document.getElementById("pending-badge");
+          badge.textContent = stats.pending_count;
+          badge.style.display = "inline";
+        }
+      }).catch(() => {});
+    }
+
+    async function handleSALogout() {
+      try { await Auth.logout(); } catch {}
+      window.location.href = "/login/";
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
