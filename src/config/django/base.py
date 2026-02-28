@@ -24,6 +24,13 @@ AUTH_USER_MODEL = "users.User"
 
 PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
 
+# ── External Services ──────────────────────────────────────────────────────
+
+UNIVERSAL_REGISTRAR_URL = env.UNIVERSAL_REGISTRAR_URL
+SIGNSERVER_URL = env.SIGNSERVER_URL
+SIGNSERVER_WORKER_NAME = env.SIGNSERVER_WORKER_NAME
+
+
 # ── Installed Apps ──────────────────────────────────────────────────────
 
 DJANGO_APPS = [
