@@ -36,27 +36,6 @@ print('  ✗ Database not ready after 30s')
 sys.exit(1)
 "
 
-# ── Wait for Redis ──────────────────────────────────────────────────────
-
-echo "→ Waiting for Redis..."
-python -c "
-import time, sys
-sys.path.insert(0, '.')
-from src.config.env import env
-import redis
-
-for i in range(15):
-    try:
-        r = redis.Redis(host=env.REDIS_HOST, port=env.REDIS_PORT, password=env.REDIS_PASSWORD)
-        r.ping()
-        print('  ✓ Redis ready')
-        sys.exit(0)
-    except (redis.ConnectionError, redis.exceptions.AuthenticationError):
-        time.sleep(1)
-print('  ✗ Redis not ready after 15s')
-sys.exit(1)
-"
-
 # ── Migrations ──────────────────────────────────────────────────────────
 
 echo "→ Running migrations..."
