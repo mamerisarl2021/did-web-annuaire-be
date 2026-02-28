@@ -62,7 +62,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d annuaire_did"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-annuaire} -d annuaire_did"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -127,7 +127,7 @@ services:
 
   # ── Celery beat scheduler ─────────────────────────────────────────────────
   celery-beat:
-    image: ctrldaviddee/annuaire_did_be:staging-latest
+    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
     container_name: annuaire-celery-beat
     restart: unless-stopped
     command: celery -A src.tasks beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler

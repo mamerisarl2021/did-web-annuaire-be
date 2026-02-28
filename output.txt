@@ -1,0 +1,474 @@
+EJBCA
+david@vps108562:~/apps/keyfactor$  docker compose -f keyfactor-ejbca.yml up -d
+[+] Running 4/4
+ ✔ Network keyfactor_ejbca_internal  Created                                                                                                                                             0.1s
+ ✔ Volume "keyfactor_ejbca_db_data"  Created                                                                                                                                             0.0s
+ ✔ Container ejbca-database          Healthy                                                                                                                                            11.0s
+ ✔ Container ejbca-node1             Started                                                                                                                                            11.4s
+david@vps108562:~/apps/keyfactor$  docker compose -f keyfactor-ejbca.yml  logs -f
+ejbca-database  | The files belonging to this database system will be owned by user "postgres".
+ejbca-database  | This user must also own the server process.
+ejbca-database  |
+ejbca-database  | The database cluster will be initialized with locale "en_US.utf8".
+ejbca-database  | The default database encoding has accordingly been set to "UTF8".
+ejbca-database  | The default text search configuration will be set to "english".
+ejbca-database  |
+ejbca-database  | Data page checksums are enabled.
+ejbca-database  |
+ejbca-database  | fixing permissions on existing directory /var/lib/postgresql/18/docker ... ok
+ejbca-database  | creating subdirectories ... ok
+ejbca-database  | selecting dynamic shared memory implementation ... posix
+ejbca-database  | selecting default "max_connections" ... 100
+ejbca-database  | selecting default "shared_buffers" ... 128MB
+ejbca-database  | selecting default time zone ... Etc/UTC
+ejbca-database  | creating configuration files ... ok
+ejbca-database  | running bootstrap script ... ok
+ejbca-database  | performing post-bootstrap initialization ... ok
+ejbca-database  | syncing data to disk ... ok
+ejbca-database  |
+ejbca-database  |
+ejbca-database  | Success. You can now start the database server using:
+ejbca-database  |
+ejbca-database  |     pg_ctl -D /var/lib/postgresql/18/docker -l logfile start
+ejbca-database  |
+ejbca-database  | initdb: warning: enabling "trust" authentication for local connections
+ejbca-database  | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+ejbca-database  | waiting for server to start....2026-02-28 12:24:09.671 UTC [51] LOG:  starting PostgreSQL 18.2 (Debian 18.2-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+ejbca-database  | 2026-02-28 12:24:09.671 UTC [51] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+ejbca-database  | 2026-02-28 12:24:09.680 UTC [57] LOG:  database system was shut down at 2026-02-28 12:24:08 UTC
+ejbca-database  | 2026-02-28 12:24:09.694 UTC [51] LOG:  database system is ready to accept connections
+ejbca-database  |  done
+ejbca-database  | server started
+ejbca-database  | CREATE DATABASE
+ejbca-database  |
+ejbca-database  |
+ejbca-database  | /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+ejbca-database  |
+ejbca-database  | waiting for server to shut down....2026-02-28 12:24:09.920 UTC [51] LOG:  received fast shutdown request
+ejbca-database  | 2026-02-28 12:24:09.921 UTC [51] LOG:  aborting any active transactions
+ejbca-database  | 2026-02-28 12:24:09.929 UTC [51] LOG:  background worker "logical replication launcher" (PID 60) exited with exit code 1
+ejbca-database  | 2026-02-28 12:24:09.930 UTC [55] LOG:  shutting down
+ejbca-database  | 2026-02-28 12:24:09.930 UTC [55] LOG:  checkpoint starting: shutdown immediate
+ejbca-database  | 2026-02-28 12:24:10.090 UTC [55] LOG:  checkpoint complete: wrote 943 buffers (5.8%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.036 s, sync=0.124 s, total=0.161 s; sync files=303, longest=0.098 s, average=0.001 s; distance=4352 kB, estimate=4352 kB; lsn=0/1B9FBA0, redo lsn=0/1B9FBA0
+ejbca-database  | 2026-02-28 12:24:10.112 UTC [51] LOG:  database system is shut down
+ejbca-database  |  done
+ejbca-database  | server stopped
+ejbca-database  |
+ejbca-database  | PostgreSQL init process complete; ready for start up.
+ejbca-database  |
+ejbca-database  | 2026-02-28 12:24:10.151 UTC [1] LOG:  starting PostgreSQL 18.2 (Debian 18.2-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+ejbca-database  | 2026-02-28 12:24:10.152 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+ejbca-database  | 2026-02-28 12:24:10.152 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+ejbca-database  | 2026-02-28 12:24:10.153 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+ejbca-database  | 2026-02-28 12:24:10.161 UTC [73] LOG:  database system was shut down at 2026-02-28 12:24:10 UTC
+ejbca-database  | 2026-02-28 12:24:10.167 UTC [1] LOG:  database system is ready to accept connections
+ejbca-database  | 2026-02-28 12:24:24.017 UTC [86] ERROR:  relation "globalconfigurationdata" does not exist at character 24
+ejbca-database  | 2026-02-28 12:24:24.017 UTC [86] STATEMENT:  SELECT rowVersion FROM GlobalConfigurationData WHERE configurationId='UPGRADE'
+ejbca-database  | 2026-02-28 12:24:28.882 UTC [96] ERROR:  function subjectaltname(integer) does not exist at character 58
+ejbca-database  | 2026-02-28 12:24:28.882 UTC [96] HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ejbca-database  | 2026-02-28 12:24:28.882 UTC [96] STATEMENT:  CREATE INDEX certificatedata_idx_san ON CertificateData (subjectAltName(750))
+ejbca-node1     | 2026-02-28 12:24:19,124+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Configure logging for Application Server
+ejbca-node1     | 2026-02-28 12:24:19,155+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Configure logging for ejbca
+ejbca-node1     | 2026-02-28 12:24:19,171+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) uid=10001 gid=0(root) groups=0(root)
+ejbca-node1     | 2026-02-28 12:24:19,323+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Detected 32 available core(s).
+ejbca-node1     | 2026-02-28 12:24:19,346+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Detected 202412261376 bytes available host memory.
+ejbca-node1     | 2026-02-28 12:24:19,354+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Using the upper Metaspace limit of '2048m'.
+ejbca-node1     | 2026-02-28 12:24:19,365+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Observable at 127.0.0.1:8090 under paths: /health /health/ready /health/live
+ejbca-node1     | 2026-02-28 12:24:19,400+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) LOG_LEVEL_APP_OCSP_TRANSACTIONS setting is depricated and does nothing
+ejbca-node1     | 2026-02-28 12:24:19,407+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) LOG_LEVEL_APP_OCSP_AUDIT setting is depricated and does nothing
+ejbca-node1     | 2026-02-28 12:24:19,413+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) PostgreSQL database.
+ejbca-node1     | 2026-02-28 12:24:19,460+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Looking for plugins to import and initialize under /opt/keyfactor/ejbca/plugins/.
+ejbca-node1     | 2026-02-28 12:24:19,484+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) External hostname env.HTTPSERVER_HOSTNAME is set to 'ejbca-node1'.
+ejbca-node1     | 2026-02-28 12:24:19,495+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Cluster Node ID is set to '4k5dpdmidhvderepz6'.
+ejbca-node1     | 2026-02-28 12:24:19,508+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Using provided CLI username and secret
+ejbca-node1     | 2026-02-28 12:24:21,617+0000 INFO  [org.apache.commons.beanutils.FluentPropertyBeanIntrospector] (main) Error when creating PropertyDescriptor for public final void org.apache.commons.configuration2.AbstractConfiguration.setProperty(java.lang.String,java.lang.Object)! Ignoring this property.
+ejbca-node1     | 2026-02-28 12:24:21,709+0000 INFO  [com.keyfactor.util.RandomHelper] (main) Using default NativePRNG serialNumber RNG algorithm.
+ejbca-node1     | 2026-02-28 12:24:21,932+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Connected.
+ejbca-node1     | 2026-02-28 12:24:21,947+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'SELECT 1' -> hit
+ejbca-node1     | 2026-02-28 12:24:21,952+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Done.
+ejbca-node1     | 2026-02-28 12:24:23,700+0000 INFO  [org.apache.commons.beanutils.FluentPropertyBeanIntrospector] (main) Error when creating PropertyDescriptor for public final void org.apache.commons.configuration2.AbstractConfiguration.setProperty(java.lang.String,java.lang.Object)! Ignoring this property.
+ejbca-node1     | 2026-02-28 12:24:23,778+0000 INFO  [com.keyfactor.util.RandomHelper] (main) Using default NativePRNG serialNumber RNG algorithm.
+ejbca-node1     | 2026-02-28 12:24:24,010+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Connected.
+ejbca-node1     | 2026-02-28 12:24:24,024+0000 ERROR [org.ejbca.ui.cli.jdbc.JdbcTool] (main) ERROR: relation "globalconfigurationdata" does not exist
+ejbca-node1     |   Position: 24
+ejbca-node1     | 2026-02-28 12:24:24,024+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Done.
+ejbca-node1     | 2026-02-28 12:24:24,066+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Creating database tables...
+ejbca-node1     | 2026-02-28 12:24:25,960+0000 INFO  [org.apache.commons.beanutils.FluentPropertyBeanIntrospector] (main) Error when creating PropertyDescriptor for public final void org.apache.commons.configuration2.AbstractConfiguration.setProperty(java.lang.String,java.lang.Object)! Ignoring this property.
+ejbca-node1     | 2026-02-28 12:24:26,040+0000 INFO  [com.keyfactor.util.RandomHelper] (main) Using default NativePRNG serialNumber RNG algorithm.
+ejbca-node1     | 2026-02-28 12:24:26,051+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Loading SQL script '/opt/keyfactor/ejbca/doc/sql-scripts/create-tables-ejbca-postgres.sql' with 479 lines.
+ejbca-node1     | 2026-02-28 12:24:26,307+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Connected.
+ejbca-node1     | 2026-02-28 12:24:26,323+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AccessRulesData ( pK INT4 NOT NULL, accessRule TEXT NOT NULL, isRecursive BOOLEAN NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, rule INT4 NOT NULL, AdminGroupData_accessRules INT4, PRIMARY KEY (pK) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,332+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AdminEntityData ( pK INT4 NOT NULL, cAId INT4 NOT NULL, matchType INT4 NOT NULL, matchValue TEXT, matchWith INT4 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, tokenType TEXT, AdminGroupData_adminEntities INT4, PRIMARY KEY (pK) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,337+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AdminGroupData ( pK INT4 NOT NULL, adminGroupName TEXT NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (pK) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,340+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AdminPreferencesData ( id TEXT NOT NULL, data BYTEA NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,344+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE ApprovalData ( id INT4 NOT NULL, approvalData TEXT NOT NULL, approvalId INT4 NOT NULL, approvalType INT4 NOT NULL, cAId INT4 NOT NULL, endEntityProfileId INT4 NOT NULL, expireDate INT8 NOT NULL, remainingApprovals INT4 NOT NULL, subjectDn TEXT, email TEXT, reqAdminCertIssuerDn TEXT, reqAdminCertSn TEXT, requestData TEXT NOT NULL, requestDate INT8 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, status INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,347+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AuditRecordData ( pk TEXT NOT NULL, additionalDetails TEXT, authToken TEXT NOT NULL, customId TEXT, eventStatus TEXT NOT NULL, eventType TEXT NOT NULL, module TEXT NOT NULL, nodeId TEXT NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, searchDetail1 TEXT, searchDetail2 TEXT, sequenceNumber INT8 NOT NULL, service TEXT NOT NULL, timeStamp INT8 NOT NULL, PRIMARY KEY (pk) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,353+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AuthorizationTreeUpdateData ( pK INT4 NOT NULL, authorizationTreeUpdateNumber INT4 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (pK) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,356+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE Base64CertData ( fingerprint TEXT NOT NULL, base64Cert TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, certificateRequest TEXT, PRIMARY KEY (fingerprint) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,359+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE CAData ( cAId INT4 NOT NULL, data TEXT NOT NULL, expireTime INT8 NOT NULL, name TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, status INT4 NOT NULL, subjectDN TEXT, updateTime INT8 NOT NULL, PRIMARY KEY (cAId) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,361+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE CRLData ( fingerprint TEXT NOT NULL, base64Crl TEXT NOT NULL, cAFingerprint TEXT NOT NULL, crlPartitionIndex INT4, cRLNumber INT4 NOT NULL, deltaCRLIndicator INT4 NOT NULL, issuerDN TEXT NOT NULL, nextUpdate INT8 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, thisUpdate INT8 NOT NULL, PRIMARY KEY (fingerprint) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,364+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE CertReqHistoryData ( fingerprint TEXT NOT NULL, issuerDN TEXT NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, serialNumber TEXT NOT NULL, timestamp INT8 NOT NULL, userDataVO TEXT NOT NULL, username TEXT NOT NULL, PRIMARY KEY (fingerprint) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,367+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE CertificateData ( fingerprint TEXT NOT NULL, base64Cert TEXT, cAFingerprint TEXT, certificateProfileId INT4 NOT NULL, endEntityProfileId INT4, crlPartitionIndex INT4, expireDate INT8 NOT NULL, issuerDN TEXT NOT NULL, notBefore INT8, invalidityDate INT8, revocationDate INT8 NOT NULL, revocationReason INT4 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, serialNumber TEXT NOT NULL, status INT4 NOT NULL, subjectAltName TEXT, subjectDN TEXT NOT NULL, subjectKeyId TEXT, accountBindingId TEXT, tag TEXT, type INT4 NOT NULL, updateTime INT8 NOT NULL, username TEXT, certificateRequest TEXT, PRIMARY KEY (fingerprint) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,370+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE CertificateProfileData ( id INT4 NOT NULL, certificateProfileName TEXT NOT NULL, data BYTEA NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,372+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE CryptoTokenData ( id INT4 NOT NULL, lastUpdate INT8 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, tokenData TEXT, tokenName TEXT NOT NULL, tokenProps TEXT, tokenType TEXT NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,374+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE EndEntityProfileData ( id INT4 NOT NULL, data BYTEA NOT NULL, profileName TEXT NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,379+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE GlobalConfigurationData ( configurationId TEXT NOT NULL, data BYTEA NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (configurationId) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,382+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE InternalKeyBindingData ( id INT4 NOT NULL, certificateId TEXT, cryptoTokenId INT4 NOT NULL, keyBindingType TEXT NOT NULL, keyPairAlias TEXT NOT NULL, lastUpdate INT8 NOT NULL, name TEXT NOT NULL, rawData TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, status TEXT NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,386+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE KeyRecoveryData ( certSN TEXT NOT NULL, issuerDN TEXT NOT NULL, cryptoTokenId INT4 DEFAULT 0 NOT NULL, keyAlias TEXT, keyData TEXT NOT NULL, markedAsRecoverable BOOLEAN NOT NULL, publicKeyId TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, username TEXT, PRIMARY KEY (certSN, issuerDN) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,388+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE PeerData ( id INT4 NOT NULL, connectorState INT4 NOT NULL, data TEXT, name TEXT NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, url TEXT NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,391+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE ProfileData ( id INT4 NOT NULL, profileName TEXT NOT NULL, profileType TEXT NOT NULL, rawData TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,395+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE PublisherData ( id INT4 NOT NULL, data TEXT, name TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, updateCounter INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,399+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE PublisherQueueData ( pk TEXT NOT NULL, fingerprint TEXT, lastUpdate INT8 NOT NULL, publishStatus INT4 NOT NULL, publishType INT4 NOT NULL, publisherId INT4 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, timeCreated INT8 NOT NULL, tryCounter INT4 NOT NULL, volatileData TEXT, PRIMARY KEY (pk) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,402+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE BlacklistData ( id INT4 NOT NULL, type TEXT NOT NULL, value TEXT NOT NULL, data TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, updateCounter INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,408+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE RoleData ( id INT4 NOT NULL, roleName TEXT NOT NULL, nameSpace TEXT, rawData TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,412+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE RoleMemberData ( primaryKey INT4 NOT NULL, tokenType TEXT NOT NULL, tokenIssuerId INT4 NOT NULL, tokenProviderId INT4 DEFAULT 0 NOT NULL, tokenMatchKey INT4 NOT NULL, tokenMatchOperator INT4 NOT NULL, tokenMatchValue TEXT, roleId INT4 NOT NULL, description TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (primaryKey) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,417+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE ServiceData ( id INT4 NOT NULL, data TEXT, name TEXT NOT NULL, nextRunTimeStamp INT8 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, runTimeStamp INT8 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,424+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE UserData ( username TEXT NOT NULL, cAId INT4 NOT NULL, cardNumber TEXT, certificateProfileId INT4 NOT NULL, clearPassword TEXT, endEntityProfileId INT4 NOT NULL, extendedInformationData TEXT, hardTokenIssuerId INT4 NOT NULL, keyStorePassword TEXT, passwordHash TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, status INT4 NOT NULL, subjectAltName TEXT, subjectDN TEXT, subjectEmail TEXT, timeCreated INT8 NOT NULL, timeModified INT8 NOT NULL, tokenType INT4 NOT NULL, type INT4 NOT NULL, PRIMARY KEY (username) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,427+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE UserDataSourceData ( id INT4 NOT NULL, data TEXT, name TEXT NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, updateCounter INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,431+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE NoConflictCertificateData ( id TEXT NOT NULL, fingerprint TEXT NOT NULL, base64Cert TEXT, cAFingerprint TEXT, certificateProfileId INT4 NOT NULL, endEntityProfileId INT4, crlPartitionIndex INT4, expireDate INT8 NOT NULL, issuerDN TEXT NOT NULL, notBefore INT8, invalidityDate INT8, revocationDate INT8 NOT NULL, revocationReason INT4 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, serialNumber TEXT NOT NULL, status INT4 NOT NULL, subjectAltName TEXT, subjectDN TEXT NOT NULL, subjectKeyId TEXT, accountBindingId TEXT, tag TEXT, type INT4 NOT NULL, updateTime INT8 NOT NULL, username TEXT, certificateRequest TEXT, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,434+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AcmeNonceData ( nonce TEXT NOT NULL, timeExpires INT8 NOT NULL, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (nonce) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,438+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AcmeAccountData ( accountId TEXT NOT NULL, currentKeyId TEXT NOT NULL, rawData TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (accountId) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,446+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AcmeOrderData ( orderId TEXT NOT NULL, accountId TEXT NOT NULL, fingerprint TEXT, status TEXT NOT NULL, rawData TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (orderId) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,455+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AcmeChallengeData ( challengeId TEXT NOT NULL, authorizationId TEXT NOT NULL, type TEXT NOT NULL, rawData TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (challengeId) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,458+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE AcmeAuthorizationData ( authorizationId TEXT NOT NULL, identifier TEXT, identifierType TEXT, expires INT8, status TEXT, orderId TEXT, accountId TEXT NOT NULL, rawData TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (authorizationId) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,460+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE SctData ( pk TEXT NOT NULL, logId INT4 NOT NULL, fingerprint TEXT NOT NULL, certificateExpirationDate INT8 NOT NULL, data TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (pk) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,463+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE OcspResponseData ( id TEXT NOT NULL, serialNumber TEXT NOT NULL, producedAt INT8 NOT NULL, nextUpdate INT8, ocspResponse BYTEA, cAId INT4, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (id) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,465+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE TABLE IncompleteIssuanceJournalData ( serialNumberAndCaId TEXT NOT NULL, startTime INT8 NOT NULL, rawData TEXT, rowProtection TEXT, rowVersion INT4 NOT NULL, PRIMARY KEY (serialNumberAndCaId) )' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,468+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'alter table AccessRulesData add constraint FKABB4C1DFDBBC970 foreign key (AdminGroupData_accessRules) references AdminGroupData' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,470+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'alter table AdminEntityData add constraint FKD9A99EBCB3A110AD foreign key (AdminGroupData_adminEntities) references AdminGroupData' -> 0
+ejbca-node1     | 2026-02-28 12:24:26,470+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Done.
+ejbca-node1     | 2026-02-28 12:24:26,501+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Applying recommended database indexes...
+ejbca-node1     | 2026-02-28 12:24:28,272+0000 INFO  [org.apache.commons.beanutils.FluentPropertyBeanIntrospector] (main) Error when creating PropertyDescriptor for public final void org.apache.commons.configuration2.AbstractConfiguration.setProperty(java.lang.String,java.lang.Object)! Ignoring this property.
+ejbca-node1     | 2026-02-28 12:24:28,405+0000 INFO  [com.keyfactor.util.RandomHelper] (main) Using default NativePRNG serialNumber RNG algorithm.
+ejbca-node1     | 2026-02-28 12:24:28,413+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Loading SQL script '/opt/keyfactor/ejbca/doc/sql-scripts/create-index-ejbca.sql' with 130 lines.
+ejbca-node1     | 2026-02-28 12:24:28,822+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Connected.
+ejbca-node1     | 2026-02-28 12:24:28,831+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE UNIQUE INDEX auditrecorddata_idx2 ON AuditRecordData (nodeId,sequenceNumber)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,833+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX auditrecorddata_idx3 ON AuditRecordData (timeStamp)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,835+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX auditrecorddata_idx4 ON AuditRecordData (searchDetail2)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,842+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX crldata_idx5 ON CRLData(cRLNumber, issuerDN, crlPartitionIndex)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,843+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE UNIQUE INDEX crldata_idx6 ON CRLData(issuerDN, crlPartitionIndex, deltaCRLIndicator, cRLNumber)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,846+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE UNIQUE INDEX cadata_idx1 ON CAData (name)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,848+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx2 ON CertificateData (username)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,851+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx4 ON CertificateData (subjectDN)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,852+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx5 ON CertificateData (type)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,853+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx6 ON CertificateData (issuerDN,status,revocationDate)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,854+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx7 ON CertificateData(certificateProfileId)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,858+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx11 ON CertificateData (subjectKeyId)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,860+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'DELETE FROM CertificateData WHERE fingerprint='caba75f68c833c3c2d33f3f5052b7d5a76e80383'' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,861+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'DELETE FROM CertificateData WHERE fingerprint='05a219d835622653192c30eeeee8f01f918b30fb'' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,862+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'DELETE FROM Base64CertData WHERE fingerprint='caba75f68c833c3c2d33f3f5052b7d5a76e80383'' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,869+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'DELETE FROM Base64CertData WHERE fingerprint='05a219d835622653192c30eeeee8f01f918b30fb'' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,871+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE UNIQUE INDEX certificatedata_idx12 ON CertificateData (serialNumber, issuerDN)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,873+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx15 ON CertificateData (issuerDN,notBefore)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,875+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx16 ON CertificateData (issuerDN,revocationDate)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,876+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx17 ON CertificateData (issuerDN, status, crlPartitionIndex)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,878+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx18 ON CertificateData (issuerDN, status, crlPartitionIndex, revocationDate)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,879+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx_serial ON CertificateData (serialNumber)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,881+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) 'CREATE INDEX certificatedata_idx_eab ON CertificateData (accountBindingId)' -> 0
+ejbca-node1     | 2026-02-28 12:24:28,890+0000 ERROR [org.ejbca.ui.cli.jdbc.JdbcTool] (main) ERROR: function subjectaltname(integer) does not exist
+ejbca-node1     |   Hint: No function matches the given name and argument types. You might need to add explicit type casts.
+ejbca-node1     |   Position: 58
+ejbca-node1     | 2026-02-28 12:24:28,891+0000 INFO  [org.ejbca.ui.cli.jdbc.JdbcTool] (main) Done.
+ejbca-node1     | 2026-02-28 12:24:28,928+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Starting application server:
+ejbca-node1     | =========================================================================
+ejbca-node1     |
+ejbca-node1     |   JBoss Bootstrap Environment
+ejbca-node1     |
+ejbca-node1     |   JBOSS_HOME: /opt/keyfactor/wildfly-35.0.1.Final
+ejbca-node1     |
+ejbca-node1     |   JAVA: /usr/lib/jvm/java-17-slim/bin/java
+ejbca-node1     |
+ejbca-node1     |   JAVA_OPTS:  -Djdk.serialFilter=""   -Xms128m -Xmx190907m -Xss256k -XX:MetaspaceSize=160m -XX:MaxMetaspaceSize=2048m -XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:+ExitOnOutOfMemoryError -Djdk.tls.ephemeralDHKeySize=2048 -Djava.net.preferIPv4Stack=false -Djava.security.egd=file:/dev/random -Dcontainer.database.name=postgres -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true --add-exports=jdk.crypto.cryptoki/sun.security.pkcs11.wrapper=ALL-UNNAMED  --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED --add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED --add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED --add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED -Djava.security.manager=allow
+ejbca-node1     |
+ejbca-node1     | =========================================================================
+ejbca-node1     |
+ejbca-node1     | 2026-02-28 12:24:31,403+0000 INFO  [org.jboss.as] (MSC service thread 1-2) WFLYSRV0049: WildFly 35.0.1.Final (WildFly Core 27.0.1.Final) starting
+ejbca-node1     | 2026-02-28 12:24:34,390+0000 WARN  [org.jboss.as.server.deployment.scanner] (ServerService Thread Pool -- 25) WFLYDS0006: Reliable deployment behaviour is not possible when auto-deployment of exploded content is enabled (i.e. deployment without use of ".dodeploy"' marker files). Configuration of auto-deployment of exploded content is not recommended in any situation where reliability is desired. Configuring the deployment scanner's auto-deploy-exploded setting to "false" is recommended.
+ejbca-node1     | 2026-02-28 12:24:34,534+0000 INFO  [org.jboss.as.server] (Controller Boot Thread) WFLYSRV0039: Creating http management service using socket-binding (management-http)
+ejbca-node1     | 2026-02-28 12:24:34,615+0000 INFO  [org.wildfly.extension.health] (ServerService Thread Pool -- 45) WFLYHEALTH0001: Activating Base Health Subsystem
+ejbca-node1     | 2026-02-28 12:24:34,696+0000 INFO  [org.wildfly.extension.microprofile.config.smallrye] (ServerService Thread Pool -- 54) WFLYCONF0001: Activating MicroProfile Config Subsystem
+ejbca-node1     | 2026-02-28 12:24:34,717+0000 INFO  [org.wildfly.extension.microprofile.telemetry] (ServerService Thread Pool -- 57) WFLYMPTEL0001: Activating MicroProfile Telemetry Subsystem
+ejbca-node1     | 2026-02-28 12:24:34,726+0000 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-1) WFLYSRV0027: Starting deployment of "ejbca.ear" (runtime-name: "ejbca.ear")
+ejbca-node1     | 2026-02-28 12:24:34,729+0000 INFO  [org.wildfly.extension.microprofile.health.smallrye] (ServerService Thread Pool -- 55) WFLYMPHEALTH0001: Activating MicroProfile Health Subsystem
+ejbca-node1     | 2026-02-28 12:24:34,733+0000 INFO  [org.wildfly.extension.metrics] (ServerService Thread Pool -- 53) WFLYMETRICS0001: Activating Base Metrics Subsystem
+ejbca-node1     | 2026-02-28 12:24:34,946+0000 WARN  [org.wildfly.clustering.web.undertow] (ServerService Thread Pool -- 65) WFLYCLWEBUT0007: No routing provider found for default-server; using legacy provider based on static configuration
+ejbca-node1     | 2026-02-28 12:24:35,081+0000 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-4) WFLYUT0003: Undertow 2.3.18.Final starting
+ejbca-node1     | 2026-02-28 12:24:35,275+0000 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-6) WFLYUT0012: Started server default-server.
+ejbca-node1     | 2026-02-28 12:24:35,281+0000 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-3) Queuing requests.
+ejbca-node1     | 2026-02-28 12:24:35,282+0000 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-3) WFLYUT0018: Host default-host starting
+ejbca-node1     | 2026-02-28 12:24:35,355+0000 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-5) WFLYUT0006: Undertow HTTP listener remoting listening on 127.0.0.1:4447
+ejbca-node1     | 2026-02-28 12:24:35,357+0000 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-4) WFLYUT0006: Undertow HTTP listener observation listening on 127.0.0.1:8090
+ejbca-node1     | 2026-02-28 12:24:35,505+0000 INFO  [org.jboss.as.server.deployment.scanner] (MSC service thread 1-8) WFLYDS0013: Started FileSystemDeploymentService for directory /opt/keyfactor/wildfly-35.0.1.Final/standalone/deployments
+ejbca-node1     | 2026-02-28 12:24:42,071+0000 INFO  [org.jboss.as.jpa] (MSC service thread 1-3) WFLYJPA0002: Read persistence.xml for ejbca
+ejbca-node1     | 2026-02-28 12:24:44,177+0000 INFO  [org.jboss.as.jpa] (ServerService Thread Pool -- 68) WFLYJPA0010: Starting Persistence Unit (phase 1 of 2) Service 'ejbca.ear#ejbca'
+ejbca-node1     | 2026-02-28 12:24:44,459+0000 WARN  [org.jipijapa] (ServerService Thread Pool -- 68) JIPIORMV6020262: Application custom cache region setting is ignored hibernate.cache.region.factory_class=org.hibernate.cache.internal.NoCachingRegionFactory
+ejbca-node1     | 2026-02-28 12:24:47,685+0000 INFO  [org.jboss.as.jpa] (ServerService Thread Pool -- 68) WFLYJPA0010: Starting Persistence Unit (phase 2 of 2) Service 'ejbca.ear#ejbca'
+ejbca-node1     | 2026-02-28 12:24:48,074+0000 INFO  [org.apache.commons.beanutils.FluentPropertyBeanIntrospector] (MSC service thread 1-3) Error when creating PropertyDescriptor for public final void org.apache.commons.configuration2.AbstractConfiguration.setProperty(java.lang.String,java.lang.Object)! Ignoring this property.
+ejbca-node1     | 2026-02-28 12:24:48,178+0000 WARN  [org.jboss.as.jaxrs] (MSC service thread 1-5) WFLYRS0018: Explicit usage of Jackson annotation in a Jakarta RESTful Web Services deployment; the system will disable Jakarta JSON Binding processing for the current deployment. Consider setting the 'resteasy.preferJacksonOverJsonB' property to 'false' to restore Jakarta JSON Binding.
+ejbca-node1     | 2026-02-28 12:24:48,262+0000 INFO  [com.keyfactor.util.RandomHelper] (MSC service thread 1-3) Using default NativePRNG serialNumber RNG algorithm.
+ejbca-node1     | 2026-02-28 12:24:51,310+0000 INFO  [org.cesecore.dbprotection.ProtectedData] (ServerService Thread Pool -- 68) No database integrity protection available in this version of EJBCA.
+ejbca-node1     | 2026-02-28 12:24:54,618+0000 WARN  [org.jboss.weld.Validator] (MSC service thread 1-8) WELD-001471: Interceptor method initialize defined on class org.ejbca.ui.web.admin.endentity.AddEndEntityMBean is not defined according to the specification. It should not throw org.cesecore.authorization.AuthorizationDeniedException, which is a checked exception.
+ejbca-node1     | 	at org.ejbca.ui.web.admin.endentity.AddEndEntityMBean.initialize(AddEndEntityMBean.java:0)
+ejbca-node1     |   StackTrace
+ejbca-node1     | 2026-02-28 12:24:54,622+0000 WARN  [org.jboss.weld.Validator] (MSC service thread 1-8) WELD-001471: Interceptor method initialize defined on class org.ejbca.ui.web.admin.endentity.AddEndEntityMBean is not defined according to the specification. It should not throw org.ejbca.core.EjbcaException, which is a checked exception.
+ejbca-node1     | 	at org.ejbca.ui.web.admin.endentity.AddEndEntityMBean.initialize(AddEndEntityMBean.java:0)
+ejbca-node1     |   StackTrace
+ejbca-node1     | 2026-02-28 12:24:55,390+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 76) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET]
+ejbca-node1     | 2026-02-28 12:24:55,402+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 78) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET]
+ejbca-node1     | 2026-02-28 12:24:55,404+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 71) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET]
+ejbca-node1     | 2026-02-28 12:24:55,405+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 86) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, GET]
+ejbca-node1     | 2026-02-28 12:24:55,419+0000 INFO  [org.ejbca.core.ejb.StartupSingletonBean] (ServerService Thread Pool -- 70) Init, EJBCA 9.3.7 Community (afce321eed98ab06bd8cc78e89fc50b73a5b8db4) startup.
+ejbca-node1     | 2026-02-28 12:24:55,420+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 87) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET]
+ejbca-node1     | 2026-02-28 12:24:55,425+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 74) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET]
+ejbca-node1     | 2026-02-28 12:24:55,435+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 79) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, GET]
+ejbca-node1     | 2026-02-28 12:24:55,436+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 75) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET]
+ejbca-node1     | 2026-02-28 12:24:55,566+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 76) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET, PUT]
+ejbca-node1     | 2026-02-28 12:24:55,900+0000 INFO  [jakarta.enterprise.resource.webcontainer.faces.config] (ServerService Thread Pool -- 84) Initializing Mojarra 4.0.8 for context '/ejbca/ra'
+ejbca-node1     | 2026-02-28 12:24:56,423+0000 INFO  [org.ejbca.core.ejb.StartupSingletonBean] (ServerService Thread Pool -- 70) BouncyCastle provider is from our ejbca.ear classloader.
+ejbca-node1     | 2026-02-28 12:24:56,427+0000 INFO  [org.ejbca.core.ejb.StartupSingletonBean] (ServerService Thread Pool -- 70) Registered AuthenticationTokens [OAuth2AuthenticationToken, PublicAccessAuthenticationToken, CertificateAuthenticationToken, CliAuthenticationToken, AlwaysAllowLocalAuthenticationToken]
+ejbca-node1     | 2026-02-28 12:24:56,443+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Class not found: se.primeKey.caToken.card.PrimeCAToken.
+ejbca-node1     | 2026-02-28 12:24:56,444+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Can not register se.primeKey.caToken.card.PrimeCAToken. This is normally not an error.
+ejbca-node1     | 2026-02-28 12:24:56,450+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002225: Deploying jakarta.ws.rs.core.Application: class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,458+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Class not found: org.ejbca.keys.token.FortanixCryptoToken.
+ejbca-node1     | 2026-02-28 12:24:56,458+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Can not register org.ejbca.keys.token.FortanixCryptoToken. This is normally not an error.
+ejbca-node1     | 2026-02-28 12:24:56,458+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Class not found: org.ejbca.keys.token.AWSKMSCryptoToken.
+ejbca-node1     | 2026-02-28 12:24:56,458+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Can not register org.ejbca.keys.token.AWSKMSCryptoToken. This is normally not an error.
+ejbca-node1     | 2026-02-28 12:24:56,458+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Class not found: org.cesecore.keys.token.p11ng.cryptotoken.Pkcs11NgCryptoToken.
+ejbca-node1     | 2026-02-28 12:24:56,459+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Can not register org.cesecore.keys.token.p11ng.cryptotoken.Pkcs11NgCryptoToken. This is normally not an error.
+ejbca-node1     | 2026-02-28 12:24:56,459+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Class not found: org.ejbca.keys.token.securosys.SecurosysCryptoToken.
+ejbca-node1     | 2026-02-28 12:24:56,459+0000 INFO  [org.cesecore.keys.token.CryptoTokenFactory] (ServerService Thread Pool -- 70) Can not register org.ejbca.keys.token.securosys.SecurosysCryptoToken. This is normally not an error.
+ejbca-node1     | 2026-02-28 12:24:56,529+0000 INFO  [org.cesecore.audit.AuditDevicesConfig] (ServerService Thread Pool -- 70) Registered audit device using implementation: org.cesecore.audit.impl.log4j.Log4jDevice
+ejbca-node1     | 2026-02-28 12:24:56,538+0000 INFO  [org.cesecore.audit.AuditDevicesConfig] (ServerService Thread Pool -- 70) Configured exporter AuditExporterDummy for device Log4jDevice
+ejbca-node1     | 2026-02-28 12:24:56,579+0000 INFO  [org.reflections.Reflections] (ServerService Thread Pool -- 76) Reflections took 73 ms to scan 1 urls, producing 9 keys and 22 values
+ejbca-node1     | 2026-02-28 12:24:56,582+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:56+00:00;EJBCA_STARTING;SUCCESS;SERVICE;EJBCA;Application internal;;ejbca-node1;;msg=Init, EJBCA 9.3.7 Community (afce321eed98ab06bd8cc78e89fc50b73a5b8db4) startup.
+ejbca-node1     | 2026-02-28 12:24:56,587+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:56+00:00;LOG_MANAGEMENT_CHANGE;VOID;SECURITY_AUDIT;CORE;Application internal;;;;msg=No integrity protected security audit logger devices configured.
+ejbca-node1     | 2026-02-28 12:24:56,597+0000 INFO  [org.ejbca.core.ejb.authorization.AuthorizationSystemSessionBean] (ServerService Thread Pool -- 70) No roles or CAs exist, initializing Super Administrator Role with default CLI user.
+ejbca-node1     | 2026-02-28 12:24:56,602+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002205: Adding provider class org.ejbca.ui.web.rest.api.exception.ValidationExceptionMapper from Application class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,603+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002205: Adding provider class org.ejbca.ui.web.rest.api.config.ExceptionHandler from Application class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,604+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002205: Adding provider class org.ejbca.ui.web.rest.api.exception.IllegalWildCardSyntaxExceptionWrapper from Application class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,605+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002200: Adding class resource org.ejbca.ui.web.rest.api.resource.swagger.CertificateRestResourceV2Swagger from Application class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,605+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002200: Adding class resource org.ejbca.ui.web.rest.api.resource.swagger.CertificateRestResourceSwagger from Application class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,606+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002205: Adding provider class org.ejbca.ui.web.rest.api.config.ObjectMapperContextResolver from Application class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,606+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002200: Adding class resource org.ejbca.ui.web.rest.api.resource.swagger.CaRestResourceSwagger from Application class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,611+0000 INFO  [org.jboss.resteasy.resteasy_jaxrs.i18n] (ServerService Thread Pool -- 76) RESTEASY002200: Adding class resource org.ejbca.ui.web.rest.api.resource.swagger.SystemRestResourceSwagger from Application class org.ejbca.ui.web.rest.api.RestApiApplication
+ejbca-node1     | 2026-02-28 12:24:56,643+0000 WARN  [io.smallrye.openapi.runtime.scanner] (MSC service thread 1-3) SROAP04005: Could not find schema class in index: jakarta.ws.rs.core.EntityPart
+ejbca-node1     | 2026-02-28 12:24:56,650+0000 WARN  [io.smallrye.openapi.runtime.scanner] (MSC service thread 1-3) SROAP04005: Could not find schema class in index: jakarta.ws.rs.core.EntityPart
+ejbca-node1     | 2026-02-28 12:24:56,655+0000 WARN  [io.smallrye.openapi.runtime.scanner] (MSC service thread 1-3) SROAP04005: Could not find schema class in index: jakarta.ws.rs.core.EntityPart
+ejbca-node1     | 2026-02-28 12:24:56,657+0000 WARN  [io.smallrye.openapi.runtime.scanner] (MSC service thread 1-3) SROAP04005: Could not find schema class in index: jakarta.ws.rs.core.EntityPart
+ejbca-node1     | 2026-02-28 12:24:56,780+0000 INFO  [org.ejbca.core.ejb.authorization.AuthorizationSystemSessionBean] (ServerService Thread Pool -- 70) Initialising public access role with confidential role member.
+ejbca-node1     | 2026-02-28 12:24:57,100+0000 INFO  [org.cesecore.certificates.certificate.CertificateStoreSessionBean] (ServerService Thread Pool -- 70) Setting isUniqueCertificateSerialNumberIndex to: true
+ejbca-node1     | 2026-02-28 12:24:57,141+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;Internal upgrade;;;;resource0=/system_functionality/edit_systemconfiguration
+ejbca-node1     | 2026-02-28 12:24:57,169+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;SYSTEMCONF_CREATE;SUCCESS;GLOBALCONF;CORE;Internal upgrade;;;;msg=Global configuration with id 0 created.
+ejbca-node1     | 2026-02-28 12:24:57,183+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;Internal upgrade;;;;resource0=/system_functionality/edit_systemconfiguration
+ejbca-node1     | 2026-02-28 12:24:57,189+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;SYSTEMCONF_CREATE;SUCCESS;GLOBALCONF;CORE;Internal upgrade;;;;msg=Global configuration with id UPGRADE created.
+ejbca-node1     | 2026-02-28 12:24:57,203+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;Internal upgrade;;;;resource0=/system_functionality/edit_systemconfiguration
+ejbca-node1     | 2026-02-28 12:24:57,238+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;SYSTEMCONF_EDIT;SUCCESS;GLOBALCONF;CORE;Internal upgrade;;;;msg=Saved global configuration with id UPGRADE.;added:validityWithSecondsGranularity=true
+ejbca-node1     | 2026-02-28 12:24:57,262+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;Internal upgrade;;;;resource0=/system_functionality/edit_systemconfiguration
+ejbca-node1     | 2026-02-28 12:24:57,267+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;SYSTEMCONF_EDIT;SUCCESS;GLOBALCONF;CORE;Internal upgrade;;;;msg=Saved global configuration with id UPGRADE.;added:upgradedFromVersion=9.3.7;added:upgradedToVersion=9.3.7
+ejbca-node1     | 2026-02-28 12:24:57,274+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;Internal upgrade;;;;resource0=/system_functionality/edit_systemconfiguration
+ejbca-node1     | 2026-02-28 12:24:57,278+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (ServerService Thread Pool -- 70) 2026-02-28 12:24:57+00:00;SYSTEMCONF_EDIT;SUCCESS;GLOBALCONF;CORE;Internal upgrade;;;;msg=Saved global configuration with id UPGRADE.;added:postUpgradedToVersion=9.3.0
+ejbca-node1     | 2026-02-28 12:24:57,278+0000 INFO  [org.wildfly.extension.microprofile.openapi.smallrye] (MSC service thread 1-5) WFLYMPOAI0004: Registered MicroProfile OpenAPI endpoint '/openapi' for host 'default-host'
+ejbca-node1     | 2026-02-28 12:24:57,293+0000 INFO  [org.ejbca.core.ejb.upgrade.UpgradeSessionBean] (ServerService Thread Pool -- 70) Database content version: 9.3.7, current application version: 9.3.7 -> Upgrade is not needed.
+ejbca-node1     | 2026-02-28 12:24:57,332+0000 INFO  [org.cesecore.certificates.ocsp.cache.OcspSigningCache] (ServerService Thread Pool -- 70) No default responder was defined. OCSP requests for certificates issued by unknown CAs will return "unauthorized" as per RFC6960, Section 2.3
+ejbca-node1     | 2026-02-28 12:24:57,392+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 84) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET]
+ejbca-node1     | 2026-02-28 12:24:57,721+0000 INFO  [org.ejbca.core.ejb.ocsp.OcspResponseCleanupSessionBean] (ServerService Thread Pool -- 70) OCSP clean up job is disabled.
+ejbca-node1     | 2026-02-28 12:24:57,729+0000 INFO  [org.ejbca.core.protocol.scep.ScepKeyRenewalSessionBean] (ServerService Thread Pool -- 70) SCEP key renewal job with configured schedule starting.
+ejbca-node1     | 2026-02-28 12:24:57,734+0000 INFO  [org.ejbca.core.protocol.scep.ScepKeyRenewalSessionBean] (ServerService Thread Pool -- 70) SCEP key renewal job has following schedule: ScheduleExpression [second=0;minute=0;hour=*;dayOfMonth=*;month=*;dayOfWeek=*;year=*;timezoneID=null;start=null;end=null]
+ejbca-node1     | 2026-02-28 12:24:57,785+0000 INFO  [org.owasp.csrfguard.config.properties.PropertyUtils] (ServerService Thread Pool -- 85) The 'org.owasp.csrfguard.PRNG.Provider' property was not defined, using 'SUN' as default value. %n
+ejbca-node1     | 2026-02-28 12:24:57,788+0000 INFO  [org.owasp.csrfguard.config.properties.PropertyUtils] (ServerService Thread Pool -- 85) The 'org.owasp.csrfguard.TokenHolder' property was not defined, using 'org.owasp.csrfguard.token.storage.impl.InMemoryTokenHolder' as default value. %n
+ejbca-node1     | 2026-02-28 12:24:58,125+0000 INFO  [jakarta.enterprise.resource.webcontainer.faces.config] (ServerService Thread Pool -- 85) Initializing Mojarra 4.0.8 for context '/ejbca/adminweb'
+ejbca-node1     | 2026-02-28 12:24:59,293+0000 INFO  [org.primefaces.webapp.PostConstructApplicationEventListener] (ServerService Thread Pool -- 85) Running on PrimeFaces 15.0.3
+ejbca-node1     | 2026-02-28 12:24:59,294+0000 WARN  [io.undertow.servlet] (ServerService Thread Pool -- 85) UT015020: Path /* is secured for some HTTP methods, however it is not secured for [HEAD, POST, GET]
+ejbca-node1     | 2026-02-28 12:24:59,786+0000 INFO  [org.jboss.as.server] (ServerService Thread Pool -- 39) WFLYSRV0010: Deployed "ejbca.ear" (runtime-name : "ejbca.ear")
+ejbca-node1     | 2026-02-28 12:24:59,880+0000 INFO  [org.jboss.as.server] (Controller Boot Thread) WFLYSRV0212: Resuming server
+ejbca-node1     | 2026-02-28 12:24:59,901+0000 INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0060: Http management interface listening on http://127.0.0.1:9990/management
+ejbca-node1     | 2026-02-28 12:24:59,902+0000 INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0054: Admin console is not enabled
+ejbca-node1     | 2026-02-28 12:24:59,913+0000 INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0025: WildFly 35.0.1.Final (WildFly Core 27.0.1.Final) started in 30146ms - Started 5348 of 5536 services (380 services are lazy, passive or on-demand) - Server configuration file in use: standalone.xml - Minimum feature stability level: community
+ejbca-node1     | 2026-02-28 12:25:00,050+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Application /opt/keyfactor/appserver/standalone/deployments/ejbca.ear.deployed successfully started.
+ejbca-node1     | 2026-02-28 12:25:00,064+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Setting up in-bound connectivity...
+ejbca-node1     | 2026-02-28 12:25:07,322+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Configuration import automation tool is not present in this build. /opt/keyfactor/configdump/{stage.d|initialize.d}/*/*.yaml will be ignored.
+ejbca-node1     | 2026-02-28 12:25:07,348+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) No keystore and/or password file were detected at '/opt/keyfactor/secrets/external/tls/ks/server.[jks|storepasswd]'. Check mount points and file permissions if this is not what you expected.
+ejbca-node1     | 2026-02-28 12:25:18,230+0000 INFO  [org.cesecore.certificates.ca.CaSessionBean] (default task-1) CA with name ManagementCA does not exist.
+ejbca-node1     | 2026-02-28 12:25:20,010+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:20+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/cryptotoken/modify
+ejbca-node1     | 2026-02-28 12:25:20,046+0000 INFO  [org.cesecore.keys.token.SoftCryptoToken] (default task-1) Error activating Crypto Token with ID -1. No keystore data available yet, creating new PKCS#12 keystore.
+ejbca-node1     | 2026-02-28 12:25:20,233+0000 INFO  [org.cesecore.keys.token.SoftCryptoToken] (default task-1) Error activating Crypto Token with ID 1521166782. No keystore data available yet, creating new PKCS#12 keystore.
+ejbca-node1     | 2026-02-28 12:25:20,392+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:20+00:00;CRYPTOTOKEN_CREATE;SUCCESS;CRYPTOTOKEN;CORE;ejbca;1521166782;;;msg=Created CryptoToken with id 1521166782;name=ManagementCA;encProviderName=BC;signProviderName=BC;autoActivation=added;autoActivationPinProtection=legacy;added:tokenName=ManagementCA
+ejbca-node1     | 2026-02-28 12:25:20,453+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:20+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/cryptotoken/keys/generate/1521166782
+ejbca-node1     | 2026-02-28 12:25:21,679+0000 INFO  [com.keyfactor.util.keys.SignWithWorkingAlgorithm] (default task-1) Signature algorithm 'SHA256WithRSA' working for provider 'BC version 1.8'.
+ejbca-node1     | 2026-02-28 12:25:21,841+0000 INFO  [com.keyfactor.util.keys.SignWithWorkingAlgorithm] (default task-1) Signature algorithm 'SHA1WithRSA' working for provider 'BC version 1.8'.
+ejbca-node1     | 2026-02-28 12:25:21,977+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:21+00:00;CRYPTOTOKEN_GEN_KEYPAIR;SUCCESS;CRYPTOTOKEN;CORE;ejbca;1521166782;;;msg=Generated new keypair in CryptoToken 1521166782;keyAlias=signKey;keySpecification=3072
+ejbca-node1     | 2026-02-28 12:25:22,003+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:22+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/cryptotoken/keys/generate/1521166782
+ejbca-node1     | 2026-02-28 12:25:23,368+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;CRYPTOTOKEN_GEN_KEYPAIR;SUCCESS;CRYPTOTOKEN;CORE;ejbca;1521166782;;;msg=Generated new keypair in CryptoToken 1521166782;keyAlias=encryptKey;keySpecification=3072
+ejbca-node1     | 2026-02-28 12:25:23,553+0000 INFO  [org.ejbca.core.ejb.ca.caadmin.CAAdminSessionBean] (default task-1) Creating an X509 CA: ManagementCA
+ejbca-node1     | 2026-02-28 12:25:23,576+0000 INFO  [org.cesecore.certificates.ca.CaSessionBean] (default task-1) cryptoTokenId: 1521166782
+ejbca-node1     | 2026-02-28 12:25:23,577+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/add_ca;resource1=/cryptotoken/use/1521166782
+ejbca-node1     | 2026-02-28 12:25:23,616+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;CA_CREATION;SUCCESS;CA;CORE;ejbca;1604700314;;;msg=CA with id 1604700314 and name ManagementCA added, status: 1. ;tokenproperties={certSignKey=signKey, crlSignKey=signKey, defaultKey=encryptKey};tokensequence=00000
+ejbca-node1     | 2026-02-28 12:25:23,617+0000 INFO  [org.cesecore.certificates.ca.CaSessionBean] (default task-1) Created CA with subject DN: UID=c-0dwidniskurqotssq,CN=ManagementCA,O=EJBCA Container Quickstart
+ejbca-node1     | 2026-02-28 12:25:23,658+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/edit_ca;resource1=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:23,659+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;CA_EDITING;SUCCESS;CA;CORE;ejbca;1604700314;;;msg=CA with id 1604700314 and name ManagementCA edited., 1;removed:expiretime=Thu Jan 01 00:00:00 UTC 1970;added:certificatechain=[MIIEszCCAxugAwIBAgIUc+DNxJ1mtnEJetj76iE0/RcC3mswDQYJKoZIhvcNAQEL
+ejbca-node1     | BQAwYTEjMCEGCgmSJomT8ixkAQEME2MtMGR3aWRuaXNrdXJxb3Rzc3ExFTATBgNV
+ejbca-node1     | BAMMDE1hbmFnZW1lbnRDQTEjMCEGA1UECgwaRUpCQ0EgQ29udGFpbmVyIFF1aWNr
+ejbca-node1     | c3RhcnQwHhcNMjYwMjI4MTIyNTIzWhcNMzYwMjI4MTIyNTIyWjBhMSMwIQYKCZIm
+ejbca-node1     | iZPyLGQBAQwTYy0wZHdpZG5pc2t1cnFvdHNzcTEVMBMGA1UEAwwMTWFuYWdlbWVu
+ejbca-node1     | dENBMSMwIQYDVQQKDBpFSkJDQSBDb250YWluZXIgUXVpY2tzdGFydDCCAaIwDQYJ
+ejbca-node1     | KoZIhvcNAQEBBQADggGPADCCAYoCggGBAKcmxl7pKpvSyiZa09V7tGClGCIwA2Dl
+ejbca-node1     | FUSffVjq2vJrC77sTPrV3v1IOwAmV+u3JDfOilS3PLB2sfNb4iwetdUiZb1B9ml9
+ejbca-node1     | eDXU9stazBX54pHbG86NA/M9U25FmF/nowYAHnEPwSLE5HV8o7+NhESEA9QRH4Qz
+ejbca-node1     | rKLOjPGGpRF5vgtOBt/b4VCtnRC/VIQ34rXcIR/abn2y5nZgDUvbmBA4u86xh4r/
+ejbca-node1     | pX3SwfvVCCKXxHNiKGhY2fd2WKh4pHV0m5HteC7BZDH9wXOrUWHpo01i57ssK09x
+ejbca-node1     | h+uBe9x2cVt1K0wPQ6bke0FP/oIvBud7CDftrdhuX0c/eA0yrVOoPo9Db6wVIKnc
+ejbca-node1     | 5PvUvEbPOSflZRXcn6gC61oa30t5koKauFowVLK87VLB0W2LLmgHXdC1XGMnVocY
+ejbca-node1     | gN7+3GWUjp2Uz4ZEFzVdCKWxatFifgCB4iF7tkSwddgmENR0jKsj/xRcY8UHNWZK
+ejbca-node1     | /g5uQmFE9i4CTdr1YCldBGLYQXPXn/Tt+wIDAQABo2MwYTAPBgNVHRMBAf8EBTAD
+ejbca-node1     | AQH/MB8GA1UdIwQYMBaAFAEUfsxkZHrCT/sSxskxHOpOXHbbMB0GA1UdDgQWBBQB
+ejbca-node1     | FH7MZGR6wk/7EsbJMRzqTlx22zAOBgNVHQ8BAf8EBAMCAYYwDQYJKoZIhvcNAQEL
+ejbca-node1     | BQADggGBAIc9z137lyH7FogycO4iWiv+KSk5uQpPQBR3J09Nitu7wkWa57JKAf3k
+ejbca-node1     | EeOu806eM5f6oYNAZyURB3spLQEHq9j0j9fCYhJU1ov8FYFCp9UtuHMpDcacrUPG
+ejbca-node1     | oB+Q2JDaylgbLGRs8ni5+7bqu7zRCc0yW34V+ZWorUJGIc3lerMTxQJGdsmwLnOX
+ejbca-node1     | RPcnenQR0n/WTcCwch/nEb4CyXw2wpOVivfnyJ1C0FkuQfnyO4vzWIF+rLv+ltSy
+ejbca-node1     | hUFuyFGsOh+M2GDCHgHS6pThmdb7YnIfL1v8IJNn8EZ4Fv4lOUUISC2hNq80uF4D
+ejbca-node1     | oDmJVwjGzKUVERBGC0dOEqDlulnaNUt+mnhdRKpsEx1cMIrYIpUpNUEhpWIV1yXU
+ejbca-node1     | rqwiCtfzYM5+ICOrjBJIaUyt9gcIeRu+24/ZA6QJ0P4JvEjZq/vENbR2GP1BAbA+
+ejbca-node1     | 01FG5Fdyhyl1jtATtXQRBanxXnQDukYJz8CP4OwZEaOcwqZKzt7bvQ6LbPd+jvRO
+ejbca-node1     | xL7HB8THyw==];tokenproperties={certSignKey=signKey, crlSignKey=signKey, defaultKey=encryptKey};tokensequence=00000
+ejbca-node1     | 2026-02-28 12:25:23,690+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:23,698+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;CERT_STORED;SUCCESS;CERTIFICATE;CORE;ejbca;1604700314;73E0CDC49D66B671097AD8FBEA2134FD1702DE6B;SYSTEMCA;msg=Certificate stored for username 'SYSTEMCA', fp=24a5c17de8f9f25c53054cf5295a8de920407716, subjectDN 'UID=c-0dwidniskurqotssq,CN=ManagementCA,O=EJBCA Container Quickstart', issuerDN 'UID=c-0dwidniskurqotssq,CN=ManagementCA,O=EJBCA Container Quickstart', serialNo=73E0CDC49D66B671097AD8FBEA2134FD1702DE6B, accountBindingId=.
+ejbca-node1     | 2026-02-28 12:25:23,734+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:23,735+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/edit_ca;resource1=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:23,764+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:23,980+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:23+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/create_crl
+ejbca-node1     | 2026-02-28 12:25:24,001+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:24+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:24,005+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:24+00:00;CRL_STORED;SUCCESS;CRL;CORE;ejbca;1604700314;;;msg=Stored CRL with CRLNumber=1, fingerprint=70ec3ed8fd54c2118b7f3556f51cadffa81e04ba, issuerDN 'UID=c-0dwidniskurqotssq,CN=ManagementCA,O=EJBCA Container Quickstart'.
+ejbca-node1     | 2026-02-28 12:25:24,005+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:24+00:00;CRL_CREATION;SUCCESS;CRL;CORE;ejbca;1604700314;;;msg=Created CRL with number 1 for CA 'ManagementCA' with DN 'UID=c-0dwidniskurqotssq,CN=ManagementCA,O=EJBCA Container Quickstart'.
+ejbca-node1     | 2026-02-28 12:25:24,006+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:24+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:24,007+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:24+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:24,007+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:24+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:24,016+0000 INFO  [org.ejbca.core.ejb.crl.PublishingCrlSessionBean] (default task-1) Delta Crl in CA ManagementCA, 1604700314 is not enabled. Delta CRL can not be created.
+ejbca-node1     | 2026-02-28 12:25:24,061+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:24+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:18,234+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Initializing CA
+ejbca-node1     | 2026-02-28 12:25:18,234+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Generating rootCA keystore:
+ejbca-node1     | 2026-02-28 12:25:18,234+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA Type:x509
+ejbca-node1     | 2026-02-28 12:25:18,234+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA name: ManagementCA
+ejbca-node1     | 2026-02-28 12:25:18,234+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) SuperAdmin CN: null
+ejbca-node1     | 2026-02-28 12:25:18,234+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) DN: UID=c-0dwidniskurqotssq,CN=ManagementCA,O=EJBCA Container Quickstart
+ejbca-node1     | 2026-02-28 12:25:18,235+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA token type: soft
+ejbca-node1     | 2026-02-28 12:25:18,235+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA token password: hidden
+ejbca-node1     | 2026-02-28 12:25:18,235+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Keytype: RSA
+ejbca-node1     | 2026-02-28 12:25:18,235+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Keyspec: 3072
+ejbca-node1     | 2026-02-28 12:25:18,235+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Validity: 3652d
+ejbca-node1     | 2026-02-28 12:25:18,235+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Policy ID: null
+ejbca-node1     | 2026-02-28 12:25:18,235+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Signature alg: SHA256WithRSA
+ejbca-node1     | 2026-02-28 12:25:18,236+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Certificate profile: ROOTCA
+ejbca-node1     | 2026-02-28 12:25:18,236+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA token properties: {}
+ejbca-node1     | 2026-02-28 12:25:18,236+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Signed by: Self signed
+ejbca-node1     | 2026-02-28 12:25:18,250+0000 INFO  [org.ejbca.ui.cli.ca.BaseCaAdminCommand] (main) Initalizing authorization module with caid=1604700314 and superadmin CN 'null'.
+ejbca-node1     | 2026-02-28 12:25:23,489+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Creating CA...
+ejbca-node1     | 2026-02-28 12:25:24,074+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CAId for created CA: 1604700314
+ejbca-node1     | 2026-02-28 12:25:24,074+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Created and published initial CRL.
+ejbca-node1     | 2026-02-28 12:25:24,074+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA initialized
+ejbca-node1     | 2026-02-28 12:25:24,074+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Note that open browser sessions may have to be restarted to interact with this CA.
+ejbca-node1     | 2026-02-28 12:25:28,727+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:28+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:33,850+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:33+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:33,924+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:33+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:38,629+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:38+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:38,719+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:38+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/endentityprofilesrules/1/create_end_entity;resource1=/ra_functionality/create_end_entity
+ejbca-node1     | 2026-02-28 12:25:38,758+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:38+00:00;RA_ADDENDENTITY;SUCCESS;RA;CORE;ejbca;1604700314;;ejbca-node1;msg=Added end entity ejbca-node1.;caid=1604700314;cardnumber=;certificateprofileid=9;endentityprofileid=1;status=10;subjectAltName=dnsName=ejbca-node1;subjectDN=UID=c-0dwidniskurqotssq,CN=ejbca-node1,O=EJBCA Container Quickstart;subjectEmail=;tokentype=3;type=1;username=B64:ZWpiY2Etbm9kZTE=
+ejbca-node1     | 2026-02-28 12:25:38,680+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Using certificate profile: SERVER, with id: 9
+ejbca-node1     | 2026-02-28 12:25:38,696+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Trying to add end entity:
+ejbca-node1     | 2026-02-28 12:25:38,696+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Username: ejbca-node1
+ejbca-node1     | 2026-02-28 12:25:38,696+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Password: <password hidden>
+ejbca-node1     | 2026-02-28 12:25:38,696+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) DN: CN=ejbca-node1,O=EJBCA Container Quickstart,UID=c-0dwidniskurqotssq
+ejbca-node1     | 2026-02-28 12:25:38,696+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) CA Name: ManagementCA
+ejbca-node1     | 2026-02-28 12:25:38,697+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) SubjectAltName: dnsName=ejbca-node1
+ejbca-node1     | 2026-02-28 12:25:38,697+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Email: null
+ejbca-node1     | 2026-02-28 12:25:38,697+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Type: 1
+ejbca-node1     | 2026-02-28 12:25:38,697+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Token: JKS
+ejbca-node1     | 2026-02-28 12:25:38,697+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Certificate profile: 9
+ejbca-node1     | 2026-02-28 12:25:38,698+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) End entity profile: 1
+ejbca-node1     | 2026-02-28 12:25:38,772+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) User 'ejbca-node1' has been added.
+ejbca-node1     | 2026-02-28 12:25:38,772+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Note: If batch processing should be possible, also use 'ra setclearpwd ejbca-node1 <pwd>'.
+ejbca-node1     | 2026-02-28 12:25:43,318+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:43+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/endentityprofilesrules/1/edit_end_entity;resource1=/ra_functionality/edit_end_entity
+ejbca-node1     | 2026-02-28 12:25:43,320+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:43+00:00;RA_EDITENDENTITY;SUCCESS;RA;CORE;ejbca;1604700314;;ejbca-node1;msg=Edited end entity ejbca-node1, new status 10.
+ejbca-node1     | 2026-02-28 12:25:43,336+0000 INFO  [org.ejbca.ui.cli.ra.SetEndEntityStatusCommand] (main) New status for end entity ejbca-node1 is 10
+ejbca-node1     | 2026-02-28 12:25:48,245+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:48+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/endentityprofilesrules/1/edit_end_entity;resource1=/ra_functionality/edit_end_entity
+ejbca-node1     | 2026-02-28 12:25:48,248+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-2) 2026-02-28 12:25:48+00:00;RA_EDITENDENTITY;SUCCESS;RA;CORE;ejbca;1604700314;;ejbca-node1;msg=Password changed for end entity ejbca-node1.
+ejbca-node1     | 2026-02-28 12:25:48,228+0000 INFO  [org.ejbca.ui.cli.ra.SetCleartextPasswordCommand] (main) Setting clear text password for user ejbca-node1
+ejbca-node1     | 2026-02-28 12:25:54,232+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:54+00:00;CA_USERAUTH;SUCCESS;CA;EJBCA;ejbca;1604700314;;ejbca-node1;msg=Authenticated user ejbca-node1.
+ejbca-node1     | 2026-02-28 12:25:54,247+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:54+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/create_certificate;resource1=/ca/1604700314
+ejbca-node1     | 2026-02-28 12:25:54,248+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:54+00:00;CERT_REQUEST;SUCCESS;CERTIFICATE;CORE;ejbca;1604700314;;ejbca-node1;subjectdn=UID=c-0dwidniskurqotssq,CN=ejbca-node1,O=EJBCA Container Quickstart;requestX500name=null;subjectaltname=B64:ZG5zTmFtZT1lamJjYS1ub2RlMQ==;certprofile=9;keyusage=-1;notbefore=;notafter=;sequence=;publickey=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApRCOv44axY5PixL2GeC2p51ddebaDlBMXuVkzTjj/tHAb89aDshKDQ0cNwliq8rL3HeZKRHdkYUsYu09EoOR3ADcOMMPHhU+zE1SaH0FnTNwD3OiIGko4izlQK4+AFxSmH+1YoBdLifx4Gesf6/mfBYoARqnyu/hTtBsNOur+7ZU3QmdkcBhjF8bBkVa+KE8QoWrtoJVov/3CmoOvm1TLW9IO/I8pncqWFVtmazrdryWK2tnKRqfS8wTMQyH+G9dQuAtL1THhadgWEQQFk9n3A5H4JGt4nN1XSLSmkw+pOzE7qq6+RKoYC5Y273W/yMJfAzyChoIzby8s5yA3RkWzQIDAQAB
+ejbca-node1     | 2026-02-28 12:25:54,268+0000 INFO  [org.cesecore.certificates.ca.internal.CertificateValidity] (default task-1) Limiting validity of certificate because requested start of validity (Sat Feb 28 12:15:54 UTC 2026) is before CA start of validity (Sat Feb 28 12:25:23 UTC 2026).
+ejbca-node1     | 2026-02-28 12:25:54,285+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:54+00:00;CERT_STORED;SUCCESS;CERTIFICATE;CORE;ejbca;1604700314;7E7D3A6E2CE21776D0215CB5632BF4F835BB825B;ejbca-node1;msg=Certificate stored for username 'ejbca-node1', fp=4d2095cac59811f39d7dea13bebdf462eed94ad0, subjectDN 'UID=c-0dwidniskurqotssq,CN=ejbca-node1,O=EJBCA Container Quickstart', issuerDN 'UID=c-0dwidniskurqotssq,CN=ManagementCA,O=EJBCA Container Quickstart', serialNo=7E7D3A6E2CE21776D0215CB5632BF4F835BB825B, accountBindingId=.
+ejbca-node1     | 2026-02-28 12:25:54,286+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:54+00:00;CERT_CREATION;SUCCESS;CERTIFICATE;CORE;ejbca;1604700314;7E7D3A6E2CE21776D0215CB5632BF4F835BB825B;ejbca-node1;subjectdn=UID=c-0dwidniskurqotssq,CN=ejbca-node1,O=EJBCA Container Quickstart;certprofile=9;issuancerevocationreason=-1;cert=MIIEXjCCAsagAwIBAgIUfn06biziF3bQIVy1Yyv0+DW7glswDQYJKoZIhvcNAQELBQAwYTEjMCEGCgmSJomT8ixkAQEME2MtMGR3aWRuaXNrdXJxb3Rzc3ExFTATBgNVBAMMDE1hbmFnZW1lbnRDQTEjMCEGA1UECgwaRUpCQ0EgQ29udGFpbmVyIFF1aWNrc3RhcnQwHhcNMjYwMjI4MTIyNTIzWhcNMjgwMjI4MTIxNTUzWjBgMSMwIQYKCZImiZPyLGQBAQwTYy0wZHdpZG5pc2t1cnFvdHNzcTEUMBIGA1UEAwwLZWpiY2Etbm9kZTExIzAhBgNVBAoMGkVKQkNBIENvbnRhaW5lciBRdWlja3N0YXJ0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApRCOv44axY5PixL2GeC2p51ddebaDlBMXuVkzTjj/tHAb89aDshKDQ0cNwliq8rL3HeZKRHdkYUsYu09EoOR3ADcOMMPHhU+zE1SaH0FnTNwD3OiIGko4izlQK4+AFxSmH+1YoBdLifx4Gesf6/mfBYoARqnyu/hTtBsNOur+7ZU3QmdkcBhjF8bBkVa+KE8QoWrtoJVov/3CmoOvm1TLW9IO/I8pncqWFVtmazrdryWK2tnKRqfS8wTMQyH+G9dQuAtL1THhadgWEQQFk9n3A5H4JGt4nN1XSLSmkw+pOzE7qq6+RKoYC5Y273W/yMJfAzyChoIzby8s5yA3RkWzQIDAQABo4GOMIGLMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUARR+zGRkesJP+xLGyTEc6k5cdtswFgYDVR0RBA8wDYILZWpiY2Etbm9kZTEwEwYDVR0lBAwwCgYIKwYBBQUHAwEwHQYDVR0OBBYEFMOhcssVaIQlG+Pcqd05HRLBSQd3MA4GA1UdDwEB/wQEAwIFoDANBgkqhkiG9w0BAQsFAAOCAYEAO0qo4rRK1Z20W+K3oPRK18JFEoLXEVyTYFlNNlPrWVTJNl8wPd5tPgCR9uLzHixQStdQUJthqJ1oRZW3+xQ2fNsYToczIPfLBrM4L5OWIGIY4iOy3Bji6Ncm5WiSfBm7B7Wot3HNw++RCsUVteydAj6LhyxwmiCO4/rgBZs7X84aiWnSmtIU4MJvVYhfxGfDeWBBnV/NeFJFcCX2zVp40PrRPWIQyCSiRrkWgYkGjZcX58/ubi0q1Gnps6E+bJsmEGY2coj3I1yIG4MUfA2sM2UoyMCQqmGhw9mPP0Us0aqHOFTVaxmFJxEXgBW62Ok7YN98ZNneLJtI1MZhhwD89dFUx1yGS3fpjiJT9BKUdW788V34mZ1idTI9IsSauz5uFLxGXb+ptwegm+bhVNlIvyBUqtCdv0ECcSeINwL7jRWIgnyzeXXYkvjKQ+NScIeuqVDkezHftupc/gvxW9gg6UgpuXJ3HdxNtvZ6A9LnqATqbmGJtN5g7kzh21cQNeFN
+ejbca-node1     | 2026-02-28 12:25:54,287+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:54+00:00;RA_EDITENDENTITY;SUCCESS;RA;CORE;Local admin call from EndEntityManagementSession.decRequestCounter;1604700314;;ejbca-node1;msg=Edited end entity ejbca-node1, new status 40.
+ejbca-node1     | 2026-02-28 12:25:54,288+0000 INFO  [org.ejbca.core.ejb.ra.EndEntityManagementSessionBean] (default task-1) Changed status for user 'ejbca-node1' to STATUS_GENERATED.
+ejbca-node1     | 2026-02-28 12:25:54,444+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:54+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/endentityprofilesrules/1/edit_end_entity;resource1=/ra_functionality/edit_end_entity
+ejbca-node1     | 2026-02-28 12:25:54,445+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:25:54+00:00;RA_EDITENDENTITY;SUCCESS;RA;CORE;ejbca;1604700314;;ejbca-node1;msg=Password changed for end entity ejbca-node1.
+ejbca-node1     | 2026-02-28 12:25:52,999+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) Generating keys in directory /opt/keyfactor/tmp/tmp.TCUQYrqRYZ.
+ejbca-node1     | 2026-02-28 12:25:53,060+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) Loading configuration from defaults.
+ejbca-node1     | 2026-02-28 12:25:53,060+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) Generating RSA keys of size 2048 for ejbca-node1.
+ejbca-node1     | 2026-02-28 12:25:54,033+0000 INFO  [com.keyfactor.util.RandomHelper] (main) Using FIPS/SP800 compliant Bouncy Castle Hybrid serialNumber RNG algorithm.
+ejbca-node1     | 2026-02-28 12:25:54,366+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) Created Keystore for 'ejbca-node1'.
+ejbca-node1     | 2026-02-28 12:25:54,451+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) New user generated successfully - ejbca-node1.
+ejbca-node1     | 2026-02-28 12:25:54,892+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) ********************************************************************************************
+ejbca-node1     | 2026-02-28 12:25:54,906+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Keystore is created at /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.storepasswd.
+ejbca-node1     | 2026-02-28 12:25:54,917+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Keystore password saved at /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.storepasswd. Please save both of these files for later.
+ejbca-node1     | 2026-02-28 12:25:54,926+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) We recommend using 'APPSERVER_KEYSTORE_SECRET' env variable to set the TLS keystore password on next boot.
+ejbca-node1     | 2026-02-28 12:25:54,940+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) ********************************************************************************************
+ejbca-node1     | 2026-02-28 12:25:54,956+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Certificate stored in file </opt/keyfactor/tmp/tmp.TCUQYrqRYZ/keystore.der>
+ejbca-node1     | 2026-02-28 12:25:55,477+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Generated TLS certificate with fingerprint 6d416f59e0dda03115706aedbe71145da9ecb48e71d5960e6dbbeca516f679f9.
+ejbca-node1     | 2026-02-28 12:25:55,486+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) ********************************************************************************************
+ejbca-node1     | 2026-02-28 12:25:55,495+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Keystore password found at /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.storepasswd
+ejbca-node1     | 2026-02-28 12:25:55,502+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) We recommend using 'APPSERVER_KEYSTORE_SECRET' env variable to set the TLS keystore password.
+ejbca-node1     | 2026-02-28 12:25:55,511+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) ********************************************************************************************
+ejbca-node1     | 2026-02-28 12:25:55,528+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) No key password file were detected at '/opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.keypasswd'. Keystore password will also be used to access private key.
+ejbca-node1     | 2026-02-28 12:25:55,563+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Importing keystore /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.jks to /opt/keyfactor/tmp/tmp.TCUQYrqRYZ/keystore.jks...
+ejbca-node1     | 2026-02-28 12:25:55,563+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Entry for alias ejbca-node1 successfully imported.
+ejbca-node1     | 2026-02-28 12:25:55,563+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Entry for alias cacert successfully imported.
+ejbca-node1     | 2026-02-28 12:25:55,563+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Import command completed:  2 entries successfully imported, 0 entries failed or cancelled
+ejbca-node1     | 2026-02-28 12:26:12,877+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Will use application provided server side TLS keystore.
+ejbca-node1     | 2026-02-28 12:26:22,307+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Adding initial application RoleMember (";PublicAccessAuthenticationToken:TRANSPORT_CONFIDENTIAL;").
+ejbca-node1     | 2026-02-28 12:26:26,457+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-02-28 12:26:26+00:00;ROLE_ACCESS_USER_ADDITION;SUCCESS;ROLES;CORE;ejbca;;;;msg=Added administrator aspect(s)  to role Super Administrator Role.;id=227994998;tokenType=PublicAccessAuthenticationToken;tokenIssuerId=0;tokenProviderId=0;tokenMatchKey=TRANSPORT_CONFIDENTIAL (2);tokenMatchOperator=TYPE_UNUSED (0);tokenMatchValue=;roleId=1;nameSpace=;roleName=Super Administrator Role;description=Initial RoleMember.
+ejbca-node1     | 2026-02-28 12:26:26,464+0000 INFO  [org.ejbca.ui.cli.roles.AddRoleMemberCommand] (main) Role member was successfully added.
+ejbca-node1     | 2026-02-28 12:26:26,846+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) No truststore and/or password file were detected at '/opt/keyfactor/secrets/external/tls/ts/truststore.[jks|storepasswd]'. Check mount points and file permissions if this is not what you expected.
+ejbca-node1     | 2026-02-28 12:26:31,031+0000 INFO  [org.ejbca.ui.cli.ca.GetAdminTruststoreCommand] (main) /opt/keyfactor/tmp/tmp.TCUQYrqRYZ/truststore.jks created.
+ejbca-node1     | 2026-02-28 12:26:34,605+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Enabling HTTPS listener on 0.0.0.0:8443 with optional client certificate authentication.
+ejbca-node1     | 2026-02-28 12:26:40,867+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Enabling HTTP listener on 0.0.0.0:8080.
+ejbca-node1     | 2026-02-28 12:26:43,497+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Enabling HSTS
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #######################################################################################################
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # Whenever you are ready for production:                                                              #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # Try out the commercially supported EJBCA Enterprise Cloud on AWS or Azure, fully featured with:     #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - Additional enrollment APIs such as a complete REST API, EST, ACME and more.                       #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - Support for external Registration Authority and OCSP responders                                   #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - Hardware Security Module support                                                                  #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - Application updates                                                                               #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - ...and more!                                                                                      #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # Feel free to contact us directly for a cloud, on-prem, SaaS, embedded or hybrid solution that fits  #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # your specific needs.                                                                                #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #           https://aws.amazon.com/marketplace/seller-profile?id=7edf9048-58e6-4086-9d98-b8e0c1d78fce #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #     https://azuremarketplace.microsoft.com/en-us/marketplace/apps/primekey.ejbca_enterprise_cloud_2 #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                           https://www.keyfactor.com #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                 sales@keyfactor.com #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1     | 2026-02-28 12:26:51,047+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #######################################################################################################
+ejbca-node1     | 2026-02-28 12:26:51,064+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Waiting 5 seconds before signaling application readiness to ensure proper handling of PublicAccessAuthenticationToken.
+ejbca-node1     | 2026-02-28 12:26:56,077+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Health check now reports application status at /ejbca/publicweb/healthcheck/ejbcahealth
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *****************************************************************************************
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *                                                                                       *
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) * A fresh installation was detected and a ManagementCA was created for your initial     *
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) * access to the system.                                                                 *
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *                                                                                       *
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *   URL:      https://ejbca-node1:443/ejbca/adminweb/                                   *
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *                                                                                       *
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) * If you use different port mapping or a proxy, please adapt the URL above accordingly. *
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *                                                                                       *
+ejbca-node1     | 2026-02-28 12:26:56,087+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *****************************************************************************************
+ejbca-database  | 2026-02-28 12:29:10.258 UTC [71] LOG:  checkpoint starting: time
+ejbca-database  | 2026-02-28 12:29:39.604 UTC [71] LOG:  checkpoint complete: wrote 290 buffers (1.8%), wrote 3 SLRU buffers; 1 WAL file(s) added, 0 removed, 0 recycled; write=29.130 s, sync=0.105 s, total=29.347 s; sync files=231, longest=0.100 s, average=0.001 s; distance=1844 kB, estimate=1844 kB; lsn=0/1D6D000, redo lsn=0/1D6CF70
+
+SIGNSERVER
+
