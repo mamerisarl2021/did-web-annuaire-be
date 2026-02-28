@@ -109,8 +109,8 @@ class AppSettings(BaseSettings):
     UNIVERSAL_REGISTRAR_URL: str = "http://uni-registrar-web:9080"
     SIGNSERVER_URL: str = "http://signserver-node:8080/signserver/process"
     SIGNSERVER_WORKER_NAME: str = "DIDDocumentSigner"
-    CERT_SERVICE_JAR_PATH: str = "/app/bin/ecdsa-extractor.jar"
-    CERT_SERVICE_TIMEOUT: int = 10
+    JWK_EXTRACTOR_JAR = "/home/davieddee/WORKSPACE/did-web-annuaire-be/artifacts/ecdsa-extractor.jar"
+    JWK_EXTRACTOR_JAVA = "java"
 
     # ── Platform ────────────────────────────────────────────────────────
     PLATFORM_DOMAIN: str = "localhost:8000"
