@@ -52,6 +52,7 @@ THIRD_PARTY_APPS = [
     "ninja_jwt",
     "ninja_jwt.token_blacklist",
     "django_htmx",
+    "whitenoise.runserver_nostatic",
 ]
 
 LOCAL_APPS = [
