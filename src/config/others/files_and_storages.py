@@ -9,6 +9,8 @@ from src.config.env import BASE_DIR
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+STATICFILES_DIRS = [] # Django will automatically find if empty.
+
 # ── Media files ─────────────────────────────────────────────────────────
 
 MEDIA_URL = "/media/"
