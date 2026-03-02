@@ -103,6 +103,11 @@ class Membership(BaseModel):
         default=MembershipStatus.INVITED,
         db_index=True,
     )
+    has_audit_access = models.BooleanField(
+        default=False,
+        help_text="Grant this member access to audit logs. "
+                  "ORG_ADMIN always has audit access regardless of this flag.",
+    )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -124,3 +129,8 @@ class Membership(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.user.email} → {self.organization.slug} ({self.role})"
+
+    @property
+    def can_view_audits(self) -> bool:
+        """ORG_ADMIN always can; others need the flag."""
+        return self.role == Role.ORG_ADMIN or self.has_audit_access
