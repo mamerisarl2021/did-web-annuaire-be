@@ -50,7 +50,7 @@ echo "→ Creating superadmin..."
 python -m src.manage createsuperadmin --no-input
 
 echo "-> Bootstraping platform did..."
-python manage.py bootstrap_platform_did --force
+python -m src.manage bootstrap_platform_did --force
 
 
 # ── Java check ──────────────────────────────────────────────────────────
