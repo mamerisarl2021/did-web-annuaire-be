@@ -9,7 +9,7 @@ from src.config.env import BASE_DIR
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_DIRS = [] # Django will automatically find if empty.
+STATICFILES_DIRS = [] # Auto-discovers app static/ dirs
 
 # ── Media files ─────────────────────────────────────────────────────────
 
@@ -30,3 +30,6 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+# Prevent manifest errors from crashing the app
+WHITENOISE_MANIFEST_STRICT = False
