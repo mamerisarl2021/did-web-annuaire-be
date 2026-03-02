@@ -37,6 +37,8 @@ from src.common.types import Role
 
 router = Router(tags=["Certificates"])
 
+_P = "/organizations/{org_id}/certificates"
+
 
 # ── Scoping helpers ──────────────────────────────────────────────────────
 
@@ -146,7 +148,7 @@ def _cert_detail(cert) -> dict:
 
 
 @router.get(
-    "",
+    f"{_P}",
     response=list[CertListItemSchema],
     auth=JWTAuth(),
     summary="List certificates (scoped by role)",
@@ -168,32 +170,11 @@ def list_certificates(request: HttpRequest, org_id: UUID):
     return [_cert_list_item(c) for c in certs]
 
 
-# ── Certificate detail ───────────────────────────────────────────────────
-
-
-@router.get(
-    "/{cert_id}",
-    response={200: CertDetailSchema, 404: ErrorSchema},
-    auth=JWTAuth(),
-    summary="Get certificate detail",
-)
-def get_certificate(request: HttpRequest, org_id: UUID, cert_id: UUID):
-    membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
-
-    cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
-    if cert is None or str(cert.organization_id) != str(org_id):
-        raise NotFoundError("Certificate not found.")
-
-    _require_cert_access(cert, request.auth, membership, action="view")
-
-    return _cert_detail(cert)
-
-
 # ── Upload certificate ───────────────────────────────────────────────────
 
 
 @router.post(
-    "/upload",
+    f"{_P}/upload",
     response={201: CertDetailSchema, 400: ErrorSchema, 409: ErrorSchema},
     auth=JWTAuth(),
     summary="Upload a new certificate",
@@ -218,12 +199,32 @@ def upload_certificate(
     cert = cert_selectors.get_certificate_by_id(cert_id=cert.id)
     return 201, _cert_detail(cert)
 
+# ── Certificate detail ───────────────────────────────────────────────────
+
+
+@router.get(
+    f"{_P}/{{cert_id}}",
+    response={200: CertDetailSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Get certificate detail",
+)
+def get_certificate(request: HttpRequest, org_id: UUID, cert_id: UUID):
+    membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
+
+    cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
+    if cert is None or str(cert.organization_id) != str(org_id):
+        raise NotFoundError("Certificate not found.")
+
+    _require_cert_access(cert, request.auth, membership, action="view")
+
+    return _cert_detail(cert)
+
 
 # ── Rotate certificate ──────────────────────────────────────────────────
 
 
 @router.post(
-    "/{cert_id}/rotate",
+    f"{_P}/{{cert_id}}/rotate",
     response={200: CertDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
     summary="Rotate a certificate (upload new version)",
@@ -258,7 +259,7 @@ def rotate_certificate(
 
 
 @router.post(
-    "/{cert_id}/revoke",
+    f"{_P}/{{cert_id}}/revoke",
     response={200: MessageSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
     summary="Revoke a certificate",
@@ -291,7 +292,7 @@ def revoke_certificate(
 
 
 @router.get(
-    "/{cert_id}/versions",
+    f"{_P}/{{cert_id}}/versions",
     response=list[CertVersionSummarySchema],
     auth=JWTAuth(),
     summary="List certificate versions",
@@ -313,7 +314,7 @@ def list_versions(request: HttpRequest, org_id: UUID, cert_id: UUID):
 
 
 @router.get(
-    "/{cert_id}/versions/{version_id}",
+    f"{_P}/{{cert_id}}/versions/{{version_id}}",
     response={200: CertVersionDetailSchema, 404: ErrorSchema},
     auth=JWTAuth(),
     summary="Get certificate version detail (includes JWK)",

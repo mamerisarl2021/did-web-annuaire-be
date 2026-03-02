@@ -4,7 +4,6 @@ Base Django settings.
 Imports split configuration from src/config/others/*.py to keep this file lean.
 Production and test settings override specific values from here.
 """
-
 from src.config.env import env, BASE_DIR
 
 # ── Core ────────────────────────────────────────────────────────────────
@@ -29,6 +28,7 @@ PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
 UNIVERSAL_REGISTRAR_URL = env.UNIVERSAL_REGISTRAR_URL
 SIGNSERVER_URL = env.SIGNSERVER_URL
 SIGNSERVER_WORKER_NAME = env.SIGNSERVER_WORKER_NAME
+JWK_EXTRACTOR_JAR = env.JWK_EXTRACTOR_JAR
 
 
 # ── Installed Apps ──────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ LOCAL_APPS = [
     "src.apps.certificates",
     "src.apps.documents",
     "src.apps.audits",
-    "src.bootstrap",
+    "src.seeders",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

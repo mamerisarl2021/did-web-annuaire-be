@@ -111,7 +111,6 @@ class AppSettings(BaseSettings):
     SIGNSERVER_URL: str = ""
     SIGNSERVER_WORKER_NAME: str = ""
     JWK_EXTRACTOR_JAR: str = "/home/davieddee/WORKSPACE/did-web-annuaire-be/artifacts/ecdsa-extractor.jar"
-    JWK_EXTRACTOR_JAVA: str = "java"
 
     # ── Platform ────────────────────────────────────────────────────────
     PLATFORM_DOMAIN: str = "localhost:8000"

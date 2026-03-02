@@ -3,14 +3,14 @@ SignServer integration.
 
 Signs DID documents via the SignServer CE REST API.
 
-Configuration (Django settings):
-  SIGNSERVER_PROCESS_URL  = "http://signserver-node:8080/signserver/process"
+Configuration (environment / Django settings):
+  SIGNSERVER_URL          = "http://signserver-node:8080"   (base URL)
   SIGNSERVER_WORKER_NAME  = "DIDDocumentSigner"
 
 The SignServer worker should be a PlainSigner or JWS-capable worker
 configured with the appropriate signing key (e.g., ECDSA P-256).
 
-If SIGNSERVER_PROCESS_URL is not set or empty, a stub signature is
+If SIGNSERVER_URL is not set or empty, a stub signature is
 returned for development / testing.
 """
 
@@ -24,6 +24,20 @@ logger = structlog.get_logger(__name__)
 # Stub returned when SignServer is not configured
 _STUB_JWS = "eyJhbGciOiJFUzI1NiJ9..STUB_SIGNATURE_DEV_MODE"
 
+def _get_process_url() -> str:
+    """Build the SignServer process endpoint URL from base URL."""
+    base = getattr(settings, "SIGNSERVER_URL", "") or ""
+    base = base.rstrip("/")
+    if not base:
+        return ""
+    # Accept full URL if already includes /signserver/process
+    if base.endswith("/signserver/process"):
+        return base
+    # Accept base URL with /signserver already
+    if base.endswith("/signserver"):
+        return f"{base}/process"
+    # Plain base URL like http://signserver-node:8080
+    return f"{base}/signserver/process"
 
 def sign_document(did_document: dict) -> str:
     """
@@ -38,13 +52,13 @@ def sign_document(did_document: dict) -> str:
     Raises:
         ValidationError: If signing fails.
     """
-    url = getattr(settings, "SIGNSERVER_PROCESS_URL", "")
+    url = _get_process_url()
     worker = getattr(settings, "SIGNSERVER_WORKER_NAME", "DIDDocumentSigner")
 
     if not url:
         logger.warning(
             "signserver_not_configured",
-            hint="Set SIGNSERVER_PROCESS_URL in settings. Returning stub signature.",
+            hint="Set SIGNSERVER_URL in settings. Returning stub signature.",
         )
         return _STUB_JWS
 
@@ -105,14 +119,15 @@ def health_check() -> dict:
     Returns:
         dict with "status" key ("ok", "unavailable", or "not_configured").
     """
-    url = getattr(settings, "SIGNSERVER_PROCESS_URL", "")
-    if not url:
+    base = getattr(settings, "SIGNSERVER_URL", "")
+    if not base:
         return {"status": "not_configured"}
 
-    # Derive the base URL from the process URL
-    # e.g., http://signserver-node:8080/signserver/process → http://signserver-node:8080/signserver/healthcheck/signserverhealth
-    base = url.rsplit("/process", 1)[0]
-    health_url = f"{base}/healthcheck/signserverhealth"
+    # Derive health endpoint
+    if "/signserver" in base:
+        health_url = base.rsplit("/signserver", 1)[0] + "/signserver/healthcheck/signserverhealth"
+    else:
+        health_url = f"{base}/signserver/healthcheck/signserverhealth"
 
     try:
         import requests as http_client
