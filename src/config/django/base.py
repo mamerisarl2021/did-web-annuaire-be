@@ -76,6 +76,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
