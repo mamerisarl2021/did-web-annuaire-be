@@ -12,6 +12,10 @@ Scoping:
 Lifecycle:
   ORG_MEMBER: DRAFT → PENDING_REVIEW → APPROVED → PUBLISHED → DEACTIVATED
   ORG_ADMIN:  DRAFT → PUBLISHED (direct, skips review)
+
+Update flow (for already-PUBLISHED documents):
+  Owner edits draft_content → re-publishes (creates new version).
+  ORG_ADMIN can also re-publish any document.
 """
 
 from uuid import UUID
@@ -117,6 +121,11 @@ def _doc_list_item(doc) -> dict:
         "current_version_number": (
             doc.current_version.version_number if doc.current_version else None
         ),
+        "has_pending_draft": (
+            doc.status == "PUBLISHED"
+            and doc.draft_content is not None
+            and doc.draft_content != doc.content
+        ),
         "created_at": doc.created_at.isoformat(),
         "updated_at": doc.updated_at.isoformat(),
     }
@@ -124,8 +133,6 @@ def _doc_list_item(doc) -> dict:
 
 def _doc_detail(doc) -> dict:
     vms = doc_selectors.get_document_verification_methods(document_id=doc.id)
-
-    # Build VC for published docs
     vc = doc_services.get_verifiable_credential(doc)
 
     return {
@@ -147,6 +154,11 @@ def _doc_detail(doc) -> dict:
         "review_comment": doc.review_comment or "",
         "current_version_number": (
             doc.current_version.version_number if doc.current_version else None
+        ),
+        "has_pending_draft": (
+            doc.status == "PUBLISHED"
+            and doc.draft_content is not None
+            and doc.draft_content != doc.content
         ),
         "verification_methods": [_vm_response(vm) for vm in vms],
         "verifiable_credential": vc,
@@ -271,11 +283,20 @@ def get_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     f"{_P}/{{doc_id}}/draft",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Update document draft",
+    summary="Update document draft (DRAFT, REJECTED, or PUBLISHED)",
 )
 def update_draft(
     request: HttpRequest, org_id: UUID, doc_id: UUID, payload: UpdateDraftSchema,
 ):
+    """
+    Update the draft content of a DID document.
+
+    Works on DRAFT, REJECTED, and PUBLISHED documents:
+    - DRAFT/REJECTED: normal editing before (re-)submission
+    - PUBLISHED: creates a new draft for the next version
+
+    Only the document owner can edit.
+    """
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
     _require_doc_owner(doc, request.auth, membership, action="edit")
@@ -308,7 +329,7 @@ def update_draft(
         404: ErrorSchema, 409: ErrorSchema,
     },
     auth=JWTAuth(),
-    summary="Add a verification method to a draft document",
+    summary="Add a verification method to a document",
 )
 def add_verification_method(
     request: HttpRequest, org_id: UUID, doc_id: UUID,
@@ -341,7 +362,7 @@ def add_verification_method(
     f"{_P}/{{doc_id}}/verification-methods/{{vm_id}}",
     response={200: MessageSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Remove a verification method from a draft document",
+    summary="Remove a verification method from a document",
 )
 def remove_verification_method(
     request: HttpRequest, org_id: UUID, doc_id: UUID, vm_id: UUID,
@@ -431,12 +452,16 @@ def reject_document(
     f"{_P}/{{doc_id}}/publish",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Sign and publish document",
+    summary="Sign and publish document (or re-publish with new version)",
 )
 def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     """
-    ORG_ADMIN: can publish from DRAFT (direct) or APPROVED
-    ORG_MEMBER: can publish only from APPROVED (after review)
+    Sign and publish a DID document.
+
+    Allowed flows:
+      - ORG_ADMIN on DRAFT: direct publish (skip review)
+      - Any role on APPROVED: publish after review
+      - Owner or ORG_ADMIN on PUBLISHED: re-publish (new version from draft_content)
     """
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)

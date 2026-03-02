@@ -5,7 +5,14 @@ Lifecycle:
   ORG_MEMBER: DRAFT → PENDING_REVIEW → APPROVED → PUBLISHED → DEACTIVATED
                                       → REJECTED → re-edit → DRAFT
   ORG_ADMIN:  DRAFT → PUBLISHED (direct, skips review)
-              DRAFT → DEACTIVATED (if published)
+
+Updates to PUBLISHED documents:
+  Any owner or admin can edit draft_content on a PUBLISHED document.
+  Re-publishing creates a new version. The document was already reviewed
+  and approved once; subsequent edits go through a lighter flow:
+    - ORG_ADMIN: edit → re-publish directly (new version)
+    - ORG_MEMBER owner: edit → re-publish (new version)
+  If stricter review is needed, the admin can deactivate the document.
 """
 
 import json
@@ -109,11 +116,20 @@ def update_draft(
     verification_methods: list[dict] | None = None,
     service_endpoints: list[dict] | None = None,
 ) -> DIDDocument:
+    """
+    Update the draft content of a document.
+
+    Allowed statuses: DRAFT, REJECTED, PUBLISHED.
+      - DRAFT/REJECTED: normal editing before (re-)submission.
+      - PUBLISHED: editing creates a new draft for the next version.
+        The live content stays in `content`; changes go into `draft_content`.
+    """
     editable = {DocumentStatus.DRAFT, DocumentStatus.REJECTED, DocumentStatus.PUBLISHED}
     if document.status not in editable:
         raise ValidationError(f"Cannot edit a {document.status} document.")
 
     if document.status == DocumentStatus.REJECTED:
+        # Reset review state so the owner can re-submit
         document.status = DocumentStatus.DRAFT
         document.reviewed_by = None
         document.reviewed_at = None
@@ -135,8 +151,10 @@ def update_draft(
         "reviewed_at", "review_comment", "updated_at",
     ])
 
+    is_update = document.content is not None
     _log("DOC_DRAFT_UPDATED", updated_by, document,
-         f"Draft updated for '{document.label}'.")
+         f"Draft {'updated' if is_update else 'edited'} for '{document.label}'.",
+         {"is_version_update": is_update})
 
     return document
 
@@ -180,6 +198,11 @@ def add_verification_method(
     )
 
     _reassemble_draft(document)
+
+    _log("DOC_VM_ADDED", added_by, document,
+         f"Verification method '#{method_id_fragment}' added to '{document.label}'.",
+         {"fragment": method_id_fragment, "certificate_id": str(certificate_id)})
+
     return vm
 
 
@@ -190,8 +213,14 @@ def remove_verification_method(*, document: DIDDocument, vm_id, removed_by: User
         vm = DocumentVerificationMethod.objects.get(id=vm_id, document=document)
     except DocumentVerificationMethod.DoesNotExist:
         raise NotFoundError("Verification method not found.")
+
+    fragment = vm.method_id_fragment
     vm.delete()
     _reassemble_draft(document)
+
+    _log("DOC_VM_REMOVED", removed_by, document,
+         f"Verification method '#{fragment}' removed from '{document.label}'.",
+         {"fragment": fragment})
 
 
 # ── Submit for review ────────────────────────────────────────────────────
@@ -279,21 +308,39 @@ def sign_and_publish(
     Sign via SignServer, publish via Universal Registrar.
 
     Allowed source statuses:
-      - APPROVED (normal flow after review)
-      - DRAFT    (ORG_ADMIN direct publish, set skip_review=True)
+      - APPROVED   : normal flow after review
+      - DRAFT      : ORG_ADMIN direct publish (skip_review=True)
+      - PUBLISHED  : re-publish with updated draft_content (new version)
+
+    For PUBLISHED re-publish, draft_content must differ from content.
     """
-    allowed = {DocumentStatus.APPROVED}
+    allowed = {DocumentStatus.APPROVED, DocumentStatus.PUBLISHED}
     if skip_review:
         allowed.add(DocumentStatus.DRAFT)
 
     if document.status not in allowed:
         if skip_review:
             raise ValidationError(
-                f"Only DRAFT or APPROVED documents can be published. Status: {document.status}."
+                f"Only DRAFT, APPROVED, or PUBLISHED documents can be published. "
+                f"Status: {document.status}."
             )
         raise ValidationError(
-            f"Only APPROVED documents can be published. Status: {document.status}."
+            f"Only APPROVED or PUBLISHED documents can be published. "
+            f"Status: {document.status}."
         )
+
+    # For PUBLISHED re-publish, require that draft_content exists
+    if document.status == DocumentStatus.PUBLISHED:
+        if not document.draft_content:
+            raise ValidationError(
+                "No pending changes to publish. Edit the document first."
+            )
+        # Optionally check that draft differs from current content
+        if document.draft_content == document.content:
+            raise ValidationError(
+                "Draft content is identical to the published version. "
+                "Make changes before re-publishing."
+            )
 
     # Validate VMs
     revoked = DocumentVerificationMethod.objects.filter(
@@ -321,11 +368,11 @@ def sign_and_publish(
 
     _log("DOC_SIGNED", published_by, document, f"Document '{document.label}' signed.")
 
-    # Step 2: Register
+    # Step 2: Register via Universal Registrar
     is_first = document.current_version is None
     registrar_resp = _call_registrar(signed, is_create=is_first)
 
-    # Step 3: Version
+    # Step 3: Create version record
     next_ver = 1
     if document.current_version:
         next_ver = document.current_version.version_number + 1
@@ -340,7 +387,7 @@ def sign_and_publish(
         registrar_response=registrar_resp,
     )
 
-    # Step 4: Update document
+    # Step 4: Update document — promote draft to live content
     document.content = signed
     document.draft_content = None
     document.status = DocumentStatus.PUBLISHED
@@ -351,7 +398,7 @@ def sign_and_publish(
 
     _log("DOC_PUBLISHED", published_by, document,
          f"Document '{document.label}' published as v{next_ver}.",
-         {"version": next_ver})
+         {"version": next_ver, "is_update": next_ver > 1})
 
     logger.info("document_published", doc_id=str(document.id), version=next_ver)
     return document
@@ -481,69 +528,47 @@ def _reassemble_draft(document):
     document.save(update_fields=["draft_content", "updated_at"])
 
 
-# ── External service stubs ───────────────────────────────────────────────
+# ── External service clients ─────────────────────────────────────────────
+#
+# These call the real SignServer and Universal Registrar when configured.
+# Configuration via Django settings:
+#   SIGNSERVER_PROCESS_URL  = "http://signserver-node:8080/signserver/process"
+#   SIGNSERVER_WORKER_NAME  = "DIDDocumentSigner"
+#   UNIVERSAL_REGISTRAR_URL = "http://uni-registrar-web:9080"
+#
+# If the URL is empty or not set, a stub response is returned (dev mode).
+# ─────────────────────────────────────────────────────────────────────────
 
 
 def _call_signserver(did_document: dict) -> str:
-    from django.conf import settings
-    url = getattr(settings, "SIGNSERVER_URL", "")
-    worker = getattr(settings, "SIGNSERVER_WORKER_NAME", "DIDDocumentSigner")
+    """
+    Sign a DID document via SignServer.
 
-    if url and "signserver-node" not in url:
-        try:
-            import requests
-            canonical = json.dumps(did_document, sort_keys=True, separators=(",", ":"))
-            r = requests.post(url, data=canonical.encode(), headers={
-                "Content-Type": "application/json",
-                "X-SignServer-WorkerName": worker,
-            }, timeout=30)
-            r.raise_for_status()
-            return r.text.strip()
-        except Exception as e:
-            logger.error("signserver_failed", error=str(e))
-            raise ValidationError(f"SignServer failed: {e}")
-
-    logger.warning("signserver_stub")
-    return "eyJhbGciOiJFUzI1NiJ9..STUB_SIGNATURE"
+    Sends the canonicalized JSON to the SignServer process endpoint.
+    Returns the JWS detached signature string.
+    """
+    from src.integrations.signserver import sign_document
+    return sign_document(did_document)
 
 
 def _call_registrar(did_document: dict, is_create: bool) -> dict:
-    from django.conf import settings
-    url = getattr(settings, "UNIVERSAL_REGISTRAR_URL", "")
+    """
+    Register or update a DID document via the Universal Registrar.
 
-    if url and "uni-registrar-web" not in url:
-        try:
-            import requests
-            endpoint = f"{url}/1.0/{'create' if is_create else 'update'}"
-            payload = ({"method": "web", "didDocument": did_document} if is_create
-                       else {"did": did_document.get("id"), "didDocument": did_document})
-            r = requests.post(endpoint, json=payload, timeout=30)
-            r.raise_for_status()
-            return r.json()
-        except Exception as e:
-            logger.error("registrar_failed", error=str(e))
-            raise ValidationError(f"Registrar failed: {e}")
+    Returns the registrar response dict.
+    """
+    from src.integrations.registrar import create_did, update_did
 
-    logger.warning("registrar_stub")
-    return {"didState": {"state": "finished", "did": did_document.get("id", "")}}
+    if is_create:
+        return create_did(did_document)
+    else:
+        return update_did(did_document)
 
 
 def _call_registrar_deactivate(did_uri: str) -> dict:
-    from django.conf import settings
-    url = getattr(settings, "UNIVERSAL_REGISTRAR_URL", "")
-
-    if url and "uni-registrar-web" not in url:
-        try:
-            import requests
-            r = requests.post(f"{url}/1.0/deactivate", json={"did": did_uri}, timeout=30)
-            r.raise_for_status()
-            return r.json()
-        except Exception as e:
-            logger.error("registrar_deactivate_failed", error=str(e))
-            raise ValidationError(f"Deactivation failed: {e}")
-
-    logger.warning("registrar_deactivate_stub")
-    return {"didState": {"state": "finished", "did": did_uri}}
+    """Deactivate a DID via the Universal Registrar."""
+    from src.integrations.registrar import deactivate_did
+    return deactivate_did(did_uri)
 
 
 def _log(action, actor, document, description, metadata=None):

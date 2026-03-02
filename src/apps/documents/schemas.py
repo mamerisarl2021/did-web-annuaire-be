@@ -75,6 +75,7 @@ class DocListItemSchema(Schema):
     created_by_email: str
     vm_count: int
     current_version_number: int | None
+    has_pending_draft: bool = False
     created_at: str
     updated_at: str
 
@@ -97,6 +98,7 @@ class DocDetailSchema(Schema):
     reviewed_at: str | None
     review_comment: str
     current_version_number: int | None
+    has_pending_draft: bool = False
     verification_methods: list[VerificationMethodResponse]
     verifiable_credential: Any | None
     created_at: str

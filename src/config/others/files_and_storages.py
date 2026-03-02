@@ -19,3 +19,10 @@ MEDIA_ROOT = BASE_DIR / "mediafiles"
 # The Universal Registrar's driver-did-web also writes here.
 
 DID_DOCUMENTS_ROOT = BASE_DIR / "data" / "dids"
+
+STORAGES = {
+    # ...
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}

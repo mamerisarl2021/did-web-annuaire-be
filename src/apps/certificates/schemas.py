@@ -63,6 +63,7 @@ class CertDetailSchema(Schema):
     label: str
     status: str
     created_by_email: str = ""
+    created_by_id: UUID | None = None
     created_at: str
     current_version: CertVersionDetailSchema | None = None
     version_count: int = 0

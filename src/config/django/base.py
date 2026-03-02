@@ -4,7 +4,6 @@ Base Django settings.
 Imports split configuration from src/config/others/*.py to keep this file lean.
 Production and test settings override specific values from here.
 """
-
 from src.config.env import env, BASE_DIR
 
 # ── Core ────────────────────────────────────────────────────────────────
@@ -23,6 +22,14 @@ AUTH_USER_MODEL = "users.User"
 # ── Others ──────────────────────────────────────────────────────
 
 PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
+
+# ── External Services ──────────────────────────────────────────────────────
+
+UNIVERSAL_REGISTRAR_URL = env.UNIVERSAL_REGISTRAR_URL
+SIGNSERVER_URL = env.SIGNSERVER_URL
+SIGNSERVER_WORKER_NAME = env.SIGNSERVER_WORKER_NAME
+JWK_EXTRACTOR_JAR = env.JWK_EXTRACTOR_JAR
+
 
 # ── Installed Apps ──────────────────────────────────────────────────────
 
@@ -69,6 +76,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

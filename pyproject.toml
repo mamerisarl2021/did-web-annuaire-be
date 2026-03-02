@@ -22,7 +22,12 @@ dependencies = [
     "pydantic-settings>=2.13.1",
     "pyotp>=2.9.0",
     "qrcode[pil]>=8.2",
-    "rav>=0.4.3",
     "redis>=7.2.0",
     "structlog>=25.5.0",
+    "whitenoise>=6.12.0",
+]
+
+[dependency-groups]
+dev = [
+    "rav>=0.4.3",
 ]

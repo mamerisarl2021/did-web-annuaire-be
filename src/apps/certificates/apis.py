@@ -1,8 +1,12 @@
 """
 Certificate API endpoints.
 
-Mounted at: /api/v2/org/   (alongside orgadmin router)
-Full paths:  /api/v2/org/organizations/{org_id}/certificates/...
+Mounted at: /api/v2/org/organizations/{org_id}/certificates/
+
+Scoping:
+  - ORG_ADMIN:  sees ALL org certs, can rotate/revoke any
+  - ORG_MEMBER: sees ONLY own certs (created_by = self), can rotate own
+  - AUDITOR:    sees ALL (read-only)
 
 All endpoints require JWT auth and membership in the target org.
 Upload and rotate use multipart form data (file + metadata).
@@ -10,6 +14,7 @@ Upload and rotate use multipart form data (file + metadata).
 
 from uuid import UUID
 
+from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpRequest
 from ninja import File, Form, Router, UploadedFile as NinjaFile
 from ninja_jwt.authentication import JWTAuth
@@ -26,17 +31,52 @@ from src.apps.certificates.schemas import (
     ErrorSchema,
     MessageSchema,
 )
-from src.common.exceptions import NotFoundError
+from src.common.exceptions import NotFoundError, PermissionDeniedError
 from src.common.permissions import Permission, require_permission
+from src.common.types import Role
 
 router = Router(tags=["Certificates"])
-
-# ── Path prefix (avoids putting {org_id} in add_router prefix) ──────────
 
 _P = "/organizations/{org_id}/certificates"
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────
+# ── Scoping helpers ──────────────────────────────────────────────────────
+
+
+def _can_view_all(membership) -> bool:
+    """ORG_ADMIN and AUDITOR see all org certificates."""
+    return membership.role in (Role.ORG_ADMIN, Role.AUDITOR)
+
+
+def _require_cert_access(cert, user, membership, action="access"):
+    """
+    Enforce ownership scoping: ORG_MEMBER can only access their own certs.
+    ORG_ADMIN and AUDITOR can access any cert in the org.
+    """
+    if _can_view_all(membership):
+        return
+    if cert.created_by_id == user.id:
+        return
+    raise PermissionDeniedError(
+        f"You can only {action} certificates you uploaded."
+    )
+
+
+def _require_cert_mutate(cert, user, membership, action="modify"):
+    """
+    Enforce ownership for mutations: ORG_MEMBER can only modify own certs.
+    ORG_ADMIN can modify any cert in the org.
+    """
+    if membership.role == Role.ORG_ADMIN:
+        return
+    if cert.created_by_id == user.id:
+        return
+    raise PermissionDeniedError(
+        f"You can only {action} certificates you uploaded."
+    )
+
+
+# ── Serialization helpers ────────────────────────────────────────────────
 
 
 def _cert_list_item(cert) -> dict:
@@ -96,6 +136,7 @@ def _cert_detail(cert) -> dict:
         "label": cert.label,
         "status": cert.status,
         "created_by_email": cert.created_by.email if cert.created_by else "",
+        "created_by_id": cert.created_by_id,
         "created_at": cert.created_at.isoformat(),
         "current_version": _version_detail(cert.current_version) if cert.current_version else None,
         "version_count": cert.versions.count(),
@@ -110,12 +151,24 @@ def _cert_detail(cert) -> dict:
     f"{_P}",
     response=list[CertListItemSchema],
     auth=JWTAuth(),
-    summary="List organization certificates",
+    summary="List certificates (scoped by role)",
 )
 def list_certificates(request: HttpRequest, org_id: UUID):
-    require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
-    certs = cert_selectors.get_org_certificates(organization_id=org_id)
+    """
+    ORG_ADMIN / AUDITOR: all org certificates.
+    ORG_MEMBER: only certificates uploaded by the requesting user.
+    """
+    membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
+
+    if _can_view_all(membership):
+        certs = cert_selectors.get_org_certificates(organization_id=org_id)
+    else:
+        certs = cert_selectors.get_user_certificates(
+            organization_id=org_id, user_id=request.auth.id,
+        )
+
     return [_cert_list_item(c) for c in certs]
+
 
 # ── Upload certificate ───────────────────────────────────────────────────
 
@@ -143,10 +196,8 @@ def upload_certificate(
         p12_password=p12_password if p12_password else None,
     )
 
-    # Reload with relations
     cert = cert_selectors.get_certificate_by_id(cert_id=cert.id)
     return 201, _cert_detail(cert)
-
 
 # ── Certificate detail ───────────────────────────────────────────────────
 
@@ -158,11 +209,13 @@ def upload_certificate(
     summary="Get certificate detail",
 )
 def get_certificate(request: HttpRequest, org_id: UUID, cert_id: UUID):
-    require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
+    membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
 
     cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
     if cert is None or str(cert.organization_id) != str(org_id):
         raise NotFoundError("Certificate not found.")
+
+    _require_cert_access(cert, request.auth, membership, action="view")
 
     return _cert_detail(cert)
 
@@ -183,11 +236,13 @@ def rotate_certificate(
     file: NinjaFile = File(...),
     p12_password: str = Form(None),
 ):
-    require_permission(request.auth, org_id, Permission.MUTATE_CERTIFICATES)
+    membership = require_permission(request.auth, org_id, Permission.MUTATE_CERTIFICATES)
 
     cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
     if cert is None or str(cert.organization_id) != str(org_id):
         raise NotFoundError("Certificate not found.")
+
+    _require_cert_mutate(cert, request.auth, membership, action="rotate")
 
     cert_services.rotate_certificate(
         certificate=cert,
@@ -215,11 +270,14 @@ def revoke_certificate(
     cert_id: UUID,
     payload: CertRevokeSchema,
 ):
-    require_permission(request.auth, org_id, Permission.REVOKE_CERTIFICATES)
+    membership = require_permission(request.auth, org_id, Permission.REVOKE_CERTIFICATES)
 
     cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
     if cert is None or str(cert.organization_id) != str(org_id):
         raise NotFoundError("Certificate not found.")
+
+    # ORG_ADMIN can revoke any; ORG_MEMBER can only revoke own
+    _require_cert_mutate(cert, request.auth, membership, action="revoke")
 
     cert_services.revoke_certificate(
         certificate=cert,
@@ -240,11 +298,13 @@ def revoke_certificate(
     summary="List certificate versions",
 )
 def list_versions(request: HttpRequest, org_id: UUID, cert_id: UUID):
-    require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
+    membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
 
     cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
     if cert is None or str(cert.organization_id) != str(org_id):
         raise NotFoundError("Certificate not found.")
+
+    _require_cert_access(cert, request.auth, membership, action="view versions of")
 
     versions = cert_selectors.get_certificate_versions(certificate_id=cert_id)
     return [_version_summary(v) for v in versions]
@@ -260,7 +320,13 @@ def list_versions(request: HttpRequest, org_id: UUID, cert_id: UUID):
     summary="Get certificate version detail (includes JWK)",
 )
 def get_version(request: HttpRequest, org_id: UUID, cert_id: UUID, version_id: UUID):
-    require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
+    membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
+
+    cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
+    if cert is None or str(cert.organization_id) != str(org_id):
+        raise NotFoundError("Certificate not found.")
+
+    _require_cert_access(cert, request.auth, membership, action="view")
 
     try:
         version = (
@@ -269,9 +335,6 @@ def get_version(request: HttpRequest, org_id: UUID, cert_id: UUID, version_id: U
             .get(id=version_id, certificate_id=cert_id)
         )
     except CertificateVersion.DoesNotExist:
-        raise NotFoundError("Version not found.")
-
-    if str(version.certificate.organization_id) != str(org_id):
         raise NotFoundError("Version not found.")
 
     return _version_detail(version)

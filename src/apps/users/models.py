@@ -41,7 +41,7 @@ class User(AbstractUser, PermissionsMixin, BaseModel):
 
     # OTP / 2FA
     activation_method = models.CharField(
-        max_length=3,
+        max_length=20,
         choices=ActivationMethod.choices,
         default=ActivationMethod.OTP,
     )

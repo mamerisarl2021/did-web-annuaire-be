@@ -107,14 +107,16 @@ class AppSettings(BaseSettings):
         return self.JWT_SIGNING_KEY or self.SECRET_KEY
 
     # ── External services ───────────────────────────────────────────────
-    UNIVERSAL_REGISTRAR_URL: str = "http://uni-registrar-web:9080"
-    SIGNSERVER_URL: str = "http://signserver-node:8080/signserver/process"
-    SIGNSERVER_WORKER_NAME: str = "DIDDocumentSigner"
+    UNIVERSAL_REGISTRAR_URL: str = ""
+    SIGNSERVER_URL: str = ""
+    SIGNSERVER_WORKER_NAME: str = ""
     JWK_EXTRACTOR_JAR: str = "/home/davieddee/WORKSPACE/did-web-annuaire-be/artifacts/ecdsa-extractor.jar"
-    JWK_EXTRACTOR_JAVA: str = "java"
 
     # ── Platform ────────────────────────────────────────────────────────
     PLATFORM_DOMAIN: str = "localhost:8000"
+    SUPERADMIN_EMAIL: str = ""
+    SUPERADMIN_PASSWORD: str = ""
+    SUPERADMIN_FULL_NAME: str = ""
 
     @property
     def PLATFORM_DID(self) -> str:

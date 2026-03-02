@@ -46,6 +46,13 @@ python -m src.manage migrate --noinput
 echo "→ Collecting static files..."
 python -m src.manage collectstatic --noinput --clear 2>/dev/null || true
 
+echo "→ Creating superadmin..."
+python -m src.manage createsuperadmin --no-input
+
+echo "-> Bootstraping platform did..."
+python manage.py bootstrap_platform_did --force
+
+
 # ── Java check ──────────────────────────────────────────────────────────
 
 echo "→ Verifying Java runtime..."

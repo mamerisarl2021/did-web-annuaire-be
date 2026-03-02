@@ -9,35 +9,48 @@ http {
     tcp_nopush on;
     keepalive_timeout 65;
 
-    # ── Docker DNS resolver ─────────────────────────────────────────────────
-    resolver 127.0.0.11 valid=30s ipv6=off;
+    # ── Upstreams (Docker DNS on annuaire_staging_net) ──────────────────────
+
+    upstream annuaire_backend {
+        server annuaire-backend:8899;
+    }
+
+    upstream uni_resolver {
+        server uni-resolver-web:8080;
+    }
+
+    upstream uni_registrar {
+        server uni-registrar-web:9080;
+    }
+
+    upstream signserver_http {
+        server signserver-node:8080;
+    }
 
     server {
         listen 80;
         server_name annuairedid-be.qcdigitalhub.com;
 
         # ── Static files ────────────────────────────────────────────────────
-        # WhiteNoise now serves static files directly from Django/Gunicorn.
-        # This nginx location acts as an OPTIONAL cache layer.
-        # If the volume is empty or misconfigured, Django handles it.
-        location /static/ {
-            alias /static/;
-            expires 7d;
-            add_header Cache-Control "public, immutable";
-            try_files $uri @django;
-        }
-
-        location /media/ {
-            alias /media/;
-            expires 7d;
-            try_files $uri @django;
-        }
+        location /static/ { alias /static/; expires 7d; }
+        location /media/  { alias /media/;  expires 7d; }
 
         # ════════════════════════════════════════════════════════════════════
         #  DID Document resolution (did:web spec)
+        #
+        #  did:web:<host>:<org>:<user>:<label>
+        #    resolves → GET https://<host>/<org>/<user>/<label>/did.json
+        #    file on disk → /app/data/dids/<org>/<user>/<label>/did.json
+        #
+        #  The Universal Registrar driver-did-web writes DID docs to the
+        #  shared dids_volume at basePath=/app/data/dids.
+        #
+        #  root = /app/data/dids  ⇒  nginx serves  root + URI  =
+        #    /app/data/dids/<org>/<user>/<label>/did.json
         # ════════════════════════════════════════════════════════════════════
 
-        # Personal DID: /{org}/{user}/{label}/did.json
+        # Personal DID: /{org}/{user}/{label}/did.json  (3 path segments)
+        # e.g. /acme-corp/john-doe/driving-licence/did.json
         location ~ ^/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)/did\.json$ {
             root /app/data/dids;
             try_files $uri =404;
@@ -47,7 +60,8 @@ http {
             limit_except GET HEAD { deny all; }
         }
 
-        # Organization-scope DID: /{org}/{label}/did.json
+        # Organization-scope DID: /{org}/{label}/did.json  (2 path segments)
+        # e.g. /acme-corp/platform-auth/did.json
         location ~ ^/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)/did\.json$ {
             root /app/data/dids;
             try_files $uri =404;
@@ -57,7 +71,9 @@ http {
             limit_except GET HEAD { deny all; }
         }
 
-        # Platform root DID: /.well-known/did.json
+        # Platform root DID: did:web:annuairedid-be.qcdigitalhub.com
+        # Resolves → GET /.well-known/did.json
+        # File on disk → /app/data/dids/.well-known/did.json
         location = /.well-known/did.json {
             root /app/data/dids;
             try_files /.well-known/did.json =404;
@@ -68,13 +84,12 @@ http {
 
         # ════════════════════════════════════════════════════════════════════
         #  Universal Resolver  →  /resolver/…
+        #  Example: GET /resolver/1.0/identifiers/did:web:example.com
         # ════════════════════════════════════════════════════════════════════
         location /resolver/ {
-            set $resolver_backend http://uni-resolver-web:8080;
-
             rewrite ^/resolver(/.*)$ $1 break;
 
-            proxy_pass $resolver_backend;
+            proxy_pass http://uni_resolver;
             proxy_http_version 1.1;
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
@@ -89,13 +104,12 @@ http {
 
         # ════════════════════════════════════════════════════════════════════
         #  Universal Registrar  →  /registrar/…
+        #  Example: POST /registrar/1.0/create
         # ════════════════════════════════════════════════════════════════════
         location /registrar/ {
-            set $registrar_backend http://uni-registrar-web:9080;
-
             rewrite ^/registrar(/.*)$ $1 break;
 
-            proxy_pass $registrar_backend;
+            proxy_pass http://uni_registrar;
             proxy_http_version 1.1;
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
@@ -109,52 +123,10 @@ http {
         }
 
         # ════════════════════════════════════════════════════════════════════
-        #  SignServer CE — HTTP process/healthcheck API only
-        #
-        #  IMPORTANT: The Admin Web (/signserver/adminweb/) requires
-        #  mTLS client certificate authentication. It CANNOT work through
-        #  an HTTP reverse proxy because the TLS handshake (where the
-        #  browser presents its client cert) is terminated by nginx.
-        #
-        #  Admin Web access: connect directly to SignServer's HTTPS port:
-        #    https://<server-ip>:8443/signserver/adminweb/
-        #
-        #  This proxy block handles ONLY the HTTP API endpoints used by
-        #  the backend (process, healthcheck).
+        #  SignServer CE  →  /signserver/…
         # ════════════════════════════════════════════════════════════════════
-        location /signserver/process {
-            set $signserver_backend http://signserver-node:8080;
-
-            proxy_pass $signserver_backend;
-            proxy_http_version 1.1;
-            proxy_set_header Host              $host;
-            proxy_set_header X-Real-IP         $remote_addr;
-            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-
-            proxy_connect_timeout 300s;
-            proxy_send_timeout    300s;
-            proxy_read_timeout    300s;
-        }
-
-        location /signserver/healthcheck {
-            set $signserver_backend http://signserver-node:8080;
-
-            proxy_pass $signserver_backend;
-            proxy_http_version 1.1;
-            proxy_set_header Host $host;
-        }
-
-        # Block admin web through nginx — must use direct HTTPS:8443
-        location /signserver/adminweb {
-            return 302 https://$host:8443/signserver/adminweb/;
-        }
-
-        # Other signserver resources (CSS, JS for error pages etc.)
         location /signserver/ {
-            set $signserver_backend http://signserver-node:8080;
-
-            proxy_pass $signserver_backend/signserver/;
+            proxy_pass http://signserver_http/signserver/;
             proxy_http_version 1.1;
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
@@ -170,9 +142,7 @@ http {
         #  EJBCA  →  /ejbca/…
         # ════════════════════════════════════════════════════════════════════
         location /ejbca/ {
-            set $ejbca_backend https://ejbca-node1:8443;
-
-            proxy_pass         $ejbca_backend/ejbca/;
+            proxy_pass         https://ejbca-node1:8443/ejbca/;
             proxy_ssl_verify   off;
             proxy_http_version 1.1;
 
@@ -190,24 +160,10 @@ http {
         }
 
         # ════════════════════════════════════════════════════════════════════
-        #  Django backend — named location for try_files fallback
-        # ════════════════════════════════════════════════════════════════════
-        location @django {
-            set $django http://annuaire-backend:8899;
-            proxy_pass $django;
-            proxy_http_version 1.1;
-            proxy_set_header Host              $host;
-            proxy_set_header X-Real-IP         $remote_addr;
-            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # ════════════════════════════════════════════════════════════════════
-        #  Django backend — explicit routes
+        #  Django backend (annuaire)
         # ════════════════════════════════════════════════════════════════════
         location /orbit/ {
-            set $django http://annuaire-backend:8899;
-            proxy_pass $django;
+            proxy_pass http://annuaire_backend;
             proxy_http_version 1.1;
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
@@ -216,8 +172,7 @@ http {
         }
 
         location /api/ {
-            set $django http://annuaire-backend:8899;
-            proxy_pass $django;
+            proxy_pass http://annuaire_backend;
             proxy_http_version 1.1;
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
@@ -226,8 +181,7 @@ http {
         }
 
         location /admin/ {
-            set $django http://annuaire-backend:8899;
-            proxy_pass $django;
+            proxy_pass http://annuaire_backend;
             proxy_http_version 1.1;
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
@@ -235,10 +189,9 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        # Catch-all → Django (handles /login/, /resolve/, /search/, etc.)
+        # Catch-all → Django
         location / {
-            set $django http://annuaire-backend:8899;
-            proxy_pass $django;
+            proxy_pass http://annuaire_backend;
             proxy_http_version 1.1;
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
