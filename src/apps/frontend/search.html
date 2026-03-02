@@ -1,0 +1,219 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block title %}Search DIDs — AnnuaireDID{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/public.css' %}">
+{% endblock %}
+
+{% block body %}
+<div class="public-page">
+  <nav class="public-nav">
+    <a href="/" class="brand-sm"><span>Annuaire</span>DID</a>
+    <div class="nav-links">
+      <a href="/resolve/" class="nav-link">Resolve</a>
+      <a href="/search/" class="nav-link active">Search</a>
+      <a href="/login/" class="nav-link nav-link--login">Sign In</a>
+    </div>
+  </nav>
+
+  <div class="resolve-container">
+    <div class="resolve-hero">
+      <h1>DID Directory Search</h1>
+      <p class="resolve-subtitle">
+        Search published DID documents across organizations.
+      </p>
+    </div>
+
+    <div class="resolve-input-wrap">
+      <form id="search-form" onsubmit="handleSearch(event)">
+        <div class="resolve-row">
+          <input
+            id="search-input"
+            type="text"
+            class="form-input resolve-input"
+            placeholder="Search by organization, label, or keyword…"
+            autocomplete="off"
+          >
+          <button type="submit" id="search-btn" class="btn btn-primary resolve-btn">
+            <span class="btn-label">Search</span>
+            <span class="htmx-indicator spinner"></span>
+          </button>
+        </div>
+
+        <div class="search-filters">
+          <select id="filter-org" class="form-select filter-select">
+            <option value="">All organizations</option>
+          </select>
+          <select id="filter-sort" class="form-select filter-select">
+            <option value="-updated_at">Recently updated</option>
+            <option value="-created_at">Recently created</option>
+            <option value="label">Label A–Z</option>
+          </select>
+        </div>
+      </form>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <!-- Results -->
+    <div id="results-panel" class="hidden">
+      <div class="search-results-header">
+        <span id="results-count" class="results-count"></span>
+      </div>
+
+      <div id="results-list" class="search-results-list"></div>
+
+      <div id="pagination" class="pagination hidden">
+        <button id="prev-btn" class="btn btn-sm" onclick="prevPage()" disabled>Previous</button>
+        <span id="page-info" class="page-info"></span>
+        <button id="next-btn" class="btn btn-sm" onclick="nextPage()">Next</button>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-panel" class="resolve-error hidden">
+      <div class="error-icon" style="background: rgba(122,170,206,0.15); color: var(--mid);">?</div>
+      <h3>No results found</h3>
+      <p id="empty-detail">Try a different search term or filter.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let currentPage = 1;
+  const PAGE_SIZE = 20;
+  let lastQuery = {};
+
+  /* Load orgs for filter */
+  (async function loadOrgs() {
+    try {
+      const res = await fetch("/api/v2/public/search/organizations");
+      if (res.ok) {
+        const orgs = await res.json();
+        const sel = document.getElementById("filter-org");
+        orgs.forEach(o => {
+          const opt = document.createElement("option");
+          opt.value = o.id;
+          opt.textContent = o.name;
+          sel.appendChild(opt);
+        });
+      }
+    } catch {}
+  })();
+
+  async function handleSearch(e) {
+    if (e) e.preventDefault();
+    currentPage = 1;
+    await doSearch();
+  }
+
+  async function doSearch() {
+    const q = document.getElementById("search-input").value.trim();
+    const orgId = document.getElementById("filter-org").value;
+    const sort = document.getElementById("filter-sort").value;
+    const btn = document.getElementById("search-btn");
+
+    clearAlert("alert-box");
+    hide("results-panel");
+    hide("empty-panel");
+    setLoading(btn, true);
+
+    lastQuery = { q, org_id: orgId, sort, page: currentPage, page_size: PAGE_SIZE };
+
+    try {
+      const params = new URLSearchParams();
+      if (q) params.set("q", q);
+      if (orgId) params.set("org_id", orgId);
+      params.set("sort", sort);
+      params.set("page", currentPage);
+      params.set("page_size", PAGE_SIZE);
+
+      const res = await fetch(`/api/v2/public/search/documents?${params}`);
+      if (!res.ok) throw { detail: `HTTP ${res.status}` };
+
+      const data = await res.json();
+
+      if (!data.results || data.results.length === 0) {
+        show("empty-panel");
+        return;
+      }
+
+      renderResults(data);
+      show("results-panel");
+
+    } catch (err) {
+      showAlert("alert-box", err.detail || "Search failed.");
+    } finally {
+      setLoading(btn, false);
+    }
+  }
+
+  function renderResults(data) {
+    const { results, total, page, total_pages } = data;
+
+    document.getElementById("results-count").textContent =
+      `${total} document${total !== 1 ? "s" : ""} found`;
+
+    const list = document.getElementById("results-list");
+    list.innerHTML = results.map(doc => `
+      <div class="search-result-card" onclick="window.location.href='/resolve/?did=${encodeURIComponent(doc.did_uri)}'">
+        <div class="src-top">
+          <span class="src-label mono">${esc(doc.label)}</span>
+          <span class="src-status status-${doc.status.toLowerCase()}">${doc.status}</span>
+        </div>
+        <div class="src-did mono">${esc(doc.did_uri)}</div>
+        <div class="src-meta">
+          <span>${esc(doc.organization_name)}</span>
+          <span>Owner: ${esc(doc.owner_name)}</span>
+          <span>v${doc.version_count}</span>
+          <span>${timeAgo(doc.updated_at)}</span>
+        </div>
+      </div>
+    `).join("");
+
+    /* Pagination */
+    if (total_pages > 1) {
+      show("pagination");
+      document.getElementById("page-info").textContent = `Page ${page} of ${total_pages}`;
+      document.getElementById("prev-btn").disabled = page <= 1;
+      document.getElementById("next-btn").disabled = page >= total_pages;
+    } else {
+      hide("pagination");
+    }
+  }
+
+  function prevPage() { if (currentPage > 1) { currentPage--; doSearch(); } }
+  function nextPage() { currentPage++; doSearch(); }
+
+  function show(id) { document.getElementById(id).classList.remove("hidden"); }
+  function hide(id) { document.getElementById(id).classList.add("hidden"); }
+
+  function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = s || "";
+    return d.innerHTML;
+  }
+
+  function timeAgo(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const now = new Date();
+    const s = Math.floor((now - d) / 1000);
+    if (s < 60) return "just now";
+    if (s < 3600) return Math.floor(s / 60) + "m ago";
+    if (s < 86400) return Math.floor(s / 3600) + "h ago";
+    return Math.floor(s / 86400) + "d ago";
+  }
+
+  /* Auto-search from URL params */
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("q") || params.get("org_id")) {
+    if (params.get("q")) document.getElementById("search-input").value = params.get("q");
+    if (params.get("org_id")) document.getElementById("filter-org").value = params.get("org_id");
+    handleSearch();
+  }
+</script>
+{% endblock %}

@@ -11,4 +11,6 @@ urlpatterns = [
     path("reset-password/<str:token>/", views.password_reset_confirm_view, name="password_reset_confirm"),
     path("activate/<uuid:invitation_token>/", views.activate_view, name="activate"),
     path("dashboard/", views.dashboard_view, name="dashboard"),
+    path("resolve/", views.resolve_view, name="resolve"),
+    path("search/", views.search_view, name="search"),
 ]

@@ -3,6 +3,11 @@ RBAC permission system.
 
 Roles: SUPERADMIN (platform), ORG_ADMIN, ORG_MEMBER, AUDITOR (per-org).
 Permissions are derived from role — no separate permission table.
+
+Audit access is now controlled by the has_audit_access flag on Membership
+rather than a standalone AUDITOR role. ORG_ADMIN always has audit access.
+AUDITOR role is kept for backwards compatibility but is functionally
+equivalent to ORG_MEMBER + has_audit_access=True.
 """
 
 import enum
@@ -22,6 +27,8 @@ class Permission(str, enum.Enum):
 
 
 # ── Role → Permission mapping ───────────────────────────────────────────
+# VIEW_AUDITS is no longer in the base mappings — it's resolved dynamically
+# via membership.has_audit_access or the ORG_ADMIN role.
 
 ROLE_PERMISSIONS: dict[str, set[Permission]] = {
     Role.ORG_ADMIN: {
@@ -31,21 +38,35 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.MUTATE_CERTIFICATES,
         Permission.REVOKE_CERTIFICATES,
         Permission.MANAGE_MEMBERS,
-        Permission.VIEW_AUDITS,
+        Permission.VIEW_AUDITS,  # always for ORG_ADMIN
     },
     Role.ORG_MEMBER: {
         Permission.VIEW_DOCUMENTS,
         Permission.MUTATE_DOCUMENTS,
         Permission.VIEW_CERTIFICATES,
         Permission.MUTATE_CERTIFICATES,
-        Permission.VIEW_AUDITS,
     },
+    # Backwards compat: AUDITOR role = read-only + audit access
     Role.AUDITOR: {
         Permission.VIEW_DOCUMENTS,
         Permission.VIEW_CERTIFICATES,
         Permission.VIEW_AUDITS,
     },
 }
+
+
+def _get_effective_permissions(membership) -> set[Permission]:
+    """
+    Compute the effective permission set for a membership,
+    accounting for the has_audit_access flag.
+    """
+    base = ROLE_PERMISSIONS.get(membership.role, set()).copy()
+
+    # Grant VIEW_AUDITS if the flag is set, regardless of role
+    if getattr(membership, "has_audit_access", False):
+        base.add(Permission.VIEW_AUDITS)
+
+    return base
 
 
 # ── Guards ───────────────────────────────────────────────────────────────
@@ -95,8 +116,8 @@ def require_permission(user, org_id, permission: Permission):
     if membership is None:
         raise PermissionDeniedError("You are not an active member of this organization.")
 
-    role_perms = ROLE_PERMISSIONS.get(membership.role, set())
-    if permission not in role_perms:
+    effective_perms = _get_effective_permissions(membership)
+    if permission not in effective_perms:
         raise PermissionDeniedError(
             f"Your role ({membership.role}) does not have {permission.value} permission."
         )

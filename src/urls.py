@@ -3,9 +3,11 @@ Root URL configuration.
 
 - /api/v2/              → Main NinjaExtraAPI (JWT auth, REST endpoints)
 - /api/v2/org/          → Org Admin API (scoped to user's orgs)
+- /api/v2/public/       → Public API (no auth required)
 - /superadmin/api/v2/   → Superadmin API
 - /superadmin/          → Superadmin frontend (Django templates)
 - /workspace/           → Org admin frontend (Django templates)
+- /resolve/, /search/   → Public pages (no auth)
 - /login/, /register/   → Public frontend (Django templates)
 - /admin/               → Django admin
 """
@@ -18,6 +20,7 @@ from ninja_jwt.controller import NinjaJWTDefaultController
 from src.apps.authentication.apis import router as auth_router
 from src.apps.certificates.apis import router as cert_router
 from src.apps.documents.apis import router as doc_router
+from src.apps.documents.public_apis import router as public_search_router
 from src.apps.orgadmin.apis import router as orgadmin_router
 from src.apps.superadmin.apis import router as superadmin_router
 from src.common.exceptions import configure_exception_handlers
@@ -47,6 +50,9 @@ api.add_router("/org", cert_router)
 
 # Documents: /api/v2/org/organizations/{org_id}/documents/...
 api.add_router("/org", doc_router)
+
+# Public search (no auth): /api/v2/public/search/...
+api.add_router("/public", public_search_router)
 
 # ── Superadmin API ──────────────────────────────────────────────────────
 

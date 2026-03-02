@@ -38,3 +38,11 @@ def activate_view(request, invitation_token):
 @never_cache
 def dashboard_view(request):
     return render(request, "frontend/dashboard.html")
+
+@never_cache
+def resolve_view(request):
+    return render(request, "frontend/resolve.html")
+
+@never_cache
+def search_view(request):
+    return render(request, "frontend/search.html")
