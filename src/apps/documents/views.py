@@ -11,12 +11,12 @@ from django.shortcuts import render
 
 @never_cache
 def documents_view(request):
-    return render(request, "orgadmin/documents.html", {"active_page": "documents"})
+    return render(request, "documents.html", {"active_page": "documents"})
 
 
 @never_cache
 def document_detail_view(request, doc_id):
-    return render(request, "orgadmin/document_detail.html", {
+    return render(request, "document_detail.html", {
         "active_page": "documents",
         "doc_id": doc_id,
     })

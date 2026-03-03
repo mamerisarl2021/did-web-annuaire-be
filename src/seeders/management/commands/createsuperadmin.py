@@ -100,7 +100,7 @@ class Command(BaseCommand):
         # Check for existing user
         existing = User.objects.filter(email=email).first()
         if existing:
-            if existing.is_superadmin:
+            if existing.is_superadmin and existing.is_staff:
                 self.stdout.write(
                     self.style.WARNING(f"Superadmin '{email}' already exists. Skipping.")
                 )
@@ -109,11 +109,12 @@ class Command(BaseCommand):
             # Promote existing user to superadmin
             existing.is_superadmin = True
             existing.is_active = True
+            existing.is_staff=True
             if not existing.account_activated_at:
                 from django.utils import timezone
                 existing.account_activated_at = timezone.now()
             existing.save(update_fields=[
-                "is_superadmin", "is_active", "account_activated_at", "updated_at",
+                "is_superadmin", "is_active", "account_activated_at", "updated_at", "is_staff"
             ])
             self.stdout.write(
                 self.style.SUCCESS(f"Existing user '{email}' promoted to superadmin.")
@@ -127,6 +128,7 @@ class Command(BaseCommand):
             is_superadmin=True,
             is_active=True,
             activation_method="manual",
+            is_staff=True,
         )
         user.set_password(password)
 
