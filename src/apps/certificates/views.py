@@ -11,12 +11,12 @@ from django.shortcuts import render
 
 @never_cache
 def certificates_view(request):
-    return render(request, "orgadmin/certificates.html", {"active_page": "certificates"})
+    return render(request, "certificates.html", {"active_page": "certificates"})
 
 
 @never_cache
 def certificate_detail_view(request, cert_id):
-    return render(request, "orgadmin/certificate_detail.html", {
+    return render(request, "certificate_detail.html", {
         "active_page": "certificates",
         "cert_id": cert_id,
     })

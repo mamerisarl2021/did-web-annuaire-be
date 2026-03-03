@@ -12,37 +12,37 @@ from django.views.decorators.cache import never_cache
 
 @never_cache
 def login_view(request):
-    return render(request, "frontend/login.html")
+    return render(request, "login.html", {})
 
 
 @never_cache
 def register_view(request):
-    return render(request, "frontend/register.html")
+    return render(request, "register.html", {})
 
 
 @never_cache
 def forgot_password_view(request):
-    return render(request, "frontend/forgot_password.html")
+    return render(request, "forgot_password.html", {})
 
 
 @never_cache
 def password_reset_confirm_view(request, token):
-    return render(request, "frontend/password_reset_confirm.html", {"token": token})
+    return render(request, "password_reset_confirm.html", {"token": token})
 
 
 @never_cache
 def activate_view(request, invitation_token):
-    return render(request, "frontend/activate.html", {"invitation_token": invitation_token})
+    return render(request, "activate.html", {"invitation_token": invitation_token})
 
 
 @never_cache
 def dashboard_view(request):
-    return render(request, "frontend/dashboard.html")
+    return render(request, "dashboard.html", {})
 
 @never_cache
 def resolve_view(request):
-    return render(request, "frontend/resolve.html")
+    return render(request, "resolve.html", {})
 
 @never_cache
 def search_view(request):
-    return render(request, "frontend/search.html")
+    return render(request, "search.html", {})

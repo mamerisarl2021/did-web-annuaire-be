@@ -94,7 +94,7 @@ class AppSettings(BaseSettings):
     # SESSION_COOKIE_AGE: int = 86400  # 24h
     # SESSION_COOKIE_SECURE: bool = False
     # SESSION_COOKIE_DOMAIN: str = ""
-    # CSRF_COOKIE_SECURE: bool = False
+    CSRF_COOKIE_SECURE: bool = False
 
     # ── JWT ─────────────────────────────────────────────────────────────
 
@@ -107,9 +107,9 @@ class AppSettings(BaseSettings):
         return self.JWT_SIGNING_KEY or self.SECRET_KEY
 
     # ── External services ───────────────────────────────────────────────
-    UNIVERSAL_REGISTRAR_URL: str = ""
-    SIGNSERVER_URL: str = ""
-    SIGNSERVER_WORKER_NAME: str = ""
+    #UNIVERSAL_REGISTRAR_URL: str = ""
+    #SIGNSERVER_URL: str = ""
+    #SIGNSERVER_WORKER_NAME: str = ""
     JWK_EXTRACTOR_JAR: str = "/home/davieddee/WORKSPACE/did-web-annuaire-be/artifacts/ecdsa-extractor.jar"
 
     # ── Platform ────────────────────────────────────────────────────────
