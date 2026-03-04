@@ -303,6 +303,7 @@ dependencies = [
     { name = "pyotp" },
     { name = "qrcode", extra = ["pil"] },
     { name = "redis" },
+    { name = "requests" },
     { name = "structlog" },
     { name = "whitenoise", extra = ["brotli"] },
 ]
@@ -332,6 +333,7 @@ requires-dist = [
     { name = "pyotp", specifier = ">=2.9.0" },
     { name = "qrcode", extras = ["pil"], specifier = ">=8.2" },
     { name = "redis", specifier = ">=7.2.0" },
+    { name = "requests", specifier = ">=2.32.5" },
     { name = "structlog", specifier = ">=25.5.0" },
     { name = "whitenoise", extras = ["brotli"], specifier = ">=6.12.0" },
 ]
