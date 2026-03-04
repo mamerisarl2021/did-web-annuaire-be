@@ -106,9 +106,9 @@ class AppSettings(BaseSettings):
         return self.JWT_SIGNING_KEY or self.SECRET_KEY
 
     # ── External services ───────────────────────────────────────────────
-    #UNIVERSAL_REGISTRAR_URL: str = ""
-    #SIGNSERVER_URL: str = ""
-    #SIGNSERVER_WORKER_NAME: str = ""
+    UNIVERSAL_REGISTRAR_URL: str = ""
+    SIGNSERVER_URL: str = ""
+    SIGNSERVER_WORKER_NAME: str = ""
     JWK_EXTRACTOR_JAR: str = "path/to/ecdsa-extractor.jar"
 
     # ── Platform ────────────────────────────────────────────────────────
