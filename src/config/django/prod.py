@@ -45,3 +45,5 @@ EMAIL_BACKEND = env.EMAIL_BACKEND
 # ── Others ───────────────────────────────────────────────────
 JWK_EXTRACTOR_JAR = "/app/bin/ecdsa-extractor.jar"
 JWK_EXTRACTOR_JAVA = "java"
+
+REDIS_PASSWORD=env.REDIS_PASSWORD
