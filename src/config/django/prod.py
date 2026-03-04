@@ -10,7 +10,7 @@ from src.config.env import env
 
 # ── Security ────────────────────────────────────────────────────────────
 
-DEBUG = False
+DEBUG = env.DEBUG
 
 ALLOWED_HOSTS = env.ALLOWED_HOSTS
 
