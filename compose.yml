@@ -1,5 +1,5 @@
 ###############################################################################
-# Annuaire DID Backend Stackeb-annuaire-backend/staging$  nano compose.yml
+# Annuaire DID Backend Stack
 # Location on VPS: ~/app/did-web-annuaire-backend/staging/
 #
 # This stack owns the shared network and named volumes.
@@ -66,7 +66,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-annuaire} -d annuaire_did"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-annuaire} -d annuaire_did" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -89,11 +89,11 @@ services:
       redis-server
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
-      --requirepass ${REDIS_PASSWORD:-changeme_redis}
+      --requirepass ${REDIS_PASSWORD:-OykJKrnF94ZFZu3evGA}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -131,28 +131,28 @@ services:
       - annuaire_staging_net
 
   # ── Celery beat scheduler ─────────────────────────────────────────────────
-  #celery-beat:
-  #  image: ctrldaviddee/annuaire_did_be:staging-prime-latest
-  #  container_name: annuaire-celery-beat
-  #  restart: unless-stopped
-  #  command: celery -A src.config.celery_app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-  #  user: "0"
-  #  env_file:
-  #    - .env.backend
-  #  volumes:
-  #    - media_volume:/app/mediafiles
-  #  depends_on:
-  #    db:
-  #      condition: service_healthy
-  #    redis:
-  #      condition: service_healthy
-  #  logging:
-  #    driver: "json-file"
-  #    options:
-  #      max-size: "170m"
-  #      max-file: "5"
-  #  networks:
-  #    - annuaire_staging_net
+  celery-beat:
+    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
+    container_name: annuaire-celery-beat
+    restart: unless-stopped
+    command: celery -A src.config.celery_app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    user: "0"
+    env_file:
+      - .env.backend
+    volumes:
+      - media_volume:/app/mediafiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "170m"
+        max-file: "5"
+    networks:
+      - annuaire_staging_net
 
 # ── Named volumes (shared with Keyfactor & DIF stacks) ─────────────────────
 volumes:
