@@ -6,6 +6,8 @@
 # driver-did-web writes DID docs to the shared dids_volume that nginx serves.
 ###############################################################################
 
+name: registrar
+
 networks:
   annuaire_staging_net:
     external: true

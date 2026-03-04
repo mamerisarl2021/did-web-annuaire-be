@@ -29,10 +29,7 @@ app = Celery("annuaire_did")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 
 # Auto-discover tasks.py in each app
-app.autodiscover_tasks(
-    ["src.apps.audits", "src.apps.authentication", "src.apps.files", "src.apps.organizations", "src.apps.emails",
-     "src.apps.users", "src.apps.superadmin", "src.seeders", "src.apps.certificates", "src.apps.documents",
-     "src.apps.audits", "src"])
+app.autodiscover_tasks()
 
 
 @setup_logging.connect

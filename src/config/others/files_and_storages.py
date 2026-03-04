@@ -25,10 +25,13 @@ MEDIA_ROOT = BASE_DIR / "mediafiles"
 DID_DOCUMENTS_ROOT = BASE_DIR / "data" / "dids"
 
 STORAGES = {
+    "default" : {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 
 # Prevent manifest errors from crashing the app
-#WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_MANIFEST_STRICT = False

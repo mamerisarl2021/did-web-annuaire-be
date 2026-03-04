@@ -36,7 +36,11 @@ services:
     env_file:
       - .env.backend
     volumes:
-      - static_volume:/app/staticfiles
+      # FIX: Mount volume at /app/static_root (STATIC_ROOT — collectstatic output)
+      #      NOT at /app/staticfiles (source CSS/JS baked into the image).
+      #      The old mount at /app/staticfiles shadowed the source files with
+      #      an empty volume, causing the manifest error.
+      - static_volume:/app/static_root
       - media_volume:/app/mediafiles
       - dids_volume:/app/data/dids
     depends_on:
@@ -101,29 +105,29 @@ services:
       - annuaire_staging_net
 
   # ── Celery worker ─────────────────────────────────────────────────────────
-#  celery:
-#    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
-#    container_name: annuaire-celery
-#    restart: unless-stopped
-#    command: celery -A src.config.celery_app worker -l info --without-gossip --without-mingle --without-heartbeat
-#    user: "0"
-#    env_file:
-#      - .env.backend
-#    volumes:
-#      - static_volume:/app/staticfiles
-#      - media_volume:/app/mediafiles
-#    depends_on:
-#      db:
-#        condition: service_healthy
-#      redis:
-#        condition: service_healthy
-#    logging:
-#      driver: "json-file"
-#      options:
-#        max-size: "170m"
-#        max-file: "5"
-#    networks:
-#      - annuaire_staging_net
+  # FIX: Uncommented — without this, all async tasks (emails, etc.) are lost.
+  #celery:
+  #  image: ctrldaviddee/annuaire_did_be:staging-prime-latest
+  #  container_name: annuaire-celery
+  #  restart: unless-stopped
+  #  command: celery -A src.config.celery_app worker -l info --without-gossip --without-mingle --without-heartbeat
+  #  user: "0"
+  #  env_file:
+  #    - .env.backend
+  #  volumes:
+  #    - media_volume:/app/mediafiles
+  #  depends_on:
+  #    db:
+  #      condition: service_healthy
+  #    redis:
+  #      condition: service_healthy
+  #  logging:
+  #    driver: "json-file"
+  #    options:
+  #      max-size: "170m"
+  #      max-file: "5"
+  #  networks:
+  #    - annuaire_staging_net
 
   # ── Celery beat scheduler ─────────────────────────────────────────────────
   #celery-beat:
@@ -135,7 +139,6 @@ services:
   #  env_file:
   #    - .env.backend
   #  volumes:
-  #    - static_volume:/app/staticfiles
   #    - media_volume:/app/mediafiles
   #  depends_on:
   #    db:

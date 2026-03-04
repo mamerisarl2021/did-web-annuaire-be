@@ -62,8 +62,7 @@ class AppSettings(BaseSettings):
         )
 
     # ── Redis ───────────────────────────────────────────────────────────
-    #REDIS_PASSWORD: str = "changeme_redis"
-    REDIS_PASSWORD: str = "redisallow-alex@123"
+    REDIS_PASSWORD: str = "changeme_redis"
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
 
@@ -110,7 +109,7 @@ class AppSettings(BaseSettings):
     #UNIVERSAL_REGISTRAR_URL: str = ""
     #SIGNSERVER_URL: str = ""
     #SIGNSERVER_WORKER_NAME: str = ""
-    JWK_EXTRACTOR_JAR: str = "/home/davieddee/WORKSPACE/did-web-annuaire-be/artifacts/ecdsa-extractor.jar"
+    JWK_EXTRACTOR_JAR: str = "path/to/ecdsa-extractor.jar"
 
     # ── Platform ────────────────────────────────────────────────────────
     PLATFORM_DOMAIN: str = "localhost:8000"

@@ -30,6 +30,8 @@
 #   # Wait ~90s, then access https://<host>:8443/signserver/
 ###############################################################################
 
+name: signserver
+
 networks:
   annuaire_staging_net:
     external: true

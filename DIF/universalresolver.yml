@@ -5,6 +5,8 @@
 # NOT restarted by CI/CD — stays running independently.
 ###############################################################################
 
+name: resolver
+
 networks:
   annuaire_staging_net:
     external: true

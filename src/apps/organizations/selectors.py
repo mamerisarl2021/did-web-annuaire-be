@@ -60,7 +60,7 @@ def get_membership_by_invitation_token(*, token) -> Membership | None:
 
 
 def get_organization_members(*, organization_id) -> list[Membership]:
-    """Return all members (excluding deactivated) for an organization."""
+    """Return all members for an organization."""
     return list(
         Membership.objects
         .filter(organization_id=organization_id)
