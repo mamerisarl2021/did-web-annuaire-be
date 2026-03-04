@@ -10,17 +10,17 @@ from django.views.decorators.cache import never_cache
 
 @never_cache
 def dashboard_view(request):
-    return render(request, "dashboard.html", {"active_page": "dashboard"})
+    return render(request, "superadmin/dashboard.html", {"active_page": "dashboard"})
 
 
 @never_cache
 def organizations_view(request):
-    return render(request, "organizations.html", {"active_page": "organizations"})
+    return render(request, "superadmin/organizations.html", {"active_page": "organizations"})
 
 
 @never_cache
 def organization_detail_view(request, org_id):
-    return render(request, "organization_detail.html", {
+    return render(request, "superadmin/organization_detail.html", {
         "active_page": "organizations",
         "org_id": str(org_id),
     })

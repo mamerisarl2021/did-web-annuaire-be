@@ -1,0 +1,130 @@
+/* ── Certificate detail additions ─────────────────────────────
+   Append to orgadmin.css
+   ─────────────────────────────────────────────────────────── */
+
+/* Detail 2-column grid */
+.oa-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .oa-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card inside detail */
+.oa-card {
+  background: var(--oa-surface);
+  border: 1px solid var(--oa-border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.oa-card h3 {
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--oa-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Field rows inside cards */
+.oa-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--oa-border);
+}
+
+.oa-field:last-child {
+  border-bottom: none;
+}
+
+.oa-field .label {
+  font-size: 0.8125rem;
+  color: var(--oa-text-muted);
+  flex-shrink: 0;
+  margin-right: 1rem;
+}
+
+.oa-field .value {
+  font-size: 0.875rem;
+  color: var(--oa-text);
+  text-align: right;
+  word-break: break-word;
+}
+
+.oa-field .value.mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+}
+
+/* Small button variant */
+.oa-btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* Danger button */
+.oa-btn-danger {
+  background: var(--oa-error, #c0392b);
+  color: #fff;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.oa-btn-danger:hover {
+  opacity: 0.85;
+}
+
+/* Description text under modal title */
+.oa-modal .desc {
+  font-size: 0.8125rem;
+  color: var(--oa-text-muted);
+  margin: -0.5rem 0 1.25rem;
+}
+
+/* Required marker */
+.req { color: var(--oa-error, #c0392b); }
+
+/* Empty state */
+.oa-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--oa-text-muted);
+}
+
+.oa-empty .icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Spinner inside button */
+.oa-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: oa-spin 0.6s linear infinite;
+}
+
+@keyframes oa-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Warning color */
+:root {
+  --oa-warn: #e67e22;
+}

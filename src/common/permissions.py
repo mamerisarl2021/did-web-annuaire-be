@@ -38,7 +38,7 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.MUTATE_CERTIFICATES,
         Permission.REVOKE_CERTIFICATES,
         Permission.MANAGE_MEMBERS,
-        Permission.VIEW_AUDITS,  # always for ORG_ADMIN
+        Permission.VIEW_AUDITS,
     },
     Role.ORG_MEMBER: {
         Permission.VIEW_DOCUMENTS,
@@ -87,20 +87,42 @@ def require_permission(user, org_id, permission: Permission):
 
     Superadmins bypass org membership checks.
     """
-    from src.apps.organizations.models import Membership
+    from src.apps.organizations.models import Membership, Organization
     from src.common.types import MembershipStatus
 
-    # Superadmins have all permissions everywhere
+    # ── FIX: Superadmin bypass ──────────────────────────────────────
+    # Old code returned a random org member's membership (or None),
+    # which meant membership.user was the wrong person and
+    # membership.organization could crash with AttributeError.
+    #
+    # New: try the superadmin's own membership first; if they don't
+    # have one, build a synthetic unsaved Membership so callers get
+    # valid .organization and .user references.
     if getattr(user, "is_superadmin", False):
-        membership = (
+        org = Organization.objects.filter(id=org_id).first()
+        if org is None:
+            raise PermissionDeniedError("Organization not found.")
+
+        own_membership = (
             Membership.objects
-            .filter(organization_id=org_id)
+            .filter(user=user, organization_id=org_id)
             .select_related("organization", "user")
             .first()
         )
-        if membership:
-            return membership
-        return None
+        if own_membership:
+            return own_membership
+
+        # Synthetic (unsaved) membership for API consistency
+        synthetic = Membership(
+            user=user,
+            organization=org,
+            role=Role.ORG_ADMIN,
+            status=MembershipStatus.ACTIVE,
+            has_audit_access=True,
+        )
+        synthetic.organization = org
+        synthetic.user = user
+        return synthetic
 
     membership = (
         Membership.objects
