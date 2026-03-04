@@ -1,5 +1,5 @@
 ###############################################################################
-# Annuaire DID Backend Stack
+# Annuaire DID Backend Stackeb-annuaire-backend/staging$  nano compose.yml
 # Location on VPS: ~/app/did-web-annuaire-backend/staging/
 #
 # This stack owns the shared network and named volumes.
@@ -83,11 +83,12 @@ services:
     image: redis:8.4.1-alpine
     container_name: annuaire-redis
     restart: unless-stopped
+    env_file:
+      - .env.backend
     command: >
       redis-server
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
-      --appendonly yes
       --requirepass ${REDIS_PASSWORD:-changeme_redis}
     volumes:
       - redis_data:/data
@@ -106,28 +107,28 @@ services:
 
   # ── Celery worker ─────────────────────────────────────────────────────────
   # FIX: Uncommented — without this, all async tasks (emails, etc.) are lost.
-  #celery:
-  #  image: ctrldaviddee/annuaire_did_be:staging-prime-latest
-  #  container_name: annuaire-celery
-  #  restart: unless-stopped
-  #  command: celery -A src.config.celery_app worker -l info --without-gossip --without-mingle --without-heartbeat
-  #  user: "0"
-  #  env_file:
-  #    - .env.backend
-  #  volumes:
-  #    - media_volume:/app/mediafiles
-  #  depends_on:
-  #    db:
-  #      condition: service_healthy
-  #    redis:
-  #      condition: service_healthy
-  #  logging:
-  #    driver: "json-file"
-  #    options:
-  #      max-size: "170m"
-  #      max-file: "5"
-  #  networks:
-  #    - annuaire_staging_net
+  celery:
+    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
+    container_name: annuaire-celery
+    restart: unless-stopped
+    command: celery -A src.config.celery_app worker -l info --without-gossip --without-mingle --without-heartbeat
+    user: "0"
+    env_file:
+      - .env.backend
+    volumes:
+      - media_volume:/app/mediafiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "170m"
+        max-file: "5"
+    networks:
+      - annuaire_staging_net
 
   # ── Celery beat scheduler ─────────────────────────────────────────────────
   #celery-beat:
