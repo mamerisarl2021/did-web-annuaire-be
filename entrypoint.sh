@@ -11,31 +11,6 @@ echo "════════════════════════�
 
 cd /app
 
-# ── Wait for database ───────────────────────────────────────────────────
-
-echo "→ Waiting for database..."
-python -c "
-import time, sys
-sys.path.insert(0, '.')
-from src.config.env import env
-import psycopg2
-
-for i in range(30):
-    try:
-        conn = psycopg2.connect(
-            dbname=env.POSTGRES_DB, user=env.POSTGRES_USER,
-            password=env.POSTGRES_PASSWORD, host=env.POSTGRES_HOST,
-            port=env.POSTGRES_PORT
-        )
-        conn.close()
-        print('  ✓ Database ready')
-        sys.exit(0)
-    except psycopg2.OperationalError:
-        time.sleep(1)
-print('  ✗ Database not ready after 30s')
-sys.exit(1)
-"
-
 # ── Migrations ──────────────────────────────────────────────────────────
 
 echo "→ Running migrations..."
