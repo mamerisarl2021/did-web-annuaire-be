@@ -190,6 +190,151 @@ Quick Test Plan After docker compose up -d
 https://localhost:8443/ → should hit Django (or login page)
 https://localhost:8443/.well-known/did.json → root DID if exists
 https://localhost:8443/resolver/1.0/identifiers/did:key:z6M... (test a known did:key)
-https://localhost:8443/signserver/adminweb → SignServer UI (after ~90s init)
+https://localhost:8444/signserver/adminweb/
 https://localhost:446/ejbca/ → EJBCA
 Create a test DID via POST to https://localhost:8443/registrar/1.0/create (with driver-did-web) → check generated file in volume + resolution via :8080
+
+One-time SignServer setup:
+
+Create a Soft CryptoToken (stores the key pair in DB)
+Generate an Ed25519 key in that CryptoToken
+Create a PlainSigner worker linked to the CryptoToken
+Activate the worker
+
+Per DID document signing (Django backend):
+
+Build the DID document (without proof)
+Canonicalize it with JCS (RFC 8785)
+POST the canonicalized bytes to SignServer's /signserver/process HTTP API
+Get back raw Ed25519 signature bytes
+Construct the Data Integrity proof object (type, verificationMethod, proofValue, created, proofPurpose)
+Attach proof to the DID document
+Write the final did.json to the dids volume
+
+difference between ecdsa-jcs-2019 and eddsa-jcs-2022
+
+Yes, that's the right flow. Let me be precise about the split of responsibilities though, because SignServer only handles one part:
+SignServer's job (raw crypto only): hold the private key and sign bytes you send it. It returns a raw signature. It does not know anything about DID documents, JCS, or Linked Data Proofs.
+Your Django backend's job: everything else — canonicalization, constructing the proof, attaching it.
+So the full flow is:
+One-time SignServer setup:
+
+Create a Soft CryptoToken (stores the key pair in DB)
+Generate an Ed25519 key in that CryptoToken
+Create a PlainSigner worker linked to the CryptoToken
+Activate the worker
+
+Per DID document signing (Django backend):
+
+Build the DID document (without proof)
+Canonicalize it with JCS (RFC 8785)
+POST the canonicalized bytes to SignServer's /signserver/process HTTP API
+Get back raw Ed25519 signature bytes
+Construct the Data Integrity proof object (type, verificationMethod, proofValue, created, proofPurpose)
+Attach proof to the DID document
+Write the final did.json to the dids volume
+
+Does that match what you had in mind? Want to start with the SignServer CryptoToken and signer setup, or with the Django signing logic?Yeah you've got it. But i hope i'm on the right path.
+If yes let's do the One-time SignServer setup first10:47 PMCharted SignServer setup path and verified Ed25519 compatibility concernsCharted SignServer setup path and verified Ed25519 compatibility concernsYou're on the right path. Before we set up the workers, let me quickly verify SignServer CE supports Ed25519 — it depends on the Java version and crypto provider bundled.Reconciled Ed25519 limitations and validated ECDSA alternative approachReconciled Ed25519 limitations and validated ECDSA alternative approachHere's an important finding from the research. Ed25519 and Ed448 are now supported in the Plain signer, but Keyfactor use of the EdDSA algorithms requires utilizing the P11NG crypto token as well as HSM support for the selected algorithm. That means Ed25519 won't work with a Soft CryptoToken (PKCS12) in SignServer CE — it needs a hardware security module.
+So you have two practical options:
+Option A: Use ECDSA P-256 through SignServer — fully supported with the soft crypto token, and the W3C Data Integrity spec defines ecdsa-jcs-2019 as a standard cryptosuite. This keeps SignServer as your key custodian.
+Option B: Handle Ed25519 entirely in Django (using PyNaCl or the cryptography library) — gives you eddsa-jcs-2022 proofs but SignServer is bypassed for signing.
+Both produce valid, verifiable DID document proofs per W3C specs.Q: Which approach do you want to go with?
+A: ECDSA P-256 via SignServer (ecdsa-jcs-2019)10:51 PMOrchestrated sequential setup steps for cryptographic infrastructureOrchestrated sequential setup steps for cryptographic infrastructureGood choice. Let's walk through the setup step by step in the SignServer Admin Web UI you already have open.
+Step 1 — Create the CryptoToken (key store)
+
+On the Workers page, click Add
+Choose FROM TEMPLATE
+Select keystore-crypto.properties → click Next
+In the config that appears, change this line:
+
+   WORKERGENID1.KEYSTORETYPE=PKCS12
+to:
+   WORKERGENID1.KEYSTORETYPE=INTERNAL
+This stores the keys in SignServer's database rather than a file.
+5. Click Apply
+You should see a new worker called "CryptoTokenP12" in the list.
+Step 2 — Generate the ECDSA P-256 key
+
+Select the CryptoTokenP12 worker → click Crypto Token
+Click Generate key
+For New Key Alias, enter: DIDSigner
+For Key Algorithm, select: ECDSA
+For Key Specification, select: prime256v1
+Click Generate
+
+Step 3 — Create the PlainSigner worker
+
+Go back to Workers → click Add
+Choose FROM TEMPLATE
+Select plainsigner.properties → click Next
+Change WORKERGENID1.DEFAULTKEY=00003 to WORKERGENID1.DEFAULTKEY=DIDSigner
+Click Apply
+
+The PlainSigner will show as OFFLINE because it needs a signing certificate — that's expected. We'll issue one from EJBCA next.
+Go ahead with Steps 1–3 and let me know how it goes. After that we'll create the certificate profile in EJBCA and wire everything up.I'm stuck at point 2 of step 2.
+There's no Generate key button here10:59 PMPinpointed missing interface tab for accessing key generation functionalityPinpointed missing interface tab for accessing key generation functionalityYou're on the Status Summary tab. Click the Crypto Token tab (the last tab in the row: Status Summary → Status Properties → Configuration → Authorization → Crypto Token). That's where the key generation interface lives with the Generate key button.
+But first — the token shows "Crypto Token is disconnected". You'll likely need to activate it first. When you click the Crypto Token tab, you should see an Activate button. Click it, and if it asks for a password/pin, try an empty string or foo123 (the default for the keystore-crypto template). Once it's active, the Generate key option will appear.done step 1 to 311:03 PMCharted next steps for issuing signing certificateCharted next steps for issuing signing certificateNow let's issue a signing certificate from EJBCA to activate the PlainSigner.
+Step 4 — Generate a CSR from SignServer
+
+Go to Workers → select the PlainSigner worker
+Click GENERATE CSR...
+For Key Alias, select DIDSigner
+For Signature Algorithm, select SHA256withECDSA
+For Subject DN, enter: CN=DIDSigner
+Click Generate → download the .p10 file
+
+Step 5 — Create a Certificate Profile in EJBCA
+
+Go to EJBCA Admin (https://localhost:446/ejbca/)
+Under CA Functions → click Certificate Profiles
+At the bottom, type DIDSigner → click Add
+Click Edit on the new profile:
+
+Available Key Algorithms: select only ECDSA
+Available Bit Lengths / EC Curves: select P-256 / prime256v1
+Key Usage: check only Digital Signature
+Extended Key Usage: uncheck Use
+Validity: 1y
+
+
+Click Save
+
+Step 6 — Create an End Entity Profile in EJBCA
+
+Under RA Functions → click End Entity Profiles
+Type DIDSigner → click Add
+Click Edit:
+
+Under Available Certificate Profiles, select DIDSigner
+Under Default CA, select your ManagementCA
+Under Available CAs, select ManagementCA
+
+
+Click Save
+
+Step 7 — Issue the certificate
+
+Under RA Functions → click Make New Request
+For Certificate Type, select DIDSigner
+For Key-pair generation, select Provided by user
+Upload the .p10 CSR file from Step 4
+For Username, enter DIDSigner
+Click Download PEM – full chain
+
+Step 8 — Install the certificate in SignServer
+
+Back in SignServer, go to Workers → select PlainSigner
+Click INSTALL CERTIFICATES...
+Browse and select the PEM file you just downloaded
+Click Add then Install
+
+The PlainSigner should now show as ACTIVE. Let me know when you get there or if you hit any snags along the way.successful11:42 PMVerified system readiness and charted backend implementation pathVerified system readiness and charted backend implementation pathBoth workers ACTIVE — SignServer is fully set up. Now let's move to the Django backend side. You can quickly verify signing works by testing from your terminal:
+bashecho -n "hello world" | curl -s -k \
+  -X POST \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @- \
+  "http://localhost:8880/signserver/process?workerName=PlainSigner" \
+  -o /dev/stdout | xxd | head
+If you get binary output back, the signer is working. If you get an error, paste it and we'll fix it before moving to the Django integration.
+Once confirmed, we'll build the Django signing service that does: JCS canonicalize → POST to SignServer → construct ecdsa-jcs-2019 proof → attach to DID document.
