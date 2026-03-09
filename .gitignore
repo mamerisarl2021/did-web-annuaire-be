@@ -208,6 +208,4 @@ __marimo__/
 #staticfiles
 mediafiles
 django-registration.backends.activation
-README.md
 .idea
-did-directory-design-final.md
