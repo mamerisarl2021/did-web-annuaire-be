@@ -51,14 +51,11 @@ def create_did(did_document: dict) -> dict:
     if not url:
         return _stub_response("create", did_document.get("id", ""))
 
-    endpoint = f"{url}/1.0/create"
+    endpoint = f"{url}/1.0/create?method=web"
     payload = {
         "jobId": None,
-        "options": {
-            "network": "mainnet",
-        },
+        "options": {},
         "secret": {},
-        "method": "web",
         "didDocument": did_document,
     }
 
@@ -178,11 +175,11 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
             operation=operation,
             endpoint=endpoint,
             did=payload.get("did")
-                or (
-                    payload.get("didDocument", {}).get("id")
-                    if isinstance(payload.get("didDocument"), dict)
-                    else ""
-                ),
+            or (
+                payload.get("didDocument", {}).get("id")
+                if isinstance(payload.get("didDocument"), dict)
+                else ""
+            ),
         )
 
         response = http_client.post(
