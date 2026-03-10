@@ -59,8 +59,12 @@ class Command(BaseCommand):
 
         # Resolve credentials: CLI args > env vars > interactive prompts
         email = options.get("email") or getattr(env, "SUPERADMIN_EMAIL", "").strip()
-        password = options.get("password") or getattr(env, "SUPERADMIN_PASSWORD", "").strip()
-        full_name = options.get("full_name") or getattr(env, "SUPERADMIN_FULL_NAME", "").strip()
+        password = (
+            options.get("password") or getattr(env, "SUPERADMIN_PASSWORD", "").strip()
+        )
+        full_name = (
+            options.get("full_name") or getattr(env, "SUPERADMIN_FULL_NAME", "").strip()
+        )
 
         if no_input:
             # Automated mode — require email and password from env or args
@@ -86,6 +90,7 @@ class Command(BaseCommand):
 
             if not password:
                 import getpass
+
                 password = getpass.getpass("Password: ")
                 password_confirm = getpass.getpass("Confirm password: ")
                 if password != password_confirm:
@@ -102,20 +107,29 @@ class Command(BaseCommand):
         if existing:
             if existing.is_superadmin and existing.is_staff:
                 self.stdout.write(
-                    self.style.WARNING(f"Superadmin '{email}' already exists. Skipping.")
+                    self.style.WARNING(
+                        f"Superadmin '{email}' already exists. Skipping."
+                    )
                 )
                 return
 
             # Promote existing user to superadmin
             existing.is_superadmin = True
             existing.is_active = True
-            existing.is_staff=True
+            existing.is_staff = True
             if not existing.account_activated_at:
                 from django.utils import timezone
+
                 existing.account_activated_at = timezone.now()
-            existing.save(update_fields=[
-                "is_superadmin", "is_active", "account_activated_at", "updated_at", "is_staff"
-            ])
+            existing.save(
+                update_fields=[
+                    "is_superadmin",
+                    "is_active",
+                    "account_activated_at",
+                    "updated_at",
+                    "is_staff",
+                ]
+            )
             self.stdout.write(
                 self.style.SUCCESS(f"Existing user '{email}' promoted to superadmin.")
             )
@@ -133,6 +147,7 @@ class Command(BaseCommand):
         user.set_password(password)
 
         from django.utils import timezone
+
         user.account_activated_at = timezone.now()
         user.save()
 

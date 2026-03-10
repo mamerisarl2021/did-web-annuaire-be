@@ -17,7 +17,11 @@ urlpatterns = [
     path("members/", members_view, name="members"),
     path("settings/", settings_view, name="settings"),
     path("certificates/", certificates_view, name="certificates"),
-    path("certificates/<uuid:cert_id>/", certificate_detail_view, name="certificate_detail"),
+    path(
+        "certificates/<uuid:cert_id>/",
+        certificate_detail_view,
+        name="certificate_detail",
+    ),
     path("documents/", documents_view, name="documents"),
     path("documents/<uuid:doc_id>/", document_detail_view, name="document_detail"),
 ]

@@ -37,7 +37,11 @@ router = Router(tags=["Authentication"])
 
 @router.post(
     "/register",
-    response={201: RegisterResponseSchema, 400: ErrorResponseSchema, 409: ErrorResponseSchema},
+    response={
+        201: RegisterResponseSchema,
+        400: ErrorResponseSchema,
+        409: ErrorResponseSchema,
+    },
     summary="Register a new user and organization (multipart)",
 )
 def register(
@@ -112,7 +116,11 @@ def activate_setup(request: HttpRequest, invitation_token: UUID):
 
 @router.post(
     "/activate/{invitation_token}/verify",
-    response={200: ActivateVerifyResponseSchema, 400: ErrorResponseSchema, 404: ErrorResponseSchema},
+    response={
+        200: ActivateVerifyResponseSchema,
+        400: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+    },
     summary="Verify OTP code and activate account",
 )
 def activate_verify(
@@ -130,6 +138,7 @@ def activate_verify(
     )
 
     from src.apps.organizations.services import activate_membership
+
     activate_membership(membership=membership)
 
     tokens = auth_services.generate_tokens_for_user(user=user)
@@ -179,7 +188,9 @@ def me(request: HttpRequest):
 )
 def password_reset_request(request: HttpRequest, payload: PasswordResetRequestSchema):
     auth_services.request_password_reset(email=payload.email)
-    return 200, {"message": "If an account with that email exists, a reset link has been sent."}
+    return 200, {
+        "message": "If an account with that email exists, a reset link has been sent."
+    }
 
 
 @router.post(
@@ -188,7 +199,9 @@ def password_reset_request(request: HttpRequest, payload: PasswordResetRequestSc
     summary="Confirm password reset with token",
 )
 def password_reset_confirm(request: HttpRequest, payload: PasswordResetConfirmSchema):
-    auth_services.confirm_password_reset(token=payload.token, new_password=payload.new_password)
+    auth_services.confirm_password_reset(
+        token=payload.token, new_password=payload.new_password
+    )
     return 200, {"message": "Password has been reset successfully."}
 
 

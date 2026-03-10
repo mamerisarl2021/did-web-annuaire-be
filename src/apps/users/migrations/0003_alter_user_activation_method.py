@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0002_remove_user_first_name_remove_user_last_name_and_more'),
+        ("users", "0002_remove_user_first_name_remove_user_last_name_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='activation_method',
-            field=models.CharField(choices=[('OTP', 'OTP (Time-based)'), ('QR', 'QR Code')], default='OTP', max_length=20),
+            model_name="user",
+            name="activation_method",
+            field=models.CharField(
+                choices=[("OTP", "OTP (Time-based)"), ("QR", "QR Code")],
+                default="OTP",
+                max_length=20,
+            ),
         ),
     ]

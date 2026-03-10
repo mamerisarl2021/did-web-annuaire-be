@@ -77,15 +77,15 @@ class AppSettings(BaseSettings):
 
     @property
     def CELERY_RESULT_BACKEND(self) -> str:
-        return 'django-db'
-        #return f"{self.REDIS_URL}/1"
+        return "django-db"
+        # return f"{self.REDIS_URL}/1"
 
     @property
     def CACHE_REDIS_URL(self) -> str:
         return f"{self.REDIS_URL}/2"
 
-    #@property
-    #def SESSION_REDIS_URL(self) -> str:
+    # @property
+    # def SESSION_REDIS_URL(self) -> str:
     #    return f"{self.REDIS_URL}/3"
 
     # ── Session / Cookies ───────────────────────────────────────────────
@@ -94,6 +94,7 @@ class AppSettings(BaseSettings):
     # SESSION_COOKIE_SECURE: bool = False
     # SESSION_COOKIE_DOMAIN: str = ""
     CSRF_COOKIE_SECURE: bool = False
+    CSRF_TRUSTED_ORIGINS: list[str] = [""]
 
     # ── JWT ─────────────────────────────────────────────────────────────
 

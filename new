@@ -330,7 +330,8 @@ Browse and select the PEM file you just downloaded
 Click Add then Install
 
 The PlainSigner should now show as ACTIVE. Let me know when you get there or if you hit any snags along the way.successful11:42 PMVerified system readiness and charted backend implementation pathVerified system readiness and charted backend implementation pathBoth workers ACTIVE — SignServer is fully set up. Now let's move to the Django backend side. You can quickly verify signing works by testing from your terminal:
-bashecho -n "hello world" | curl -s -k \
+bash
+echo -n "hello world" | curl -s -k \
   -X POST \
   -H "Content-Type: application/octet-stream" \
   --data-binary @- \
@@ -338,3 +339,6 @@ bashecho -n "hello world" | curl -s -k \
   -o /dev/stdout | xxd | head
 If you get binary output back, the signer is working. If you get an error, paste it and we'll fix it before moving to the Django integration.
 Once confirmed, we'll build the Django signing service that does: JCS canonicalize → POST to SignServer → construct ecdsa-jcs-2019 proof → attach to DID document.
+
+TODO: HEALTH CHECK FUNCtion of siGNsERVER IS NOT USED
+TODO: AUDIT LOGGING NOT WIRED

@@ -76,7 +76,9 @@ def extract_metadata(*, cert_pem_bytes: bytes, p12_password: str | None = None) 
         raise ValidationError(f"Failed to parse metadata output: {e}")
 
 
-def _run_extractor(mode: str, cert_bytes: bytes, p12_password: str | None = None) -> str:
+def _run_extractor(
+    mode: str, cert_bytes: bytes, p12_password: str | None = None
+) -> str:
     """
     Write cert to a temp file and call the JAR.
     """

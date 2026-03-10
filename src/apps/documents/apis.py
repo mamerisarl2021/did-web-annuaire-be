@@ -72,7 +72,9 @@ def _require_owner_or_admin(doc, user, membership, action="access"):
         return
     if membership.role == Role.ORG_ADMIN:
         return
-    raise PermissionDeniedError(f"Only the document owner or an admin can {action} this document.")
+    raise PermissionDeniedError(
+        f"Only the document owner or an admin can {action} this document."
+    )
 
 
 def _require_reviewer(doc, user, membership):
@@ -206,7 +208,8 @@ def list_documents(request: HttpRequest, org_id: UUID):
         docs = doc_selectors.get_org_documents(organization_id=org_id)
     else:
         docs = doc_selectors.get_user_documents(
-            organization_id=org_id, user_id=request.auth.id,
+            organization_id=org_id,
+            user_id=request.auth.id,
         )
 
     return [_doc_list_item(d) for d in docs]
@@ -227,7 +230,8 @@ def create_document(request: HttpRequest, org_id: UUID, payload: CreateDocumentS
     vm_specs = [vm.dict() for vm in payload.verification_methods]
     svc_specs = (
         [s.dict() for s in payload.service_endpoints]
-        if payload.service_endpoints else None
+        if payload.service_endpoints
+        else None
     )
 
     doc = doc_services.create_document(
@@ -286,7 +290,10 @@ def get_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     summary="Update document draft (DRAFT, REJECTED, or PUBLISHED)",
 )
 def update_draft(
-    request: HttpRequest, org_id: UUID, doc_id: UUID, payload: UpdateDraftSchema,
+    request: HttpRequest,
+    org_id: UUID,
+    doc_id: UUID,
+    payload: UpdateDraftSchema,
 ):
     """
     Update the draft content of a DID document.
@@ -303,16 +310,20 @@ def update_draft(
 
     vm_specs = (
         [vm.dict() for vm in payload.verification_methods]
-        if payload.verification_methods is not None else None
+        if payload.verification_methods is not None
+        else None
     )
     svc_specs = (
         [s.dict() for s in payload.service_endpoints]
-        if payload.service_endpoints is not None else None
+        if payload.service_endpoints is not None
+        else None
     )
 
     doc = doc_services.update_draft(
-        document=doc, updated_by=request.auth,
-        verification_methods=vm_specs, service_endpoints=svc_specs,
+        document=doc,
+        updated_by=request.auth,
+        verification_methods=vm_specs,
+        service_endpoints=svc_specs,
     )
 
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
@@ -325,14 +336,18 @@ def update_draft(
 @router.post(
     f"{_P}/{{doc_id}}/verification-methods",
     response={
-        201: VerificationMethodResponse, 400: ErrorSchema,
-        404: ErrorSchema, 409: ErrorSchema,
+        201: VerificationMethodResponse,
+        400: ErrorSchema,
+        404: ErrorSchema,
+        409: ErrorSchema,
     },
     auth=JWTAuth(),
     summary="Add a verification method to a document",
 )
 def add_verification_method(
-    request: HttpRequest, org_id: UUID, doc_id: UUID,
+    request: HttpRequest,
+    org_id: UUID,
+    doc_id: UUID,
     payload: AddVerificationMethodSchema,
 ):
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
@@ -365,14 +380,19 @@ def add_verification_method(
     summary="Remove a verification method from a document",
 )
 def remove_verification_method(
-    request: HttpRequest, org_id: UUID, doc_id: UUID, vm_id: UUID,
+    request: HttpRequest,
+    org_id: UUID,
+    doc_id: UUID,
+    vm_id: UUID,
 ):
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
     _require_doc_owner(doc, request.auth, membership, action="edit")
 
     doc_services.remove_verification_method(
-        document=doc, vm_id=vm_id, removed_by=request.auth,
+        document=doc,
+        vm_id=vm_id,
+        removed_by=request.auth,
     )
     return {"message": "Verification method removed."}
 
@@ -407,14 +427,19 @@ def submit_for_review(request: HttpRequest, org_id: UUID, doc_id: UUID):
     summary="Approve document (PENDING_REVIEW → APPROVED)",
 )
 def approve_document(
-    request: HttpRequest, org_id: UUID, doc_id: UUID, payload: ReviewSchema,
+    request: HttpRequest,
+    org_id: UUID,
+    doc_id: UUID,
+    payload: ReviewSchema,
 ):
     membership = require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
     doc = _get_doc_or_404(doc_id, org_id)
     _require_reviewer(doc, request.auth, membership)
 
     doc = doc_services.approve_document(
-        document=doc, approved_by=request.auth, comment=payload.comment,
+        document=doc,
+        approved_by=request.auth,
+        comment=payload.comment,
     )
 
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
@@ -431,14 +456,19 @@ def approve_document(
     summary="Reject document (PENDING_REVIEW → REJECTED)",
 )
 def reject_document(
-    request: HttpRequest, org_id: UUID, doc_id: UUID, payload: ReviewSchema,
+    request: HttpRequest,
+    org_id: UUID,
+    doc_id: UUID,
+    payload: ReviewSchema,
 ):
     membership = require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
     doc = _get_doc_or_404(doc_id, org_id)
     _require_reviewer(doc, request.auth, membership)
 
     doc = doc_services.reject_document(
-        document=doc, rejected_by=request.auth, reason=payload.comment,
+        document=doc,
+        rejected_by=request.auth,
+        reason=payload.comment,
     )
 
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
@@ -471,7 +501,9 @@ def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     skip_review = _is_admin(membership) and doc.status == "DRAFT"
 
     doc = doc_services.sign_and_publish(
-        document=doc, published_by=request.auth, skip_review=skip_review,
+        document=doc,
+        published_by=request.auth,
+        skip_review=skip_review,
     )
 
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
@@ -488,14 +520,19 @@ def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     summary="Deactivate a published document",
 )
 def deactivate_document(
-    request: HttpRequest, org_id: UUID, doc_id: UUID, payload: DeactivateSchema,
+    request: HttpRequest,
+    org_id: UUID,
+    doc_id: UUID,
+    payload: DeactivateSchema,
 ):
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
     _require_owner_or_admin(doc, request.auth, membership, action="deactivate")
 
     doc_services.deactivate_document(
-        document=doc, deactivated_by=request.auth, reason=payload.reason,
+        document=doc,
+        deactivated_by=request.auth,
+        reason=payload.reason,
     )
     return {"message": f"Document '{doc.label}' has been deactivated."}
 
@@ -552,5 +589,7 @@ def get_verifiable_credential(request: HttpRequest, org_id: UUID, doc_id: UUID):
 
     vc = doc_services.get_verifiable_credential(doc)
     if vc is None:
-        raise NotFoundError("Verifiable Credential not available. Document must be published.")
+        raise NotFoundError(
+            "Verifiable Credential not available. Document must be published."
+        )
     return vc

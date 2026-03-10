@@ -29,10 +29,10 @@ ALLOWED_CERTIFICATE_TYPES = {
     "application/x-pem-file",
     "application/x-x509-ca-cert",
     "application/pkix-cert",
-    "text/plain",                       # PEM files sometimes detected as text
+    "text/plain",  # PEM files sometimes detected as text
     # PKCS#12 (.p12, .pfx)
-    "application/x-pkcs12",             # standard PKCS#12 MIME
-    "application/pkcs12",               # alternative without x- prefix
+    "application/x-pkcs12",  # standard PKCS#12 MIME
+    "application/pkcs12",  # alternative without x- prefix
     # PKCS#7 (.p7b, .p7c)
     "application/x-pkcs7-certificates",
     # Fallback — some browsers/OS send generic binary

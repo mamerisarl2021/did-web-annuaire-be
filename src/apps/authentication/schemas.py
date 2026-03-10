@@ -69,7 +69,9 @@ class UserResponseSchema(Schema):
 
     @staticmethod
     def resolve_account_activated_at(obj) -> str | None:
-        return obj.account_activated_at.isoformat() if obj.account_activated_at else None
+        return (
+            obj.account_activated_at.isoformat() if obj.account_activated_at else None
+        )
 
     @staticmethod
     def resolve_created_at(obj) -> str:

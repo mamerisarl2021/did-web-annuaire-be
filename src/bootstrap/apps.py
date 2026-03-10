@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class SeedersConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'src.bootstrap'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "src.bootstrap"

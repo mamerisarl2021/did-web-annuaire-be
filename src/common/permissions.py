@@ -104,8 +104,7 @@ def require_permission(user, org_id, permission: Permission):
             raise PermissionDeniedError("Organization not found.")
 
         own_membership = (
-            Membership.objects
-            .filter(user=user, organization_id=org_id)
+            Membership.objects.filter(user=user, organization_id=org_id)
             .select_related("organization", "user")
             .first()
         )
@@ -125,8 +124,7 @@ def require_permission(user, org_id, permission: Permission):
         return synthetic
 
     membership = (
-        Membership.objects
-        .filter(
+        Membership.objects.filter(
             user=user,
             organization_id=org_id,
             status=MembershipStatus.ACTIVE,
@@ -136,7 +134,9 @@ def require_permission(user, org_id, permission: Permission):
     )
 
     if membership is None:
-        raise PermissionDeniedError("You are not an active member of this organization.")
+        raise PermissionDeniedError(
+            "You are not an active member of this organization."
+        )
 
     effective_perms = _get_effective_permissions(membership)
     if permission not in effective_perms:
@@ -155,21 +155,21 @@ def require_role(user, org_id, role: Role):
     if getattr(user, "is_superadmin", False):
         return
 
-    membership = (
-        Membership.objects
-        .filter(
-            user=user,
-            organization_id=org_id,
-            status=MembershipStatus.ACTIVE,
-        )
-        .first()
-    )
+    membership = Membership.objects.filter(
+        user=user,
+        organization_id=org_id,
+        status=MembershipStatus.ACTIVE,
+    ).first()
 
     if membership is None:
-        raise PermissionDeniedError("You are not an active member of this organization.")
+        raise PermissionDeniedError(
+            "You are not an active member of this organization."
+        )
 
     if membership.role != role:
-        raise PermissionDeniedError(f"Role {role} required, you have {membership.role}.")
+        raise PermissionDeniedError(
+            f"Role {role} required, you have {membership.role}."
+        )
 
 
 def require_document_owner(user, document) -> None:
@@ -180,9 +180,7 @@ def require_document_owner(user, document) -> None:
     Even org admins CANNOT edit documents they didn't create.
     """
     if document.owner_id != user.id:
-        raise PermissionDeniedError(
-            "Only the document owner can modify this document."
-        )
+        raise PermissionDeniedError("Only the document owner can modify this document.")
 
 
 def require_document_reviewer(user, org_id, document) -> None:
@@ -195,6 +193,4 @@ def require_document_reviewer(user, org_id, document) -> None:
     require_permission(user, org_id, Permission.MANAGE_MEMBERS)
 
     if document.owner_id == user.id:
-        raise PermissionDeniedError(
-            "You cannot review your own document."
-        )
+        raise PermissionDeniedError("You cannot review your own document.")

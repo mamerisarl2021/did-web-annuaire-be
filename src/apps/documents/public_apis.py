@@ -31,6 +31,7 @@ _P = "/search"
 
 class PublicDocResult(dict):
     """Lightweight serialization — we return plain dicts."""
+
     pass
 
 
@@ -56,10 +57,8 @@ def search_documents(
     """
     from django.conf import settings
 
-    qs = (
-        DIDDocument.objects
-        .filter(status=DocumentStatus.PUBLISHED)
-        .select_related("organization", "owner", "current_version")
+    qs = DIDDocument.objects.filter(status=DocumentStatus.PUBLISHED).select_related(
+        "organization", "owner", "current_version"
     )
 
     # Text search
@@ -76,12 +75,17 @@ def search_documents(
     if org_id:
         try:
             qs = qs.filter(organization_id=UUID(org_id))
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             pass
 
     # Sorting
     allowed_sorts = {
-        "-updated_at", "-created_at", "created_at", "updated_at", "label", "-label",
+        "-updated_at",
+        "-created_at",
+        "created_at",
+        "updated_at",
+        "label",
+        "-label",
     }
     if sort not in allowed_sorts:
         sort = "-updated_at"
@@ -91,9 +95,9 @@ def search_documents(
     total = qs.count()
     total_pages = max(1, math.ceil(total / page_size))
     offset = (page - 1) * page_size
-    docs = list(qs[offset:offset + page_size])
+    docs = list(qs[offset : offset + page_size])
 
-    domain = getattr(settings, "PLATFORM_DOMAIN", "localhost")
+    domain = settings.PLATFORM_DOMAIN
 
     results = []
     for doc in docs:
@@ -102,18 +106,20 @@ def search_documents(
 
         did_uri = f"did:web:{domain}:{org_slug}:{owner_slug}:{doc.label}"
 
-        results.append({
-            "id": str(doc.id),
-            "label": doc.label,
-            "did_uri": did_uri,
-            "status": doc.status,
-            "organization_name": doc.organization.name if doc.organization else "",
-            "organization_slug": org_slug,
-            "owner_name": doc.owner.full_name if doc.owner else "",
-            "version_count": doc.versions.count(),
-            "created_at": doc.created_at.isoformat() if doc.created_at else None,
-            "updated_at": doc.updated_at.isoformat() if doc.updated_at else None,
-        })
+        results.append(
+            {
+                "id": str(doc.id),
+                "label": doc.label,
+                "did_uri": did_uri,
+                "status": doc.status,
+                "organization_name": doc.organization.name if doc.organization else "",
+                "organization_slug": org_slug,
+                "owner_name": doc.owner.full_name if doc.owner else "",
+                "version_count": doc.versions.count(),
+                "created_at": doc.created_at.isoformat() if doc.created_at else None,
+                "updated_at": doc.updated_at.isoformat() if doc.updated_at else None,
+            }
+        )
 
     return {
         "results": results,
@@ -138,8 +144,7 @@ def list_organizations(request: HttpRequest):
     Only organizations that have at least one published document are included.
     """
     orgs = (
-        Organization.objects
-        .filter(
+        Organization.objects.filter(
             status=OrgStatus.APPROVED,
             did_documents__status=DocumentStatus.PUBLISHED,
         )
@@ -148,7 +153,4 @@ def list_organizations(request: HttpRequest):
         .order_by("name")
     )
 
-    return [
-        {"id": str(o["id"]), "name": o["name"], "slug": o["slug"]}
-        for o in orgs
-    ]
+    return [{"id": str(o["id"]), "name": o["name"], "slug": o["slug"]} for o in orgs]

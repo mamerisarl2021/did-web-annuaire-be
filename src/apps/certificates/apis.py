@@ -57,9 +57,7 @@ def _require_cert_access(cert, user, membership, action="access"):
         return
     if cert.created_by_id == user.id:
         return
-    raise PermissionDeniedError(
-        f"You can only {action} certificates you uploaded."
-    )
+    raise PermissionDeniedError(f"You can only {action} certificates you uploaded.")
 
 
 def _require_cert_mutate(cert, user, membership, action="modify"):
@@ -71,9 +69,7 @@ def _require_cert_mutate(cert, user, membership, action="modify"):
         return
     if cert.created_by_id == user.id:
         return
-    raise PermissionDeniedError(
-        f"You can only {action} certificates you uploaded."
-    )
+    raise PermissionDeniedError(f"You can only {action} certificates you uploaded.")
 
 
 # ── Serialization helpers ────────────────────────────────────────────────
@@ -89,7 +85,9 @@ def _cert_list_item(cert) -> dict:
         "key_curve": cv.key_curve if cv else "",
         "subject_dn": cv.subject_dn if cv else "",
         "fingerprint_sha256": cv.fingerprint_sha256 if cv else "",
-        "not_valid_after": cv.not_valid_after.isoformat() if cv and cv.not_valid_after else None,
+        "not_valid_after": cv.not_valid_after.isoformat()
+        if cv and cv.not_valid_after
+        else None,
         "created_by_email": cert.created_by.email if cert.created_by else "",
         "created_at": cert.created_at.isoformat(),
         "version_count": cert.versions.count(),
@@ -105,7 +103,9 @@ def _version_summary(v: CertificateVersion) -> dict:
         "subject_dn": v.subject_dn,
         "issuer_dn": v.issuer_dn,
         "serial_number": v.serial_number,
-        "not_valid_before": v.not_valid_before.isoformat() if v.not_valid_before else None,
+        "not_valid_before": v.not_valid_before.isoformat()
+        if v.not_valid_before
+        else None,
         "not_valid_after": v.not_valid_after.isoformat() if v.not_valid_after else None,
         "fingerprint_sha256": v.fingerprint_sha256,
         "is_current": v.is_current,
@@ -115,21 +115,28 @@ def _version_summary(v: CertificateVersion) -> dict:
 
 def _version_detail(v: CertificateVersion) -> dict:
     d = _version_summary(v)
-    d.update({
-        "public_key_jwk": v.public_key_jwk,
-        "key_size": v.key_size,
-        "uploaded_by_email": v.uploaded_by.email if v.uploaded_by else "",
-        "file_name": v.certificate_file.original_file_name if v.certificate_file else "",
-    })
+    d.update(
+        {
+            "public_key_jwk": v.public_key_jwk,
+            "key_size": v.key_size,
+            "uploaded_by_email": v.uploaded_by.email if v.uploaded_by else "",
+            "file_name": v.certificate_file.original_file_name
+            if v.certificate_file
+            else "",
+        }
+    )
     return d
 
 
 def _cert_detail(cert) -> dict:
     from src.apps.documents.models import DocumentVerificationMethod
 
-    linked = DocumentVerificationMethod.objects.filter(
-        certificate=cert
-    ).values("document_id").distinct().count()
+    linked = (
+        DocumentVerificationMethod.objects.filter(certificate=cert)
+        .values("document_id")
+        .distinct()
+        .count()
+    )
 
     return {
         "id": cert.id,
@@ -138,7 +145,9 @@ def _cert_detail(cert) -> dict:
         "created_by_email": cert.created_by.email if cert.created_by else "",
         "created_by_id": cert.created_by_id,
         "created_at": cert.created_at.isoformat(),
-        "current_version": _version_detail(cert.current_version) if cert.current_version else None,
+        "current_version": _version_detail(cert.current_version)
+        if cert.current_version
+        else None,
         "version_count": cert.versions.count(),
         "linked_documents": linked,
     }
@@ -164,7 +173,8 @@ def list_certificates(request: HttpRequest, org_id: UUID):
         certs = cert_selectors.get_org_certificates(organization_id=org_id)
     else:
         certs = cert_selectors.get_user_certificates(
-            organization_id=org_id, user_id=request.auth.id,
+            organization_id=org_id,
+            user_id=request.auth.id,
         )
 
     return [_cert_list_item(c) for c in certs]
@@ -186,7 +196,9 @@ def upload_certificate(
     file: NinjaFile = File(...),
     p12_password: str = Form(None),
 ):
-    membership = require_permission(request.auth, org_id, Permission.MUTATE_CERTIFICATES)
+    membership = require_permission(
+        request.auth, org_id, Permission.MUTATE_CERTIFICATES
+    )
 
     cert = cert_services.upload_certificate(
         organization=membership.organization,
@@ -198,6 +210,7 @@ def upload_certificate(
 
     cert = cert_selectors.get_certificate_by_id(cert_id=cert.id)
     return 201, _cert_detail(cert)
+
 
 # ── Certificate detail ───────────────────────────────────────────────────
 
@@ -236,7 +249,9 @@ def rotate_certificate(
     file: NinjaFile = File(...),
     p12_password: str = Form(None),
 ):
-    membership = require_permission(request.auth, org_id, Permission.MUTATE_CERTIFICATES)
+    membership = require_permission(
+        request.auth, org_id, Permission.MUTATE_CERTIFICATES
+    )
 
     cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
     if cert is None or str(cert.organization_id) != str(org_id):
@@ -270,7 +285,9 @@ def revoke_certificate(
     cert_id: UUID,
     payload: CertRevokeSchema,
 ):
-    membership = require_permission(request.auth, org_id, Permission.REVOKE_CERTIFICATES)
+    membership = require_permission(
+        request.auth, org_id, Permission.REVOKE_CERTIFICATES
+    )
 
     cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
     if cert is None or str(cert.organization_id) != str(org_id):
@@ -329,11 +346,9 @@ def get_version(request: HttpRequest, org_id: UUID, cert_id: UUID, version_id: U
     _require_cert_access(cert, request.auth, membership, action="view")
 
     try:
-        version = (
-            CertificateVersion.objects
-            .select_related("certificate__organization", "uploaded_by", "certificate_file")
-            .get(id=version_id, certificate_id=cert_id)
-        )
+        version = CertificateVersion.objects.select_related(
+            "certificate__organization", "uploaded_by", "certificate_file"
+        ).get(id=version_id, certificate_id=cert_id)
     except CertificateVersion.DoesNotExist:
         raise NotFoundError("Version not found.")
 

@@ -139,10 +139,16 @@ def health_check() -> dict:
         # Check the properties endpoint
         r = http_client.get(f"{url}/1.0/properties", timeout=5)
         if r.status_code == 200:
-            data = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+            data = (
+                r.json()
+                if r.headers.get("content-type", "").startswith("application/json")
+                else {}
+            )
             return {
                 "status": "ok",
-                "methods": list(data.get("driver", {}).keys()) if isinstance(data.get("driver"), dict) else [],
+                "methods": list(data.get("driver", {}).keys())
+                if isinstance(data.get("driver"), dict)
+                else [],
             }
         return {"status": "unavailable", "http_status": r.status_code}
     except Exception as e:
@@ -170,7 +176,12 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
             "registrar_request",
             operation=operation,
             endpoint=endpoint,
-            did=payload.get("did") or (payload.get("didDocument", {}).get("id") if isinstance(payload.get("didDocument"), dict) else ""),
+            did=payload.get("did")
+            or (
+                payload.get("didDocument", {}).get("id")
+                if isinstance(payload.get("didDocument"), dict)
+                else ""
+            ),
         )
 
         response = http_client.post(
@@ -189,6 +200,7 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
                 body=response.text[:500],
             )
             from src.common.exceptions import ValidationError
+
             raise ValidationError(
                 f"Registrar {operation} failed with HTTP {response.status_code}: "
                 f"{response.text[:200]}"
@@ -202,8 +214,11 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
 
         if state == "failed":
             reason = did_state.get("reason", "Unknown error")
-            logger.error("registrar_did_state_failed", operation=operation, reason=reason)
+            logger.error(
+                "registrar_did_state_failed", operation=operation, reason=reason
+            )
             from src.common.exceptions import ValidationError
+
             raise ValidationError(f"Registrar {operation} failed: {reason}")
 
         if state in ("finished", "action"):
@@ -219,6 +234,7 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
     except ImportError:
         logger.error("registrar_requests_missing", hint="pip install requests")
         from src.common.exceptions import ValidationError
+
         raise ValidationError("HTTP client (requests) not installed.")
 
     except Exception as e:
@@ -226,6 +242,7 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
             raise
         logger.error("registrar_failed", operation=operation, error=str(e))
         from src.common.exceptions import ValidationError
+
         raise ValidationError(f"Registrar {operation} failed: {e}")
 
 

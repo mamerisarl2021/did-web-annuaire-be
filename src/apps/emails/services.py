@@ -17,6 +17,7 @@ def _fallback_plain_text(html: str) -> str:
     text = strip_tags(html)
     return re.sub(r"\s+\n", "\n", re.sub(r"[ \t]+", " ", text)).strip()
 
+
 @transaction.atomic
 def email_send(
     *,

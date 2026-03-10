@@ -4,6 +4,7 @@ Base Django settings.
 Imports split configuration from src/config/others/*.py to keep this file lean.
 Production and test settings override specific values from here.
 """
+
 import os
 
 from src.config.env import env, BASE_DIR
@@ -20,6 +21,8 @@ ASGI_APPLICATION = "src.asgi.application"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
+
+CSRF_TRUSTED_ORIGINS = env.CSRF_TRUSTED_ORIGINS
 
 # ── Others ──────────────────────────────────────────────────────
 
@@ -92,15 +95,15 @@ MIDDLEWARE = [
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [os.path.join(BASE_DIR, "templates")],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
                 "django.template.context_processors.debug",
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -138,17 +141,25 @@ CACHES = {
 # ── Auth ────────────────────────────────────────────────────────────────
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 # ── i18n ────────────────────────────────────────────────────────────────
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 # LANGUAGE_CODE = 'fr-fr'
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
@@ -166,6 +177,7 @@ USE_TZ = True
 # Each file exports top-level Django settings variables.
 
 from src.config.others.jwt import *  # noqa: E402, F401, F403
+
 # from src.config.others.session import *  # noqa: E402, F401, F403
 from src.config.others.cors import *  # noqa: E402, F401, F403
 from src.config.others.celery_conf import *  # noqa: E402, F401, F403

@@ -43,9 +43,11 @@ router = Router(tags=["Organization Admin"])
 
 
 def _org_summary(org: Organization) -> dict:
-    member_count = Membership.objects.filter(organization=org).exclude(
-        status=MembershipStatus.DEACTIVATED
-    ).count()
+    member_count = (
+        Membership.objects.filter(organization=org)
+        .exclude(status=MembershipStatus.DEACTIVATED)
+        .count()
+    )
     return {
         "id": org.id,
         "name": org.name,
@@ -53,7 +55,7 @@ def _org_summary(org: Organization) -> dict:
         "type": org.type,
         "status": org.status,
         "member_count": member_count,
-        "document_count": DIDDocument.objects.filter(organization_id=org.id ).count(),
+        "document_count": DIDDocument.objects.filter(organization_id=org.id).count(),
         "certificate_count": Certificate.objects.filter(organization_id=org.id).count(),
     }
 
@@ -107,9 +109,11 @@ def get_organization_detail(request: HttpRequest, org_id: UUID):
     if org is None:
         raise NotFoundError("Organization not found.")
 
-    member_count = Membership.objects.filter(organization=org).exclude(
-        status=MembershipStatus.DEACTIVATED
-    ).count()
+    member_count = (
+        Membership.objects.filter(organization=org)
+        .exclude(status=MembershipStatus.DEACTIVATED)
+        .count()
+    )
 
     return {
         "id": org.id,
@@ -123,7 +127,7 @@ def get_organization_detail(request: HttpRequest, org_id: UUID):
         "status": org.status,
         "created_at": org.created_at.isoformat(),
         "member_count": member_count,
-        "document_count": DIDDocument.objects.filter(organization_id=org.id ).count(),
+        "document_count": DIDDocument.objects.filter(organization_id=org.id).count(),
         "certificate_count": Certificate.objects.filter(organization_id=org.id).count(),
     }
 
@@ -146,8 +150,10 @@ def get_organization_stats(request: HttpRequest, org_id: UUID):
         "total_members": members.exclude(status=MembershipStatus.DEACTIVATED).count(),
         "active_members": members.filter(status=MembershipStatus.ACTIVE).count(),
         "invited_members": members.filter(status=MembershipStatus.INVITED).count(),
-        "total_documents": DIDDocument.objects.filter(organization_id=org_id ).count(),
-        "total_certificates": Certificate.objects.filter(organization_id=org_id).count(),
+        "total_documents": DIDDocument.objects.filter(organization_id=org_id).count(),
+        "total_certificates": Certificate.objects.filter(
+            organization_id=org_id
+        ).count(),
     }
 
 
@@ -184,7 +190,9 @@ def invite_member(request: HttpRequest, org_id: UUID, payload: InviteMemberSchem
     try:
         role = Role(payload.role)
     except ValueError:
-        raise ValidationError(f"Invalid role: {payload.role}. Use ORG_MEMBER or AUDITOR.")
+        raise ValidationError(
+            f"Invalid role: {payload.role}. Use ORG_MEMBER or AUDITOR."
+        )
 
     new_membership = org_services.invite_member(
         organization=org,
@@ -196,10 +204,12 @@ def invite_member(request: HttpRequest, org_id: UUID, payload: InviteMemberSchem
     # If full_name was provided and user has no name yet, set it
     if payload.full_name and not new_membership.user.full_name:
         from src.apps.users.services import update_user_profile
+
         update_user_profile(user=new_membership.user, full_name=payload.full_name)
         new_membership.user.refresh_from_db()
 
     from src.apps.emails.tasks import send_member_invitation_email
+
     send_member_invitation_email.delay(
         user_id=str(new_membership.user.id),
         invitation_token=str(new_membership.invitation_token),
@@ -228,9 +238,11 @@ def change_member_role(
 ):
     require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
 
-    target = Membership.objects.filter(
-        id=membership_id, organization_id=org_id
-    ).select_related("user", "invited_by").first()
+    target = (
+        Membership.objects.filter(id=membership_id, organization_id=org_id)
+        .select_related("user", "invited_by")
+        .first()
+    )
 
     if target is None:
         raise NotFoundError("Membership not found.")
@@ -241,9 +253,11 @@ def change_member_role(
 
     # Prevent demoting the only ORG_ADMIN
     if target.role == Role.ORG_ADMIN:
-        admin_count = Membership.objects.filter(
-            organization_id=org_id, role=Role.ORG_ADMIN
-        ).exclude(status=MembershipStatus.DEACTIVATED).count()
+        admin_count = (
+            Membership.objects.filter(organization_id=org_id, role=Role.ORG_ADMIN)
+            .exclude(status=MembershipStatus.DEACTIVATED)
+            .count()
+        )
         if admin_count <= 1:
             raise ValidationError("Cannot change role of the only organization admin.")
 
@@ -253,12 +267,16 @@ def change_member_role(
         raise ValidationError(f"Invalid role: {payload.role}")
 
     target = org_services.change_member_role(
-        membership=target, new_role=new_role, changed_by=request.auth,
+        membership=target,
+        new_role=new_role,
+        changed_by=request.auth,
     )
     target.refresh_from_db()
 
     return _member_dict(
-        Membership.objects.filter(id=target.id).select_related("user", "invited_by").first()
+        Membership.objects.filter(id=target.id)
+        .select_related("user", "invited_by")
+        .first()
     )
 
 
@@ -274,9 +292,11 @@ def change_member_role(
 def deactivate_member(request: HttpRequest, org_id: UUID, membership_id: UUID):
     require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
 
-    target = Membership.objects.filter(
-        id=membership_id, organization_id=org_id
-    ).select_related("user").first()
+    target = (
+        Membership.objects.filter(id=membership_id, organization_id=org_id)
+        .select_related("user")
+        .first()
+    )
 
     if target is None:
         raise NotFoundError("Membership not found.")
@@ -285,9 +305,11 @@ def deactivate_member(request: HttpRequest, org_id: UUID, membership_id: UUID):
         raise ValidationError("You cannot deactivate yourself.")
 
     if target.role == Role.ORG_ADMIN:
-        admin_count = Membership.objects.filter(
-            organization_id=org_id, role=Role.ORG_ADMIN
-        ).exclude(status=MembershipStatus.DEACTIVATED).count()
+        admin_count = (
+            Membership.objects.filter(organization_id=org_id, role=Role.ORG_ADMIN)
+            .exclude(status=MembershipStatus.DEACTIVATED)
+            .count()
+        )
         if admin_count <= 1:
             raise ValidationError("Cannot deactivate the only organization admin.")
 

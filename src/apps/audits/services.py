@@ -11,6 +11,7 @@ from src.apps.audits.models import AuditLog
 
 logger = structlog.get_logger(__name__)
 
+
 @transaction.atomic
 def log_action(
     *,
@@ -60,6 +61,7 @@ def log_action(
     )
 
     return entry
+
 
 @transaction.atomic
 def get_client_ip(request) -> str | None:

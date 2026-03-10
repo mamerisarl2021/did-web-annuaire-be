@@ -32,16 +32,20 @@ def password_reset_confirm_view(request, token):
 
 @never_cache
 def activate_view(request, invitation_token):
-    return render(request, "frontend/activate.html", {"invitation_token": invitation_token})
+    return render(
+        request, "frontend/activate.html", {"invitation_token": invitation_token}
+    )
 
 
 @never_cache
 def dashboard_view(request):
     return render(request, "frontend/dashboard.html", {})
 
+
 @never_cache
 def resolve_view(request):
     return render(request, "frontend/resolve.html", {})
+
 
 @never_cache
 def search_view(request):

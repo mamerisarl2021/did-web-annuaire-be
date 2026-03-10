@@ -40,6 +40,7 @@ class DocStatus(StrEnum):
     FIX: Synced with documents/models.py.
     Old enum had PENDING_SIGNATURE but model uses PENDING_REVIEW + APPROVED.
     """
+
     DRAFT = "DRAFT"
     PENDING_REVIEW = "PENDING_REVIEW"
     APPROVED = "APPROVED"
@@ -47,12 +48,6 @@ class DocStatus(StrEnum):
     SIGNED = "SIGNED"
     PUBLISHED = "PUBLISHED"
     DEACTIVATED = "DEACTIVATED"
-
-
-class DocScope(StrEnum):
-    """Whether a DID document is organization-level or personal (user-scoped)."""
-    ORGANIZATION = "ORGANIZATION"
-    PERSONAL = "PERSONAL"
 
 
 class VerificationPurpose(StrEnum):

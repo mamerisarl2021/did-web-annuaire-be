@@ -33,6 +33,7 @@ RESET_TOKEN_TTL = timedelta(hours=1)
 
 # ── Registration ────────────────────────────────────────────────────────
 
+
 @transaction.atomic
 def register_user_and_org(
     *,
@@ -104,6 +105,7 @@ def register_user_and_org(
 
     logger.info("registration_complete", user_id=str(user.id), org_slug=org.slug)
     from src.apps.emails.tasks import send_superadmin_new_registration_email
+
     send_superadmin_new_registration_email.delay(
         org_name=org_name,
         org_slug=org.slug,
@@ -113,6 +115,7 @@ def register_user_and_org(
 
 
 # ── OTP Setup ───────────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def setup_otp(*, user: User) -> dict:
@@ -143,6 +146,7 @@ def setup_otp(*, user: User) -> dict:
 
 # ── OTP Verification ───────────────────────────────────────────────────
 
+
 @transaction.atomic
 def verify_otp_and_activate(*, user: User, otp_code: str) -> User:
     if not user.otp_secret:
@@ -161,6 +165,7 @@ def verify_otp_and_activate(*, user: User, otp_code: str) -> User:
 
 # ── Token generation ────────────────────────────────────────────────────
 
+
 @transaction.atomic
 def generate_tokens_for_user(*, user: User) -> dict:
     refresh = RefreshToken.for_user(user)
@@ -176,6 +181,7 @@ def generate_tokens_for_user(*, user: User) -> dict:
 
 # ── Logout ──────────────────────────────────────────────────────────────
 
+
 @transaction.atomic
 def logout_user(*, refresh_token: str) -> None:
     try:
@@ -187,6 +193,7 @@ def logout_user(*, refresh_token: str) -> None:
 
 
 # ── Password Reset ──────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def request_password_reset(*, email: str) -> None:
@@ -206,8 +213,10 @@ def request_password_reset(*, email: str) -> None:
     cache.set(cache_key, str(user.id), timeout=int(RESET_TOKEN_TTL.total_seconds()))
 
     from src.apps.emails.tasks import send_password_reset_email
+
     send_password_reset_email.delay(user_id=str(user.id), reset_token=token)
     logger.info("password_reset_token_generated", user_id=str(user.id), token=token)
+
 
 @transaction.atomic
 def confirm_password_reset(*, token: str, new_password: str) -> None:
@@ -235,6 +244,7 @@ def confirm_password_reset(*, token: str, new_password: str) -> None:
     cache.delete(cache_key)
 
     logger.info("password_reset_confirmed", user_id=str(user.id))
+
 
 @transaction.atomic
 def change_password(*, user: User, old_password: str, new_password: str) -> None:

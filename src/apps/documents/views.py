@@ -16,7 +16,11 @@ def documents_view(request):
 
 @never_cache
 def document_detail_view(request, doc_id):
-    return render(request, "document_detail.html", {
-        "active_page": "documents",
-        "doc_id": doc_id,
-    })
+    return render(
+        request,
+        "document_detail.html",
+        {
+            "active_page": "documents",
+            "doc_id": doc_id,
+        },
+    )

@@ -11,6 +11,7 @@ from src.common.exceptions import ConflictError, ValidationError
 
 logger = structlog.get_logger(__name__)
 
+
 @transaction.atomic
 def create_user(
     *,
@@ -38,6 +39,7 @@ def create_user(
     logger.info("user_created", user_id=str(user.id), email=user.email)
     return user
 
+
 @transaction.atomic
 def activate_user(*, user: User) -> User:
     if user.is_active:
@@ -50,8 +52,15 @@ def activate_user(*, user: User) -> User:
     logger.info("user_activated", user_id=str(user.id))
     return user
 
+
 @transaction.atomic
-def update_user_profile(*, user: User, full_name: str | None = None, phone: str | None = None, functions: str | None = None) -> User:
+def update_user_profile(
+    *,
+    user: User,
+    full_name: str | None = None,
+    phone: str | None = None,
+    functions: str | None = None,
+) -> User:
     fields_to_update = ["updated_at"]
     if full_name is not None:
         user.full_name = full_name
@@ -64,6 +73,7 @@ def update_user_profile(*, user: User, full_name: str | None = None, phone: str 
         fields_to_update.append("functions")
     user.save(update_fields=fields_to_update)
     return user
+
 
 @transaction.atomic
 def set_otp_secret(*, user: User, otp_secret: str) -> User:
