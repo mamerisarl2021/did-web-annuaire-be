@@ -28,6 +28,7 @@ CSRF_TRUSTED_ORIGINS = env.CSRF_TRUSTED_ORIGINS
 
 PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
 CSRF_COOKIE_SECURE = env.CSRF_COOKIE_SECURE
+_DOMAIN="localhost"
 
 # ── External Services ──────────────────────────────────────────────────────
 

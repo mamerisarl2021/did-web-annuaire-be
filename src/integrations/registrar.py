@@ -58,6 +58,7 @@ def create_did(did_document: dict) -> dict:
             "network": "mainnet",
         },
         "secret": {},
+        "method": "web",
         "didDocument": did_document,
     }
 
@@ -177,11 +178,11 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
             operation=operation,
             endpoint=endpoint,
             did=payload.get("did")
-            or (
-                payload.get("didDocument", {}).get("id")
-                if isinstance(payload.get("didDocument"), dict)
-                else ""
-            ),
+                or (
+                    payload.get("didDocument", {}).get("id")
+                    if isinstance(payload.get("didDocument"), dict)
+                    else ""
+                ),
         )
 
         response = http_client.post(

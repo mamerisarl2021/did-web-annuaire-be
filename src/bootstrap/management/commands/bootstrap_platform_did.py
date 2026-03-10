@@ -47,7 +47,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        domain = getattr(settings, "PLATFORM_DOMAIN", "")
+        domain = getattr(settings, "_DOMAIN", "")
         if not domain:
             raise CommandError(
                 "PLATFORM_DOMAIN is not set in Django settings. "

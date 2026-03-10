@@ -340,5 +340,13 @@ echo -n "hello world" | curl -s -k \
 If you get binary output back, the signer is working. If you get an error, paste it and we'll fix it before moving to the Django integration.
 Once confirmed, we'll build the Django signing service that does: JCS canonicalize → POST to SignServer → construct ecdsa-jcs-2019 proof → attach to DID document.
 
-TODO: HEALTH CHECK FUNCtion of siGNsERVER IS NOT USED
+uni-registrar-web  | 2026-03-10T13:47:33,931 INFO  [main] u.w.c.WebAppConfig: Added driver for method 'web' at http://driver-did-web:9080/1.0/create and http://driver-did-web:9080/1.0/update and http://driver-did-web:9080/1.0/deactivate and http://driver-did-web:9080/1.0/execute (http://driver-did-web:9080/1.0/properties) (false)
+
+TODO: noticed healthchecks that are not used
 TODO: AUDIT LOGGING NOT WIRED
+TODO: Pagination not used
+{ data : [
+{},
+{}],
+meta: {
+}}
