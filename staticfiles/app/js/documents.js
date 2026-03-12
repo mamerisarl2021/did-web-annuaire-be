@@ -102,19 +102,30 @@ function vmStatusDot(isActive) {
 }
 
 /**
- * Generate a QR code URL using Google Charts API.
+ * Generate a QR code image URL.
+ * Uses the free goqr.me API (Google Charts API was shut down).
  */
 function generateQRCodeURL(text, size = 256) {
-  return `https://chart.googleapis.com/chart?cht=qr&chs=${size}x${size}&chl=${encodeURIComponent(text)}&choe=UTF-8`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&format=png`;
 }
 
 function downloadQRCode(did_uri, label) {
   const url = generateQRCodeURL(did_uri, 512);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${label}-qrcode.png`;
-  link.target = "_blank";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // Fetch the image as a blob so the download works cross-origin
+  fetch(url)
+    .then(res => res.blob())
+    .then(blob => {
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${label}-qrcode.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    })
+    .catch(() => {
+      // Fallback: open in new tab
+      window.open(url, "_blank");
+    });
 }

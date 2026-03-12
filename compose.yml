@@ -33,7 +33,7 @@ services:
     container_name: annuaire-nginx
     restart: unless-stopped
     ports:
-      - "8443:443"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx-certs:/etc/nginx/certs:ro
@@ -205,6 +205,8 @@ services:
     image: uport/uni-resolver-driver-did-uport:5.0.3
     container_name: uni-resolver-driver-did-uport
     restart: unless-stopped
+    extra_hosts:
+      - "did.localhost:host-gateway"
     networks:
       - annuaire_net
     logging:
@@ -283,7 +285,7 @@ services:
     restart: unless-stopped
     environment:
       uniregistrar_driver_did_web_basePath: /app/data/dids
-      uniregistrar_driver_did_web_baseUrl: https://localhost:8443
+      uniregistrar_driver_did_web_baseUrl: https://did.localhost
       uniregistrar_driver_did_web_generatedFolder: /generated
     volumes:
       - dids_volume:/app/data/dids

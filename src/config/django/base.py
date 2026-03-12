@@ -36,7 +36,7 @@ UNIVERSAL_REGISTRAR_URL = env.UNIVERSAL_REGISTRAR_URL
 SIGNSERVER_URL = env.SIGNSERVER_URL
 SIGNSERVER_WORKER_NAME = env.SIGNSERVER_WORKER_NAME
 JWK_EXTRACTOR_JAR = env.JWK_EXTRACTOR_JAR
-
+PLATFORM_DOMAIN_WITHOUT_SCHEME=env.PLATFORM_DOMAIN_WITHOUT_SCHEME
 
 # ── Installed Apps ──────────────────────────────────────────────────────
 
@@ -84,6 +84,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "src.common.middleware.RequestContextMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

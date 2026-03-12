@@ -350,3 +350,499 @@ TODO: Pagination not used
 {}],
 meta: {
 }}
+
+did-web-annuaire-be on  work [!?⇡] is 📦 v0.1.0 via 🐍 v3.12.3
+❯ docker compose logs driver-did-web -f
+uni-registrar-driver-did-web  | 2026-03-10 18:05:02.944:INFO :oejs.Server:main: jetty-11.0.17; built: 2023-10-09T18:39:14.424Z; git: 48e7716b9462bebea6732b885dbebb4300787a5c; jvm 17.0.9+9
+uni-registrar-driver-did-web  | 2026-03-10 18:05:03.011:INFO :oejdp.ScanningAppProvider:main: Deployment monitor [file:///var/lib/jetty/webapps/]
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.122:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.Log scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/Log.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/Log.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.124:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.LogConfigurationException scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/LogConfigurationException.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/LogConfigurationException.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.124:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.LogFactory scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/LogFactory.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/LogFactory.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.127:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.impl.NoOpLog scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/impl/NoOpLog.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/impl/NoOpLog.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.128:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.impl.SimpleLog scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/impl/SimpleLog.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/impl/SimpleLog.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:05.553:INFO :oejshC.ROOT_war:main: No Spring WebApplicationInitializer types detected on classpath
+uni-registrar-driver-did-web  | 2026-03-10 18:05:05.570:INFO :oejss.DefaultSessionIdManager:main: Session workerName=node0
+uni-registrar-driver-did-web  | [main] DEBUG web.DidWebDriver (getPropertiesFromEnvironment) - Loading from environment: {PATH=/usr/local/jetty/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin, LANGUAGE=en_US:en, JETTY_BASE=/var/lib/jetty, JETTY_TGZ_URL=https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/11.0.17/jetty-home-11.0.17.tar.gz, uniregistrar_driver_did_web_basePath=/app/data/dids, JAVA_HOME=/opt/java/openjdk, LANG=en_US.UTF-8, JETTY_GPG_KEYS=AED5EE6C45D0FE8D5D1B164F27DED4BF6216DB8F 	2A684B57436A81FA8706B53C61C3351A438A3B7D 	5989BAF76217B843D66BE55B2D0E1FB8FE4B68B4 	B59B67FD7904984367F931800818D9D68FB67BAC 	BFBB21C246D7776836287A48A04E0C74ABB35FEA 	8B096546B1A8F02656B15D3B1677D141BCF3584D 	F254B35617DC255D9344BCFA873A8E86B4372146 	E22488CC94F63E3FC928536C4241C08270D999C3, TMPDIR=/tmp/jetty, uniregistrar_driver_did_web_baseUrl=https://localhost:8443, HOSTNAME=4c2456057ee8, LC_ALL=en_US.UTF-8, JETTY_HOME=/usr/local/jetty, JETTY_VERSION=11.0.17, uniregistrar_driver_did_web_generatedFolder=/generated, PWD=/var/lib/jetty, JAVA_VERSION=jdk-17.0.9+9, HOME=/var/lib/jetty}
+uni-registrar-driver-did-web  | 2026-03-10 18:05:06.674:INFO :oejsh.ContextHandler:main: Started o.e.j.w.WebAppContext@62230c58{uni-registrar-driver-did-web,/,file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/,AVAILABLE}{/var/lib/jetty/webapps/ROOT.war}
+uni-registrar-driver-did-web  | [main] DEBUG web.DidWebDriver (configureFromProperties) - Configuring from properties: {generatedFolder=/generated, basePath=/app/data/dids, baseUrl=https://localhost:8443}
+uni-registrar-driver-did-web  | [main] DEBUG web.DidWebDriver (<init>) - Driver properties set with: {baseUrl=https://localhost:8443, basePath=/app/data/dids, generatedFolder=/generated}
+uni-registrar-driver-did-web  | [main] INFO servlet.InitServlet (init) - Loaded driver: class uniregistrar.driver.did.web.DidWebDriver
+uni-registrar-driver-did-web  | 2026-03-10 18:05:06.694:INFO :oejs.AbstractConnector:main: Started ServerConnector@6f857be8{HTTP/1.1, (http/1.1)}{0.0.0.0:9080}
+uni-registrar-driver-did-web  | 2026-03-10 18:05:06.726:INFO :oejs.Server:main: Started Server@557caf28{STARTING}[11.0.17,sto=5000] @9242ms
+uni-registrar-driver-did-web  | [qtp1791868405-15] INFO servlet.CreateServlet (doPost) - Driver: Incoming create request: class CreateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     didDocument: class DidDocument {
+uni-registrar-driver-did-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |         controller: null
+uni-registrar-driver-did-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-driver-did-web  |         service: null
+uni-registrar-driver-did-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  | }
+uni-registrar-driver-did-web  | [qtp1791868405-15] DEBUG web.DidWebDriver (create) - Create request for: class CreateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     didDocument: class DidDocument {
+uni-registrar-driver-did-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |         controller: null
+uni-registrar-driver-did-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-driver-did-web  |         service: null
+uni-registrar-driver-did-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  | }
+uni-registrar-driver-did-web  | [qtp1791868405-15] INFO web.DidWebDriver (create) - Validated path: /app/data/dids/acme-corporation/cakowucy/driving-licence
+uni-registrar-driver-did-web  | [qtp1791868405-15] DEBUG web.DidWebDriver (create) - Registration is finished: class CreateState {
+uni-registrar-driver-did-web  |     class RegistrarState {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         didState: class DidStateFinished {
+uni-registrar-driver-did-web  |             class DidState {
+uni-registrar-driver-did-web  |                 state: finished
+uni-registrar-driver-did-web  |                 did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |                 secret: null
+uni-registrar-driver-did-web  |                 didDocument: class DidDocument {
+uni-registrar-driver-did-web  |                     id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |                     controller: null
+uni-registrar-driver-did-web  |                     verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-driver-did-web  |                     service: null
+uni-registrar-driver-did-web  |                     additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-driver-did-web  |                 }
+uni-registrar-driver-did-web  |                 additionalProperties: null
+uni-registrar-driver-did-web  |             }
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         didRegistrationMetadata: null
+uni-registrar-driver-did-web  |         didDocumentMetadata: null
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  | }
+uni-registrar-driver-did-web  | [qtp1791868405-15] INFO servlet.CreateServlet (doPost) - Driver: Create state for class CreateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     didDocument: class DidDocument {
+uni-registrar-driver-did-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |         controller: null
+uni-registrar-driver-did-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-driver-did-web  |         service: null
+uni-registrar-driver-did-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  | }: {"didState":{"state":"finished","did":"did:web:localhost:acme-corporation:cakowucy:driving-licence","didDocument":{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence","verificationMethod":[{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","type":"JsonWebKey2020","controller":"did:web:localhost:acme-corporation:cakowucy:driving-licence","publicKeyJwk":{"x":"HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc","y":"bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII","alg":"ES256","crv":"P-256","kty":"EC","use":"sig"}}],"assertionMethod":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"],"proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-jcs-2019","proofPurpose":"assertionMethod","verificationMethod":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","created":"2026-03-10T18:08:07Z","proofValue":"uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ"},"@context":["https://www.w3.org/ns/did/v1","https://w3id.org/security/suites/jws-2020/v1","https://w3id.org/security/data-integrity/v2"],"authentication":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"]}}}
+uni-registrar-driver-did-web  | [qtp1791868405-15] DEBUG servlet.ServletUtil (sendResponse) - Sending response with status 200 and headers {Content-Type=application/json} and body (class java.lang.String)
+
+uni-registrar-web  | 2026-03-10T18:08:08,338 INFO  [qtp2017603323-40] u.w.WebUniRegistrar: Incoming CREATE request for method web: {jobId=null, options={}, secret={}, didDocument={id=did:web:localhost:acme-corporation:cakowucy:driving-licence, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], verificationMethod=[{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}}}
+uni-registrar-web  | 2026-03-10T18:08:08,340 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: For extension stage 'beforeReadCreate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T18:08:08,462 INFO  [qtp2017603323-40] u.w.WebUniRegistrar: Parsed CREATE request for method web: class CreateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     didDocument: class DidDocument {
+uni-registrar-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |         controller: null
+uni-registrar-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |         service: null
+uni-registrar-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T18:08:08,463 DEBUG [qtp2017603323-40] u.w.WebUniRegistrar: Incoming X-Config: header string: null
+uni-registrar-web  | 2026-03-10T18:08:08,464 INFO  [qtp2017603323-40] u.w.WebUniRegistrar: Using options: class RequestOptions {
+uni-registrar-web  |     clientSecretMode: null
+uni-registrar-web  |     storeSecrets: null
+uni-registrar-web  |     returnSecrets: null
+uni-registrar-web  |     requestVerificationMethod: null
+uni-registrar-web  |     additionalProperties: null
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T18:08:08,466 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: EXTENSIONS (beforeCreate), TRYING: []
+uni-registrar-web  | 2026-03-10T18:08:08,467 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: EXTENSIONS (beforeCreate), EXECUTED: [], SKIPPED: [], INAPPLICABLE: []
+uni-registrar-web  | 2026-03-10T18:08:08,468 INFO  [qtp2017603323-40] u.l.LocalUniRegistrar: Executing create with request class CreateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     didDocument: class DidDocument {
+uni-registrar-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |         controller: null
+uni-registrar-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |         service: null
+uni-registrar-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |     }
+uni-registrar-web  | } with driver HttpDriver
+uni-registrar-web  | 2026-03-10T18:08:08,487 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: For extension stage 'beforeDriverWriteCreate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T18:08:08,496 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Driver request for CREATE REQUEST {"didDocument":{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence","verificationMethod":[{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","type":"JsonWebKey2020","controller":"did:web:localhost:acme-corporation:cakowucy:driving-licence","publicKeyJwk":{"x":"HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc","y":"bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII","alg":"ES256","crv":"P-256","kty":"EC","use":"sig"}}],"assertionMethod":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"],"proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-jcs-2019","proofPurpose":"assertionMethod","verificationMethod":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","created":"2026-03-10T18:08:07Z","proofValue":"uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ"},"@context":["https://www.w3.org/ns/did/v1","https://w3id.org/security/suites/jws-2020/v1","https://w3id.org/security/data-integrity/v2"],"authentication":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"]},"options":{},"secret":{}} to: http://driver-did-web:9080/1.0/create
+uni-registrar-web  | 2026-03-10T18:08:08,829 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Driver response HTTP status from http://driver-did-web:9080/1.0/create: 200 OK
+uni-registrar-web  | 2026-03-10T18:08:08,830 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Driver response HTTP content type from http://driver-did-web:9080/1.0/create: application/json / ISO-8859-1
+uni-registrar-web  | 2026-03-10T18:08:08,831 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Driver response HTTP body from http://driver-did-web:9080/1.0/create: {"didState":{"state":"finished","did":"did:web:localhost:acme-corporation:cakowucy:driving-licence","didDocument":{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence","verificationMethod":[{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","type":"JsonWebKey2020","controller":"did:web:localhost:acme-corporation:cakowucy:driving-licence","publicKeyJwk":{"x":"HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc","y":"bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII","alg":"ES256","crv":"P-256","kty":"EC","use":"sig"}}],"assertionMethod":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"],"proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-jcs-2019","proofPurpose":"assertionMethod","verificationMethod":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","created":"2026-03-10T18:08:07Z","proofValue":"uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ"},"@context":["https://www.w3.org/ns/did/v1","https://w3id.org/security/suites/jws-2020/v1","https://w3id.org/security/data-integrity/v2"],"authentication":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"]}}}
+uni-registrar-web  | 2026-03-10T18:08:08,832 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: For extension stage 'beforeDriverReadCreate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T18:08:08,859 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Retrieved CREATE STATE for create request class CreateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     didDocument: class DidDocument {
+uni-registrar-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |         controller: null
+uni-registrar-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |         service: null
+uni-registrar-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |     }
+uni-registrar-web  | } (http://driver-did-web:9080/1.0/create): class CreateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: class DidDocument {
+uni-registrar-web  |                     id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                     controller: null
+uni-registrar-web  |                     verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |                     service: null
+uni-registrar-web  |                     additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |                 }
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T18:08:08,860 INFO  [qtp2017603323-40] u.l.LocalUniRegistrar: Executed create with state class CreateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: class DidDocument {
+uni-registrar-web  |                     id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                     controller: null
+uni-registrar-web  |                     verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |                     service: null
+uni-registrar-web  |                     additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |                 }
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | } with driver HttpDriver
+uni-registrar-web  | 2026-03-10T18:08:08,861 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: EXTENSIONS (afterCreate), TRYING: []
+uni-registrar-web  | 2026-03-10T18:08:08,861 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: EXTENSIONS (afterCreate), EXECUTED: [], SKIPPED: [], INAPPLICABLE: []
+uni-registrar-web  | 2026-03-10T18:08:08,868 INFO  [qtp2017603323-40] u.w.s.CreateServlet: CREATE state for class CreateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     didDocument: class DidDocument {
+uni-registrar-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |         controller: null
+uni-registrar-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |         service: null
+uni-registrar-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |     }
+uni-registrar-web  | }: class CreateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: class DidDocument {
+uni-registrar-web  |                     id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                     controller: null
+uni-registrar-web  |                     verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |                     service: null
+uni-registrar-web  |                     additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |                 }
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {duration=398, method=web}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T18:08:08,868 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: For extension stage 'beforeWriteCreate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T18:08:08,870 DEBUG [qtp2017603323-40] u.d.u.HttpBindingServerUtil: HTTP body for stream result: {"didState":{"state":"finished","did":"did:web:localhost:acme-corporation:cakowucy:driving-licence","didDocument":{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence","verificationMethod":[{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","type":"JsonWebKey2020","controller":"did:web:localhost:acme-corporation:cakowucy:driving-licence","publicKeyJwk":{"x":"HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc","y":"bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII","alg":"ES256","crv":"P-256","kty":"EC","use":"sig"}}],"assertionMethod":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"],"proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-jcs-2019","proofPurpose":"assertionMethod","verificationMethod":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","created":"2026-03-10T18:08:07Z","proofValue":"uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ"},"@context":["https://www.w3.org/ns/did/v1","https://w3id.org/security/suites/jws-2020/v1","https://w3id.org/security/data-integrity/v2"],"authentication":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"]}},"didRegistrationMetadata":{"duration":398,"method":"web"},"didDocumentMetadata":{}}
+uni-registrar-web  | 2026-03-10T18:08:08,871 INFO  [qtp2017603323-40] u.w.s.ServletUtil: Sending response with status 201 and headers {Content-Type=application/json} and body (1271)
+
+uni-registrar-web  | 2026-03-10T18:08:08,871 INFO  [qtp2017603323-40] u.w.s.ServletUtil: Sending response with status 201 and headers {Content-Type=application/json} and body (1271)
+uni-registrar-web  | 2026-03-10T21:00:59,930 INFO  [qtp2017603323-35] u.w.WebUniRegistrar: Found DID in DEACTIVATE request: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | 2026-03-10T21:00:59,939 INFO  [qtp2017603323-35] u.w.WebUniRegistrar: Incoming DEACTIVATE request for method web: {jobId=null, did=did:web:localhost:acme-corporation:cakowucy:driving-licence, options={}, secret={}}
+uni-registrar-web  | 2026-03-10T21:00:59,940 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: For extension stage 'beforeReadDeactivate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T21:00:59,941 INFO  [qtp2017603323-35] u.w.WebUniRegistrar: Parsed DEACTIVATE request for method web: class DeactivateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T21:00:59,941 DEBUG [qtp2017603323-35] u.w.WebUniRegistrar: Incoming X-Config: header string: null
+uni-registrar-web  | 2026-03-10T21:00:59,941 INFO  [qtp2017603323-35] u.w.WebUniRegistrar: Using options: class RequestOptions {
+uni-registrar-web  |     clientSecretMode: null
+uni-registrar-web  |     storeSecrets: null
+uni-registrar-web  |     returnSecrets: null
+uni-registrar-web  |     requestVerificationMethod: null
+uni-registrar-web  |     additionalProperties: null
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T21:00:59,942 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: EXTENSIONS (beforeDeactivate), TRYING: []
+uni-registrar-web  | 2026-03-10T21:00:59,942 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: EXTENSIONS (beforeDeactivate), EXECUTED: [], SKIPPED: [], INAPPLICABLE: []
+uni-registrar-web  | 2026-03-10T21:00:59,942 INFO  [qtp2017603323-35] u.l.LocalUniRegistrar: Executing deactivate with request class DeactivateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | } with driver HttpDriver
+uni-registrar-web  | 2026-03-10T21:00:59,945 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: For extension stage 'beforeDriverWriteDeactivate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T21:00:59,946 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Driver request for DEACTIVATE REQUEST {"did":"did:web:localhost:acme-corporation:cakowucy:driving-licence","options":{},"secret":{}} to: http://driver-did-web:9080/1.0/deactivate
+uni-registrar-web  | 2026-03-10T21:00:59,957 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Driver response HTTP status from http://driver-did-web:9080/1.0/deactivate: 200 OK
+uni-registrar-web  | 2026-03-10T21:00:59,957 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Driver response HTTP content type from http://driver-did-web:9080/1.0/deactivate: application/json / ISO-8859-1
+uni-registrar-web  | 2026-03-10T21:00:59,957 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Driver response HTTP body from http://driver-did-web:9080/1.0/deactivate: {"didState":{"state":"finished"}}
+uni-registrar-web  | 2026-03-10T21:00:59,958 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: For extension stage 'beforeDriverReadDeactivate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T21:00:59,959 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Retrieved DEACTIVATE STATE for deactivate request class DeactivateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | } (http://driver-did-web:9080/1.0/deactivate): class DeactivateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: null
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: null
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T21:00:59,959 INFO  [qtp2017603323-35] u.l.LocalUniRegistrar: Executed deactivate with state class DeactivateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: null
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: null
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | } with driver HttpDriver
+uni-registrar-web  | 2026-03-10T21:00:59,961 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: EXTENSIONS (afterDeactivate), TRYING: []
+uni-registrar-web  | 2026-03-10T21:00:59,961 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: EXTENSIONS (afterDeactivate), EXECUTED: [], SKIPPED: [], INAPPLICABLE: []
+uni-registrar-web  | 2026-03-10T21:00:59,964 INFO  [qtp2017603323-35] u.w.s.DeactivateServlet: DEACTIVATE state for class DeactivateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | }: class DeactivateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: null
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: null
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {duration=20, method=web}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T21:00:59,965 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: For extension stage 'beforeWriteDeactivate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T21:00:59,966 DEBUG [qtp2017603323-35] u.d.u.HttpBindingServerUtil: HTTP body for stream result: {"didState":{"state":"finished"},"didRegistrationMetadata":{"duration":20,"method":"web"},"didDocumentMetadata":{}}
+uni-registrar-web  | 2026-03-10T21:00:59,966 INFO  [qtp2017603323-35] u.w.s.ServletUtil: Sending response with status 200 and headers {Content-Type=application/json} and body (115)
+
+uni-registrar-driver-did-web  | [qtp1791868405-17] INFO servlet.DeactivateServlet (doPost) - Driver: Incoming deactivate request: class DeactivateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  | }
+uni-registrar-driver-did-web  | [qtp1791868405-17] INFO servlet.DeactivateServlet (doPost) - Driver: Deactivate state for class DeactivateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  | }: {"didState":{"state":"finished"}}
+uni-registrar-driver-did-web  | [qtp1791868405-17] DEBUG servlet.ServletUtil (sendResponse) - Sending response with status 200 and headers {Content-Type=application/json} and body (class java.lang.String)
+
+curl -s http://localhost:8080/1.0/identifiers/did:web:localhost:8443:acme-corporation:cakowucy:corporate-auth | python3 -m json.tool

@@ -68,7 +68,7 @@ def build_did_uri(org_slug: str, owner_identifier: str, label: str) -> str:
     Format: did:web:<domain>:<org_slug>:<owner_identifier>:<label>
     Port colons become %3A per did:web spec.
     """
-    domain = settings.PLATFORM_DOMAIN
+    domain = settings.PLATFORM_DOMAIN_WITHOUT_SCHEME
     encoded_domain = domain.replace(":", "%3A")
     return f"did:web:{encoded_domain}:{org_slug}:{owner_identifier}:{label}"
 
@@ -307,7 +307,7 @@ def build_verifiable_credential(
     The VC attests that the organization has published this DID document
     through the AnnuaireDID platform.
     """
-    domain = getattr(settings, "PLATFORM_DOMAIN", "localhost")
+    domain = getattr(settings, "PLATFORM_DOMAIN_WITHOUT_SCHEME", "localhost")
 
     vc: dict = {
         "@context": [

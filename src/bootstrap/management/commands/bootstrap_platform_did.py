@@ -2,7 +2,7 @@
 Management command: bootstrap_platform_did
 
 Creates the platform's own DID document at:
-  did:web:<PLATFORM_DOMAIN>
+  did:web:<PLATFORM_DOMAIN_WITHOUT_SCHEME>
 
 This DID is used as the "issuer" in Verifiable Credentials issued
 by the platform when DID documents are published.
@@ -47,7 +47,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        domain = getattr(settings, "_DOMAIN", "")
+        domain = getattr(settings, "PLATFORM_DOMAIN_WITHOUT_SCHEME", "")
         if not domain:
             raise CommandError(
                 "PLATFORM_DOMAIN is not set in Django settings. "

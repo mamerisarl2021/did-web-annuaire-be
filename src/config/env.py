@@ -113,14 +113,15 @@ class AppSettings(BaseSettings):
     JWK_EXTRACTOR_JAR: str = "path/to/ecdsa-extractor.jar"
 
     # ── Platform ────────────────────────────────────────────────────────
-    PLATFORM_DOMAIN: str = "localhost:8000"
+    PLATFORM_DOMAIN: str = "http://localhost:8000"
+    PLATFORM_DOMAIN_WITHOUT_SCHEME: str = "localhost"
     SUPERADMIN_EMAIL: str = ""
     SUPERADMIN_PASSWORD: str = ""
     SUPERADMIN_FULL_NAME: str = ""
 
     @property
     def PLATFORM_DID(self) -> str:
-        return f"did:web:{self.PLATFORM_DOMAIN}"
+        return f"did:web:{self.PLATFORM_DOMAIN_WITHOUT_SCHEME}"
 
     # ── Email ───────────────────────────────────────────────────────────
     EMAIL_BACKEND: str = "django.core.mail.backends.console.EmailBackend"

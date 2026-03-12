@@ -156,6 +156,7 @@
             const canDirectPublish = isAdmin && d.status === "DRAFT";
             const canReview = isAdmin && !isOwner && d.status === "PENDING_REVIEW";
             const canPublish = (isOwner || isAdmin) && d.status === "APPROVED";
+            const canRepublish = (isOwner || isAdmin) && d.status === "PUBLISHED" && d.has_pending_draft;
             const canDeactivate = (isOwner || isAdmin) && d.status === "PUBLISHED";
 
             // ── Header + actions
@@ -172,6 +173,9 @@
             }
             if (canPublish) {
                 actionsHtml += `<button class="oa-btn oa-btn-primary oa-btn-sm" onclick="handlePublish()">Sign & Publish</button>`;
+            }
+            if (canRepublish) {
+                actionsHtml += `<button class="oa-btn oa-btn-primary oa-btn-sm" onclick="handlePublish()">Re-publish (New Version)</button>`;
             }
             if (canDeactivate) {
                 actionsHtml += `<button class="oa-btn oa-btn-danger oa-btn-sm" onclick="openDeactivateModal()">Deactivate</button>`;
@@ -217,6 +221,17 @@
       </div>`;
             }
 
+            // Pending draft changes banner for PUBLISHED documents
+            if (d.status === "PUBLISHED" && d.has_pending_draft) {
+                html += `
+      <div class="doc-review-box" style="background:#f0f7ff;border-color:#a8cce8;">
+        <div class="review-label" style="color:var(--oa-mid);">Pending Changes</div>
+        <div class="review-comment" style="font-size:0.8125rem;">
+          This document has unpublished draft changes. ${canRepublish ? 'Click <strong>Re-publish</strong> to sign and publish as a new version.' : 'The owner can re-publish to apply changes.'}
+        </div>
+      </div>`;
+            }
+
             html += `<div class="oa-detail-grid">`;
 
             // ── Left column: VM list + JSON
@@ -248,10 +263,31 @@
             html += `</div>`;
 
             // Draft/Published JSON
-            const jsonContent = d.draft_content || d.content;
-            if (jsonContent) {
-                const jsonLabel = d.draft_content ? "Draft Content (DID Document)" : "Published Content (DID Document)";
+            const hasPendingDraft = d.status === "PUBLISHED" && d.draft_content && d.has_pending_draft;
+
+            if (hasPendingDraft) {
+                // Show draft (pending changes) first, then live content
                 html += `
+      <div class="oa-card" style="margin-bottom:1.5rem;border-color:var(--oa-mid);">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;color:var(--oa-mid);">
+          Draft Changes (Unpublished)
+          <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="copyJSON('draft')" style="text-transform:none;font-size:0.6875rem;">Copy JSON</button>
+        </h3>
+        <pre class="doc-json-viewer" id="draft-json-display">${escHTML(JSON.stringify(d.draft_content, null, 2))}</pre>
+      </div>`;
+                html += `
+      <div class="oa-card" style="margin-bottom:1.5rem;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+          Published Content (Live)
+          <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="copyJSON('did')" style="text-transform:none;font-size:0.6875rem;">Copy JSON</button>
+        </h3>
+        <pre class="doc-json-viewer" id="did-json-display">${escHTML(JSON.stringify(d.content, null, 2))}</pre>
+      </div>`;
+            } else {
+                const jsonContent = d.draft_content || d.content;
+                if (jsonContent) {
+                    const jsonLabel = d.draft_content ? "Draft Content (DID Document)" : "Published Content (DID Document)";
+                    html += `
       <div class="oa-card" style="margin-bottom:1.5rem;">
         <h3 style="display:flex;justify-content:space-between;align-items:center;">
           ${jsonLabel}
@@ -259,6 +295,7 @@
         </h3>
         <pre class="doc-json-viewer" id="did-json-display">${escHTML(JSON.stringify(jsonContent, null, 2))}</pre>
       </div>`;
+                }
             }
 
             // VC JSON (only for published documents)
@@ -359,13 +396,15 @@
             let data;
             if (type === "vc") {
                 data = docData?.verifiable_credential;
+            } else if (type === "draft") {
+                data = docData?.draft_content;
             } else {
-                data = docData?.draft_content || docData?.content;
+                data = docData?.content || docData?.draft_content;
             }
             if (data) {
                 navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-                const label = type === "vc" ? "Verifiable Credential" : "DID document";
-                oaAlert("alert-box", `${label} JSON copied to clipboard.`, "success");
+                const labels = {vc: "Verifiable Credential", draft: "Draft", did: "DID document"};
+                oaAlert("alert-box", `${labels[type] || "JSON"} copied to clipboard.`, "success");
                 setTimeout(() => oaClearAlert("alert-box"), 2000);
             }
         }
@@ -527,15 +566,21 @@
         // ── Publish ──────────────────────────────────────────────
 
         async function handlePublish() {
-            const msg = currentUserRole === "ORG_ADMIN" && docData?.status === "DRAFT"
-                ? "Sign and publish this document directly? (Skipping review)"
-                : "Sign and publish this document? The DID will become publicly resolvable.";
+            let msg;
+            if (docData?.status === "PUBLISHED") {
+                msg = "Re-sign and publish a new version with the pending changes?";
+            } else if (currentUserRole === "ORG_ADMIN" && docData?.status === "DRAFT") {
+                msg = "Sign and publish this document directly? (Skipping review)";
+            } else {
+                msg = "Sign and publish this document? The DID will become publicly resolvable.";
+            }
 
             if (!confirm(msg)) return;
             try {
                 oaAlert("alert-box", "Signing and publishing... please wait.", "success");
                 await DocAPI.publish(org.id, docId);
-                oaAlert("alert-box", "Document signed and published!", "success");
+                const isRepublish = docData?.status === "PUBLISHED";
+                oaAlert("alert-box", isRepublish ? "New version signed and published!" : "Document signed and published!", "success");
                 await loadDoc();
             } catch (err) {
                 oaAlert("alert-box", err.detail || "Publishing failed.", "error");
