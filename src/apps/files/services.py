@@ -37,6 +37,8 @@ ALLOWED_CERTIFICATE_TYPES = {
     "application/x-pkcs7-certificates",
     # Fallback — some browsers/OS send generic binary
     "application/octet-stream",
+    # Fallback — domains used as filenames (e.g., gitlab.com) are seen as MS-DOS executables
+    "application/x-msdos-program",
 }
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
