@@ -31,10 +31,15 @@
                     <span class="icon">📊</span> Dashboard
                 </a>
             </li>
-            <li>
+            <li id="nav-members-item">
                 <a href="/workspace/members/" class="{% if active_page == 'members' %}active{% endif %}">
                     <span class="icon">👥</span> Members
                     <span class="oa-nav-count" id="nav-member-count">—</span>
+                </a>
+            </li>
+            <li id="nav-audits-item" style="display: none;">
+                <a href="/workspace/audits/" class="{% if active_page == 'audits' %}active{% endif %}">
+                    <span class="icon">📋</span> Audits
                 </a>
             </li>
             <li>
@@ -72,7 +77,7 @@
 </div>
 
 <script src="{% static 'app/js/auth.js' %}"></script>
-<script src="{% static 'app/js/orgadmin.js' %}"></script>
+<script src="{% static 'app/js/orgadmin.js' %}?v=2"></script>
 <script>
     // Guard
     if (!Auth.isLoggedIn()) {
@@ -85,6 +90,8 @@
             const user = await Auth.me();
 
 
+            // Store role globally for dashboard/settings to use
+            window.currentOrgRole = null;
             document.getElementById("sidebar-user-name").textContent = user.full_name || "User";
 
             // Load orgs and pick the first (or current)
@@ -108,15 +115,36 @@
             document.getElementById("sidebar-user-role").textContent =
                 org.member_count !== undefined ? `${org.member_count} members` : "";
 
-            // Nav counts
-            if (org.member_count !== undefined) {
-                document.getElementById("nav-member-count").textContent = org.member_count;
-            }
-            if (org.document_count !== undefined) {
-                document.getElementById("nav-doc-count").textContent = org.document_count;
-            }
-            if (org.certificate_count !== undefined) {
-                document.getElementById("nav-cert-count").textContent = org.certificate_count;
+            // Determine user's role in this org to scope the UI
+            try {
+                // Fetch stats with ?scope=me just in case they are ORG_MEMBER,
+                // but if they are ORG_ADMIN it returns full org stats anyway.
+                // It also returns my_role and can_view_audits.
+                const stats = await OA.getStats(org.id, "me");
+                window.currentOrgRole = stats.my_role;
+
+                // Hide Members tab for ORG_MEMBERs
+                if (window.currentOrgRole === "ORG_MEMBER") {
+                    const navMembersItem = document.getElementById("nav-members-item");
+                    if (navMembersItem) navMembersItem.style.display = "none";
+                }
+
+                // Show Audits tab if permitted
+                if (stats.can_view_audits) {
+                    const navAuditsItem = document.getElementById("nav-audits-item");
+                    if (navAuditsItem) navAuditsItem.style.display = "block";
+                }
+
+                // Nav counts
+                if (org.member_count !== undefined && window.currentOrgRole !== "ORG_MEMBER") {
+                    document.getElementById("nav-member-count").textContent = org.member_count;
+                }
+                document.getElementById("nav-doc-count").textContent = stats.total_documents;
+                document.getElementById("nav-cert-count").textContent = stats.total_certificates;
+
+            } catch (err) {
+                console.error("Failed to load org stats", err);
+                window.currentOrgRole = "ORG_MEMBER"; // Safe fallback
             }
 
         } catch (err) {
@@ -139,4 +167,3 @@
 {% block scripts %}{% endblock %}
 </body>
 </html>
-s

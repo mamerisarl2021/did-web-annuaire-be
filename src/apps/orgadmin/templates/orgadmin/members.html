@@ -79,6 +79,40 @@
             </div>
         </div>
     </div>
+
+    <!-- ── Edit Member Modal ────────────────────────────────────────── -->
+    <div class="oa-modal-overlay hidden" id="edit-overlay" onclick="closeEdit(event)">
+        <div class="oa-modal" onclick="event.stopPropagation()">
+            <h3>Edit Member</h3>
+            <p class="desc" id="edit-desc">Update details for this member.</p>
+
+            <div id="edit-alert"></div>
+
+            <div class="oa-form-group">
+                <label>Full Name</label>
+                <input id="edit-name" class="oa-input" placeholder="Jean Dupont">
+            </div>
+            <div class="oa-form-group">
+                <label>Phone</label>
+                <input id="edit-phone" class="oa-input" placeholder="+33 6 12 34 56 78">
+            </div>
+            <div class="oa-form-group">
+                <label>Job Title / Function</label>
+                <input id="edit-functions" class="oa-input" placeholder="CTO">
+            </div>
+            <div class="oa-form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+                <input type="checkbox" id="edit-audit-access" style="width: 1rem; height: 1rem; cursor: pointer;">
+                <label for="edit-audit-access" style="margin-bottom: 0; cursor: pointer;">Has Audit Access</label>
+            </div>
+
+            <div class="oa-modal-actions" style="margin-top: 1.5rem;">
+                <button class="oa-btn oa-btn-ghost"
+                        onclick="document.getElementById('edit-overlay').classList.add('hidden')">Cancel
+                </button>
+                <button class="oa-btn oa-btn-primary" id="edit-submit" onclick="handleEditMember()">Update Member</button>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
@@ -141,6 +175,7 @@
           <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="toggleMenu('${m.id}', event)"
                   style="padding:0.25rem 0.5rem;font-size:0.75rem;">⋯</button>
           <div class="oa-action-menu hidden" id="menu-${m.id}">
+            <button onclick="openEditModal('${m.id}')">Edit member</button>
             <button onclick="openRoleModal('${m.id}', '${m.email}', '${m.role}')">Change role</button>
             <button class="danger" onclick="handleDeactivate('${m.id}', '${m.email}')">Deactivate</button>
           </div>
@@ -169,7 +204,15 @@
           <td><div class="member-name">${m.full_name || "—"}</div><div class="member-email">${m.email}</div></td>
           <td>${roleBadge(m.role)}</td>
           <td>${statusBadge(m.status)}</td>
+          <td style="font-size:0.8125rem;">${m.functions || "—"}</td>
           <td style="font-size:0.8125rem;">${oaFormatDate(m.created_at)}</td>
+          <td class="oa-actions-cell" style="opacity:1;">
+            <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="toggleMenu('${m.id}', event)"
+                    style="padding:0.25rem 0.5rem;font-size:0.75rem;">⋯</button>
+            <div class="oa-action-menu hidden" id="menu-${m.id}">
+              <button onclick="handleReactivate('${m.id}', '${m.email}')">Reactivate</button>
+            </div>
+          </td>
         </tr>
       `;
                 });
@@ -304,10 +347,97 @@
 
             try {
                 const res = await OA.deactivateMember(org.id, membershipId);
-                oaAlert("alert-box", res.message, "success");
+                oaAlert("alert-box", "Member has been deactivated.", "success");
                 await loadMembers();
             } catch (err) {
                 oaAlert("alert-box", err.detail || "Failed to deactivate member.", "error");
+            }
+        }
+
+        // ── Reactivate ──────────────────────────────────────────────────
+
+        async function handleReactivate(membershipId, email) {
+            // Close action menu
+            if (openMenuId) {
+                document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+                openMenuId = null;
+            }
+
+            if (!confirm(`Reactivate ${email}?\n\nThey will regain access to this organization.`)) return;
+
+            try {
+                await OA.reactivateMember(org.id, membershipId);
+                oaAlert("alert-box", "Member has been reactivated.", "success");
+                await loadMembers();
+            } catch (err) {
+                oaAlert("alert-box", err.detail || "Failed to reactivate member.", "error");
+            }
+        }
+
+        // ── Edit Member ──────────────────────────────────────────────────
+
+        function openEditModal(membershipId) {
+            // Close action menu
+            if (openMenuId) {
+                document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+                openMenuId = null;
+            }
+
+            const member = allMembers.find(m => m.id === membershipId);
+            if (!member) return;
+
+            currentMembershipId = membershipId;
+            document.getElementById("edit-desc").textContent = `Update details for ${member.email}`;
+            document.getElementById("edit-name").value = member.full_name || "";
+            document.getElementById("edit-phone").value = member.phone || "";
+            document.getElementById("edit-functions").value = member.functions || "";
+            
+            const auditCheckbox = document.getElementById("edit-audit-access");
+            // If they are ORG_ADMIN, they have audit access implicitly, so we might want to grey it out,
+            // but for simplicity we'll just check it if they are ORG_ADMIN or have explicit access.
+            if (member.role === "ORG_ADMIN") {
+                auditCheckbox.checked = true;
+                auditCheckbox.disabled = true;
+            } else {
+                auditCheckbox.checked = !!member.has_audit_access;
+                auditCheckbox.disabled = false;
+            }
+
+            oaClearAlert("edit-alert");
+            document.getElementById("edit-overlay").classList.remove("hidden");
+        }
+
+        function closeEdit(e) {
+            if (e.target === e.currentTarget) {
+                document.getElementById("edit-overlay").classList.add("hidden");
+            }
+        }
+
+        async function handleEditMember() {
+            oaClearAlert("edit-alert");
+            const btn = document.getElementById("edit-submit");
+            btn.disabled = true;
+
+            const payload = {
+                full_name: document.getElementById("edit-name").value.trim() || null,
+                phone: document.getElementById("edit-phone").value.trim() || null,
+                functions: document.getElementById("edit-functions").value.trim() || null,
+            };
+
+            const auditCheckbox = document.getElementById("edit-audit-access");
+            if (!auditCheckbox.disabled) {
+                payload.has_audit_access = auditCheckbox.checked;
+            }
+
+            try {
+                await OA.updateMember(org.id, currentMembershipId, payload);
+                document.getElementById("edit-overlay").classList.add("hidden");
+                oaAlert("alert-box", "Member updated successfully.", "success");
+                await loadMembers();
+            } catch (err) {
+                oaAlert("edit-alert", err.detail || "Failed to update member.");
+            } finally {
+                btn.disabled = false;
             }
         }
 

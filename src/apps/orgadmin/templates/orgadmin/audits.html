@@ -1,0 +1,136 @@
+{% extends "base_orgadmin.html" %}
+
+{% block content %}
+<div class="oa-header">
+    <div class="oa-header-text">
+        <h1 class="oa-header-title">Audit Logs</h1>
+        <p class="oa-header-subtitle">Immutable record of platform activities</p>
+    </div>
+</div>
+
+<div class="oa-card">
+    <div class="oa-table-container">
+        <table class="oa-table" id="audits-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Action</th>
+                    <th>Actor</th>
+                    <th>Resource Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody id="audits-tbody">
+                <tr><td colspan="5" style="text-align: center; color: #a0aec0;">Loading audits...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="oa-pagination" id="audits-pagination" style="display: none; justify-content: space-between; align-items: center; margin-top: 1rem;">
+        <div id="audits-page-info" style="font-size: 0.875rem; color: #718096;"></div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="oa-btn oa-btn-secondary" id="btn-prev-page" onclick="loadAuditsPage(currentPage - 1)" disabled>Previous</button>
+            <button class="oa-btn oa-btn-secondary" id="btn-next-page" onclick="loadAuditsPage(currentPage + 1)" disabled>Next</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentPage = 1;
+    const itemsPerPage = 25;
+    let totalItems = 0;
+
+    async function loadAuditsPage(page) {
+        if (page < 1) return;
+        
+        const orgId = sessionStorage.getItem("current_org");
+        if (!orgId) return;
+
+        const tbody = document.getElementById("audits-tbody");
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #a0aec0;">Loading audits...</td></tr>';
+        
+        try {
+            const data = await OA.listAudits(orgId, page);
+            renderAudits(data.results);
+            
+            totalItems = data.count;
+            currentPage = page;
+            updatePaginationControls();
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #e53e3e;">Failed to load audits: ${err.detail || "Unknown error"}</td></tr>`;
+        }
+    }
+
+    function renderAudits(audits) {
+        const tbody = document.getElementById("audits-tbody");
+        tbody.innerHTML = "";
+
+        if (audits.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #a0aec0;">No audit logs found.</td></tr>';
+            return;
+        }
+
+        audits.forEach(val => {
+            const date = new Date(val.created_at).toLocaleString();
+            
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td style="white-space: nowrap;">${date}</td>
+                <td><span class="oa-status oa-status-approved" style="font-size: 0.75rem;">${escapeHtml(val.action)}</span></td>
+                <td>${escapeHtml(val.actor_email)}</td>
+                <td>${escapeHtml(val.resource_type)}</td>
+                <td>${escapeHtml(val.description)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updatePaginationControls() {
+        const pagination = document.getElementById("audits-pagination");
+        const pageInfo = document.getElementById("audits-page-info");
+        const btnPrev = document.getElementById("btn-prev-page");
+        const btnNext = document.getElementById("btn-next-page");
+
+        if (totalItems === 0) {
+            pagination.style.display = "none";
+            return;
+        }
+
+        pagination.style.display = "flex";
+        
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const startItem = ((currentPage - 1) * itemsPerPage) + 1;
+        const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+        
+        pageInfo.textContent = `Showing ${startItem} to ${endItem} of ${totalItems} entries`;
+        
+        btnPrev.disabled = currentPage === 1;
+        btnNext.disabled = currentPage >= totalPages;
+    }
+
+    function escapeHtml(unsafe) {
+        if (!unsafe) return "";
+        return unsafe
+             .toString()
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Wait a slight delay to ensure org is loaded by base.js
+        setTimeout(() => {
+            // Guard: if current user is not allowed to view audits
+            if (window.currentOrgRole === "ORG_MEMBER" && !document.getElementById("nav-audits-item").style.display.includes("block")) {
+                 document.querySelector(".oa-main").innerHTML = '<div class="oa-card"><h2 style="color: #e53e3e;">Access Denied</h2><p>You do not have permission to view audit logs.</p></div>';
+                 return;
+            }
+            loadAuditsPage(1);
+        }, 500);
+    });
+</script>
+{% endblock %}

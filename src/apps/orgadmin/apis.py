@@ -5,6 +5,7 @@ All endpoints require JWT auth and an active membership in the target org.
 Permission checks use the RBAC system from common/permissions.py.
 """
 
+from typing import Optional
 from uuid import UUID
 
 from django.db import transaction
@@ -31,10 +32,14 @@ from src.apps.orgadmin.schemas import (
     OrgDetailSchema,
     OrgStatsSchema,
     OrgSummarySchema,
+    AuditLogSchema,
+    UpdateMemberSchema,
 )
 from src.common.exceptions import NotFoundError, PermissionDeniedError, ValidationError
+from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import Permission, require_permission
-from src.common.types import MembershipStatus, Role
+from src.common.types import MembershipStatus, Role, AuditAction
+from src.apps.audits import services as audit_services
 
 router = Router(tags=["Organization Admin"])
 
@@ -139,10 +144,36 @@ def get_organization_detail(request: HttpRequest, org_id: UUID):
     "/organizations/{org_id}/stats",
     response={200: OrgStatsSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Get organization stats",
+    summary="Get organization stats — use ?scope=me to get current-user counts only",
 )
-def get_organization_stats(request: HttpRequest, org_id: UUID):
-    require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
+def get_organization_stats(
+    request: HttpRequest,
+    org_id: UUID,
+    scope: Optional[str] = None,
+):
+    """
+    Returns org-wide statistics by default.
+    When `?scope=me` is passed the counts are filtered to the requesting user:
+    - `total_documents` / `total_certificates` reflect only that user's items.
+    - Member counts are omitted (set to 0) in the me-scoped response.
+    """
+    membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
+
+    if scope == "me":
+        user = request.auth
+        return {
+            "total_members": 0,
+            "active_members": 0,
+            "invited_members": 0,
+            "total_documents": DIDDocument.objects.filter(
+                organization_id=org_id, owner=user
+            ).count(),
+            "total_certificates": Certificate.objects.filter(
+                organization_id=org_id, created_by=user
+            ).count(),
+            "my_role": membership.role,
+            "can_view_audits": membership.can_view_audits,
+        }
 
     members = Membership.objects.filter(organization_id=org_id)
 
@@ -154,8 +185,42 @@ def get_organization_stats(request: HttpRequest, org_id: UUID):
         "total_certificates": Certificate.objects.filter(
             organization_id=org_id
         ).count(),
+        "my_role": membership.role,
+        "can_view_audits": membership.can_view_audits,
     }
 
+
+@router.get(
+    "/{org_id}/audits",
+    response=PaginatedResponse,
+    summary="List organization audits",
+)
+def list_audits(
+    request,
+    org_id: UUID,
+    page: int = 1,
+    page_size: int = 25,
+):
+    """
+    List audit logs for the organization.
+    Requires VIEW_AUDITS permission (built into ORG_ADMIN, or via has_audit_access).
+    """
+    require_permission(request.auth, org_id, Permission.VIEW_AUDITS)
+
+    from src.apps.audits.models import AuditLog
+
+    qs = AuditLog.objects.filter(organization_id=org_id).order_by("-created_at")
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+
+    return {
+        "count": total,
+        "results": list(sliced_qs),
+    }
 
 # ── Members list ─────────────────────────────────────────────────────────
 
@@ -164,10 +229,11 @@ def get_organization_stats(request: HttpRequest, org_id: UUID):
     "/organizations/{org_id}/members",
     response=list[MemberSchema],
     auth=JWTAuth(),
-    summary="List organization members",
+    summary="List organization members (ORG_ADMIN only)",
 )
 def list_members(request: HttpRequest, org_id: UUID):
-    require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
+    """Only ORG_ADMINs (MANAGE_MEMBERS permission) can list members."""
+    require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
 
     members = get_organization_members(organization_id=org_id)
     return [_member_dict(m) for m in members]
@@ -316,3 +382,102 @@ def deactivate_member(request: HttpRequest, org_id: UUID, membership_id: UUID):
     org_services.deactivate_membership(membership=target, deactivated_by=request.auth)
 
     return {"message": f"Member {target.user.email} has been deactivated."}
+
+
+# ── Reactivate member ───────────────────────────────────────────────────
+
+
+@router.post(
+    "/organizations/{org_id}/members/{membership_id}/reactivate",
+    response={200: MemberSchema, 400: ErrorSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Reactivate a member",
+)
+def reactivate_member(request: HttpRequest, org_id: UUID, membership_id: UUID):
+    require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
+
+    target = (
+        Membership.objects.filter(id=membership_id, organization_id=org_id)
+        .select_related("user")
+        .first()
+    )
+
+    if target is None:
+        raise NotFoundError("Membership not found.")
+
+    if target.status != MembershipStatus.DEACTIVATED:
+        raise ValidationError("Only deactivated members can be reactivated.")
+
+    target.status = MembershipStatus.ACTIVE
+    target.save(update_fields=["status", "updated_at"])
+
+    audit_services.log_action(
+        actor=request.auth,
+        action=AuditAction.MEMBER_ACTIVATED,
+        resource_type="MEMBERSHIP",
+        resource_id=target.id,
+        organization=target.organization,
+        description=f"Member '{target.user.email}' reactivated manually.",
+        metadata={"old_status": "DEACTIVATED", "new_status": "ACTIVE"},
+    )
+
+    return _member_dict(target)
+
+
+# ── Update member ───────────────────────────────────────────────────────
+
+
+@router.patch(
+    "/organizations/{org_id}/members/{membership_id}",
+    response={200: MemberSchema, 400: ErrorSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Update a member's profile and audit access",
+)
+def update_member(
+    request: HttpRequest,
+    org_id: UUID,
+    membership_id: UUID,
+    payload: UpdateMemberSchema,
+):
+    require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
+
+    target_membership = (
+        Membership.objects.filter(id=membership_id, organization_id=org_id)
+        .select_related("user")
+        .first()
+    )
+
+    if target_membership is None:
+        raise NotFoundError("Membership not found.")
+
+    user = target_membership.user
+    update_user = False
+
+    if payload.full_name is not None:
+        user.full_name = payload.full_name
+        update_user = True
+    if payload.phone is not None:
+        user.phone = payload.phone
+        update_user = True
+    if payload.functions is not None:
+        user.functions = payload.functions
+        update_user = True
+
+    if update_user:
+        user.save(update_fields=["full_name", "phone", "functions", "updated_at"])
+
+    if payload.has_audit_access is not None and target_membership.has_audit_access != payload.has_audit_access:
+        target_membership.has_audit_access = payload.has_audit_access
+        target_membership.save(update_fields=["has_audit_access", "updated_at"])
+
+    audit_services.log_action(
+        actor=request.auth,
+        action=AuditAction.MEMBER_ROLE_CHANGED,
+        resource_type="MEMBERSHIP",
+        resource_id=target_membership.id,
+        organization=target_membership.organization,
+        description=f"Member '{target_membership.user.email}' details updated.",
+        metadata={"fields_updated": True},
+    )
+
+    return _member_dict(target_membership)

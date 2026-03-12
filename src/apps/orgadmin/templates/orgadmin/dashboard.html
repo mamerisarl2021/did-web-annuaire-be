@@ -5,7 +5,7 @@
     <div class="oa-page-header">
         <div>
             <h2>Dashboard</h2>
-            <p>Organization overview</p>
+            <p id="dashboard-subtitle">Loading...</p>
         </div>
     </div>
 
@@ -24,7 +24,7 @@
          id="quick-actions">
     </div>
 
-    <!-- Recent members -->
+    <!-- Recent members (ORG_ADMIN only) -->
     <div id="recent-members"></div>
 {% endblock %}
 
@@ -37,14 +37,43 @@
                 return;
             }
 
-            try {
-                const [stats, members] = await Promise.all([
-                    OA.getStats(org.id),
-                    OA.listMembers(org.id),
-                ]);
+            // Wait for sidebar to resolve the role (set by base_orgadmin initSidebar)
+            const getRole = () => new Promise(resolve => {
+                const check = () => {
+                    if (window.currentOrgRole !== null && window.currentOrgRole !== undefined) {
+                        resolve(window.currentOrgRole);
+                    } else {
+                        setTimeout(check, 50);
+                    }
+                };
+                check();
+            });
 
-                // Stats
-                document.getElementById("stats-grid").innerHTML = `
+            try {
+                const role = await getRole();
+                const isAdmin = role === "ORG_ADMIN";
+
+                document.getElementById("dashboard-subtitle").textContent =
+                    isAdmin ? "Organization overview" : "Your personal workspace";
+
+                if (isAdmin) {
+                    await loadAdminDashboard(org);
+                } else {
+                    await loadMemberDashboard(org);
+                }
+            } catch (err) {
+                oaAlert("alert-box", err.detail || "Failed to load dashboard.", "error");
+            }
+        })();
+
+        // ── ORG_ADMIN: full org overview ───────────────────────────────────────
+        async function loadAdminDashboard(org) {
+            const [stats, members] = await Promise.all([
+                OA.getStats(org.id),
+                OA.listMembers(org.id),
+            ]);
+
+            document.getElementById("stats-grid").innerHTML = `
       <div class="oa-stat">
         <div class="label">Active Members</div>
         <div class="value accent">${stats.active_members}</div>
@@ -63,13 +92,12 @@
       </div>
     `;
 
-                // Quick actions
-                document.getElementById("quick-actions").innerHTML = `
+            document.getElementById("quick-actions").innerHTML = `
       <a href="/workspace/members/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
          onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">👥</div>
         <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">Manage Members</div>
-        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Invite, roles & access</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Invite, roles &amp; access</div>
       </a>
       <div class="oa-card" style="opacity:0.6;">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">📄</div>
@@ -85,14 +113,13 @@
          onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚙️</div>
         <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">Organization Settings</div>
-        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Details & configuration</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Details &amp; configuration</div>
       </a>
     `;
 
-                // Recent members
-                const activeMembers = members.filter(m => m.status !== "DEACTIVATED").slice(0, 5);
-                if (activeMembers.length > 0) {
-                    const rows = activeMembers.map(m => `
+            const activeMembers = members.filter(m => m.status !== "DEACTIVATED").slice(0, 5);
+            if (activeMembers.length > 0) {
+                const rows = activeMembers.map(m => `
         <tr>
           <td>
             <div class="member-name">${m.full_name || "—"}</div>
@@ -104,7 +131,7 @@
         </tr>
       `).join("");
 
-                    document.getElementById("recent-members").innerHTML = `
+                document.getElementById("recent-members").innerHTML = `
         <div class="oa-table-wrap">
           <div class="oa-table-header">
             <h3>Team Members</h3>
@@ -116,11 +143,42 @@
           </table>
         </div>
       `;
-                }
-
-            } catch (err) {
-                oaAlert("alert-box", err.detail || "Failed to load dashboard.", "error");
             }
-        })();
+        }
+
+        // ── ORG_MEMBER: personal overview only ────────────────────────────────
+        async function loadMemberDashboard(org) {
+            const stats = await OA.getStats(org.id, "me");
+
+            document.getElementById("stats-grid").innerHTML = `
+      <div class="oa-stat">
+        <div class="label">My DID Documents</div>
+        <div class="value">${stats.total_documents}</div>
+      </div>
+      <div class="oa-stat">
+        <div class="label">My Certificates</div>
+        <div class="value">${stats.total_certificates}</div>
+      </div>
+    `;
+
+            document.getElementById("quick-actions").innerHTML = `
+      <div class="oa-card" style="opacity:0.6;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">📄</div>
+        <div style="font-weight:600;font-size:0.9375rem;">DID Documents</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Coming soon</div>
+      </div>
+      <div class="oa-card" style="opacity:0.6;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">🔐</div>
+        <div style="font-weight:600;font-size:0.9375rem;">Certificates</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Coming soon</div>
+      </div>
+      <a href="/workspace/settings/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
+         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚙️</div>
+        <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">My Settings</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Update your profile</div>
+      </a>
+    `;
+        }
     </script>
 {% endblock %}

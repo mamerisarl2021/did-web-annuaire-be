@@ -4,8 +4,8 @@
 {% block content %}
     <div class="oa-page-header">
         <div>
-            <h2>Organization Settings</h2>
-            <p>View and manage your organization details</p>
+            <h2 id="settings-title">Settings</h2>
+            <p id="settings-subtitle">Loading...</p>
         </div>
     </div>
 
@@ -21,11 +21,41 @@
         const org = getCurrentOrg();
         if (!org) window.location.href = "/login/";
 
+        // Wait for sidebar initSidebar to resolve window.currentOrgRole
+        const getRole = () => new Promise(resolve => {
+            const check = () => {
+                if (window.currentOrgRole !== null && window.currentOrgRole !== undefined) {
+                    resolve(window.currentOrgRole);
+                } else {
+                    setTimeout(check, 50);
+                }
+            };
+            check();
+        });
+
         (async function loadSettings() {
             try {
-                const detail = await OA.getOrg(org.id);
+                const role = await getRole();
+                const isAdmin = role === "ORG_ADMIN";
 
-                document.getElementById("settings-content").innerHTML = `
+                if (isAdmin) {
+                    document.getElementById("settings-subtitle").textContent = "View and manage your organization details";
+                    await loadAdminSettings();
+                } else {
+                    document.getElementById("settings-title").textContent = "My Settings";
+                    document.getElementById("settings-subtitle").textContent = "Manage your personal information";
+                    await loadMemberSettings();
+                }
+            } catch (err) {
+                oaAlert("alert-box", err.detail || "Failed to load settings.", "error");
+            }
+        })();
+
+        // ── ORG_ADMIN settings (unchanged) ─────────────────────────────────────
+        async function loadAdminSettings() {
+            const detail = await OA.getOrg(org.id);
+
+            document.getElementById("settings-content").innerHTML = `
       <!-- Left: org info -->
       <div class="oa-card">
         <h3>Organization Information</h3>
@@ -78,10 +108,124 @@
         </div>
       </div>
     `;
-            } catch (err) {
-                oaAlert("alert-box", err.detail || "Failed to load settings.", "error");
+        }
+
+        // ── ORG_MEMBER settings ─────────────────────────────────────────────────
+        async function loadMemberSettings() {
+            const [user, stats, orgDetail] = await Promise.all([
+                Auth.me(),
+                OA.getStats(org.id, "me"),
+                OA.getOrg(org.id),
+            ]);
+
+            document.getElementById("settings-content").innerHTML = `
+      <!-- Left: personal info form -->
+      <div class="oa-card">
+        <h3>Personal Information</h3>
+        <p style="font-size:0.8125rem;color:var(--oa-text-light);margin-bottom:1rem;">
+          Update your name and phone number. Your job function is managed by your organization admin.
+        </p>
+
+        <div id="profile-alert"></div>
+
+        <div class="oa-field" style="flex-direction:column;gap:0.25rem;">
+          <label for="profile-full-name" style="font-size:0.8125rem;font-weight:600;color:var(--oa-text-muted);">Full Name</label>
+          <input id="profile-full-name" type="text" value="${escapeHtml(user.full_name || "")}"
+                 style="padding:0.5rem 0.75rem;border:1px solid var(--oa-border);border-radius:6px;font-size:0.9375rem;background:var(--oa-bg);color:var(--oa-text);width:100%;box-sizing:border-box;">
+        </div>
+
+        <div class="oa-field" style="flex-direction:column;gap:0.25rem;margin-top:1rem;">
+          <label for="profile-phone" style="font-size:0.8125rem;font-weight:600;color:var(--oa-text-muted);">Phone</label>
+          <input id="profile-phone" type="tel" value="${escapeHtml(user.phone || "")}"
+                 style="padding:0.5rem 0.75rem;border:1px solid var(--oa-border);border-radius:6px;font-size:0.9375rem;background:var(--oa-bg);color:var(--oa-text);width:100%;box-sizing:border-box;">
+        </div>
+
+        <div class="oa-field" style="flex-direction:column;gap:0.25rem;margin-top:1rem;">
+          <label style="font-size:0.8125rem;font-weight:600;color:var(--oa-text-muted);">Function / Job Title</label>
+          <div style="padding:0.5rem 0.75rem;border:1px solid var(--oa-border);border-radius:6px;font-size:0.9375rem;background:var(--oa-surface);color:var(--oa-text-muted);">
+            ${escapeHtml(user.functions || "—")}
+          </div>
+          <span style="font-size:0.75rem;color:var(--oa-text-light);">Set by your organization admin.</span>
+        </div>
+
+        <div class="oa-field" style="flex-direction:column;gap:0.25rem;margin-top:1rem;">
+          <label style="font-size:0.8125rem;font-weight:600;color:var(--oa-text-muted);">Email</label>
+          <div style="padding:0.5rem 0.75rem;border:1px solid var(--oa-border);border-radius:6px;font-size:0.9375rem;background:var(--oa-surface);color:var(--oa-text-muted);">
+            ${escapeHtml(user.email)}
+          </div>
+          <span style="font-size:0.75rem;color:var(--oa-text-light);">Contact support to change your email.</span>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+          <button id="profile-save-btn" onclick="saveProfile()"
+                  style="padding:0.5rem 1.25rem;background:var(--oa-accent);color:#fff;border:none;border-radius:6px;font-size:0.9375rem;font-weight:600;cursor:pointer;">
+            Save Changes
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: per-user stats + DID info -->
+      <div>
+        <div class="oa-card" style="margin-bottom:1.5rem;">
+          <h3>Statistics</h3>
+          ${field("My DID Documents", stats.total_documents)}
+          ${field("My Certificates", stats.total_certificates)}
+        </div>
+
+        <div class="oa-card">
+          <h3>DID Configuration</h3>
+          <div class="oa-field">
+            <div class="label">DID URI Pattern</div>
+            <div class="value mono">did:web:&lt;host&gt;:${orgDetail.slug}:&lt;label&gt;</div>
+          </div>
+          <div class="oa-field">
+            <div class="label">Resolution Path</div>
+            <div class="value mono">/.well-known/${orgDetail.slug}/&lt;label&gt;/did.json</div>
+          </div>
+          <p style="font-size:0.8125rem;color:var(--oa-text-light);margin-top:0.5rem;">
+            DID documents you create will use the slug
+            "<strong style="color:var(--oa-text);">${orgDetail.slug}</strong>" in their URI.
+          </p>
+        </div>
+      </div>
+    `;
+        }
+
+        async function saveProfile() {
+            const btn = document.getElementById("profile-save-btn");
+            const fullName = document.getElementById("profile-full-name").value.trim();
+            const phone = document.getElementById("profile-phone").value.trim();
+
+            if (!fullName) {
+                oaAlert("profile-alert", "Full name cannot be empty.", "error");
+                return;
             }
-        })();
+
+            btn.disabled = true;
+            btn.textContent = "Saving…";
+            oaClearAlert("profile-alert");
+
+            try {
+                await oaUpdateMe({ full_name: fullName, phone });
+                oaAlert("profile-alert", "Profile updated successfully.", "success");
+                // Update sidebar display name
+                const nameEl = document.getElementById("sidebar-user-name");
+                if (nameEl) nameEl.textContent = fullName;
+            } catch (err) {
+                oaAlert("profile-alert", err.detail || "Failed to save profile.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Save Changes";
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
 
         function field(label, value, mono = false) {
             const cls = !value && value !== 0 ? "value empty" : (mono ? "value mono" : "value");

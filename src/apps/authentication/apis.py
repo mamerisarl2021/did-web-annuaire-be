@@ -24,6 +24,7 @@ from src.apps.authentication.schemas import (
     PasswordResetConfirmSchema,
     PasswordResetRequestSchema,
     RegisterResponseSchema,
+    UpdateProfileSchema,
     UserResponseSchema,
 )
 from src.apps.organizations.selectors import get_membership_by_invitation_token
@@ -176,6 +177,30 @@ def logout(request: HttpRequest, payload: LogoutRequestSchema):
 )
 def me(request: HttpRequest):
     return request.auth
+
+
+@router.patch(
+    "/me",
+    response={200: UserResponseSchema, 400: ErrorResponseSchema},
+    auth=JWTAuth(),
+    summary="Update current user profile (full_name, phone only — functions is admin-managed)",
+)
+def update_me(request: HttpRequest, payload: UpdateProfileSchema):
+    """
+    Update the current user's personal information.
+
+    Only `full_name` and `phone` are editable by the user. The `functions`
+    (job title) field is set by an org admin and cannot be changed here.
+    """
+    from src.apps.users.services import update_user_profile
+
+    user = update_user_profile(
+        user=request.auth,
+        full_name=payload.full_name,
+        phone=payload.phone,
+        # functions intentionally excluded
+    )
+    return 200, user
 
 
 # ── Password Reset (public) ─────────────────────────────────────────────

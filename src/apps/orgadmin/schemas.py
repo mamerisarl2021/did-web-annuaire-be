@@ -22,6 +22,13 @@ class ChangeMemberRoleSchema(Schema):
     role: str
 
 
+class UpdateMemberSchema(Schema):
+    full_name: str | None = None
+    phone: str | None = None
+    functions: str | None = None
+    has_audit_access: bool | None = None
+
+
 # ── Response ────────────────────────────────────────────────────────────
 
 
@@ -73,6 +80,19 @@ class OrgStatsSchema(Schema):
     invited_members: int
     total_documents: int
     total_certificates: int
+    my_role: str = ""
+    can_view_audits: bool = False
+
+
+class AuditLogSchema(Schema):
+    id: UUID
+    action: str
+    resource_type: str
+    resource_id: UUID
+    description: str
+    metadata: dict
+    actor_email: str
+    created_at: str
 
 
 class MessageSchema(Schema):

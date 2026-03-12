@@ -52,6 +52,17 @@ class PasswordChangeSchema(Schema):
     new_password: str
 
 
+class UpdateProfileSchema(Schema):
+    """
+    Allows users to update their own personal info.
+    `functions` (job title) is intentionally excluded — it is set by an admin
+    and ORG_MEMBERs cannot modify it themselves.
+    """
+
+    full_name: str | None = None
+    phone: str | None = None
+
+
 # ── Response schemas ────────────────────────────────────────────────────
 
 
