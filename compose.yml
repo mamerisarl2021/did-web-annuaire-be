@@ -1,57 +1,29 @@
-###############################################################################
-# Annuaire DID — Unified Local Development Stack
-#
-# All services in one file: Backend, DIF (Resolver + Registrar),
-# Keyfactor (EJBCA + SignServer), and supporting infrastructure.
-#
-# Usage:
-#   docker compose up -d                    # start everything
-#   docker compose up -d --build            # rebuild backend + start
-#   docker compose logs -f annuaire-backend # tail backend logs
-#   docker compose down -v                  # stop + remove volumes (full reset)
-#
-# Ports exposed on host:
-#   8443  — nginx  (main entry point: https://localhost:8443)
-#   8080  — Universal Resolver  (http://localhost:8080/1.0/identifiers/...)
-#   9080  — Universal Registrar (http://localhost:9080/1.0/create)
-#   84    — EJBCA HTTP
-#   446   — EJBCA HTTPS  (Admin UI: https://localhost:446/ejbca/)
-#   8880  — SignServer HTTP
-#   8444  — SignServer HTTPS (Admin UI: https://localhost:8444/signserver/adminweb/)
-###############################################################################
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  ANNUAIRE BACKEND STACK
-# ═════════════════════════════════════════════════════════════════════════════
-
 services:
 
   # ── Reverse proxy ─────────────────────────────────────────────────────────
   nginx:
-    image: nginx:1.28-alpine
+    image: nginx:latest
     container_name: annuaire-nginx
-    restart: unless-stopped
+    restart: no
     ports:
-      - "443:443"
+      - "8086:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx-certs:/etc/nginx/certs:ro
       - static_volume:/static:ro
       - media_volume:/media:ro
       - dids_volume:/app/data/dids:ro
     depends_on:
-      - annuaire-backend
+      annuaire-backend:
+        condition: service_healthy
     networks:
-      - annuaire_net
+      - annuaire_staging_net
 
   # ── Django backend ────────────────────────────────────────────────────────
   annuaire-backend:
     build: .
-    image: annuaire-did-backend:local
+    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
     container_name: annuaire-backend
-    restart: unless-stopped
-    user: "0"
+    restart: no
     env_file:
       - .env.backend
     volumes:
@@ -77,11 +49,11 @@ services:
     networks:
       - annuaire_net
 
-  # ── PostgreSQL (backend) ──────────────────────────────────────────────────
+  # ── PostgreSQL ──────────────────────────────────────────────────
   db:
     image: postgres:18
     container_name: annuaire-db
-    restart: unless-stopped
+    restart: no
     env_file:
       - .env.backend
     volumes:
@@ -103,7 +75,7 @@ services:
   redis:
     image: redis:8.4.1-alpine
     container_name: annuaire-redis
-    restart: unless-stopped
+    restart: no
     env_file:
       - .env.backend
     command: >
@@ -115,7 +87,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redisallow-alex@123}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -129,11 +101,10 @@ services:
 
   # ── Celery worker ─────────────────────────────────────────────────────────
   celery:
-    image: annuaire-did-backend:local
+    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
     container_name: annuaire-celery
-    restart: unless-stopped
+    restart: no
     command: celery -A src.config.celery_app worker -l info --without-gossip --without-mingle --without-heartbeat
-    user: "0"
     env_file:
       - .env.backend
     volumes:
@@ -155,11 +126,10 @@ services:
 
   # ── Celery beat scheduler ─────────────────────────────────────────────────
   celery-beat:
-    image: annuaire-did-backend:local
+    image: ctrldaviddee/annuaire_did_be:staging-prime-latest
     container_name: annuaire-celery-beat
     restart: unless-stopped
     command: celery -A src.config.celery_app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    user: "0"
     env_file:
       - .env.backend
     volumes:
@@ -179,7 +149,6 @@ services:
     networks:
       - annuaire_net
 
-
 # ═════════════════════════════════════════════════════════════════════════════
 #  DIF UNIVERSAL RESOLVER
 # ═════════════════════════════════════════════════════════════════════════════
@@ -188,12 +157,12 @@ services:
     image: universalresolver/uni-resolver-web:latest
     container_name: uni-resolver-web
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    #ports:
+    #  - "8080:8080"
     volumes:
-      - ./DIF/application-uniresolver.yml:/opt/uni-resolver-java/uni-resolver-web/application.yml:ro
+      - ./application-uniresolver.yml:/opt/uni-resolver-java/uni-resolver-web/application.yml:ro
     networks:
-      - annuaire_net
+      - annuaire_staging_net
     logging:
       driver: "json-file"
       options:
@@ -205,58 +174,13 @@ services:
     image: uport/uni-resolver-driver-did-uport:5.0.3
     container_name: uni-resolver-driver-did-uport
     restart: unless-stopped
-    extra_hosts:
-      - "did.localhost:host-gateway"
     networks:
-      - annuaire_net
+      - annuaire_staging_net
     logging:
       driver: "json-file"
       options:
         max-size: "50m"
         max-file: "3"
-
-  # did:key (resolver)
-  resolver-driver-did-key:
-    image: universalresolver/driver-did-key:latest
-    container_name: uni-resolver-driver-did-key
-    restart: unless-stopped
-    networks:
-      - annuaire_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-  # did:jwk
-  did-jwk-driver:
-    image: transmute/restricted-resolver:latest
-    container_name: uni-resolver-driver-did-jwk
-    restart: unless-stopped
-    networks:
-      - annuaire_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-  # didkit fallback (did:web, did:key, did:tz, did:pkh, did:jwk)
-  driver-didkit:
-    image: ghcr.io/spruceid/didkit-http:202402050910243f0642d
-    container_name: uni-resolver-driver-didkit
-    restart: unless-stopped
-    environment:
-      PORT: "3000"
-      HOST: "0.0.0.0"
-    networks:
-      - annuaire_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
 
 # ═════════════════════════════════════════════════════════════════════════════
 #  DIF UNIVERSAL REGISTRAR
@@ -266,12 +190,12 @@ services:
     image: universalregistrar/uni-registrar-web:latest
     container_name: uni-registrar-web
     restart: unless-stopped
-    ports:
-      - "9080:9080"
+    #ports:
+    #  - "9080:9080"
     volumes:
-      - ./DIF/application-uniregistrar.yml:/opt/uni-registrar-java/uni-registrar-web/application.yml:ro
+      - ./application-uniregistrar.yml:/opt/uni-registrar-java/uni-registrar-web/application.yml:ro
     networks:
-      - annuaire_net
+      - annuaire_staging_net
     logging:
       driver: "json-file"
       options:
@@ -285,188 +209,25 @@ services:
     restart: unless-stopped
     environment:
       uniregistrar_driver_did_web_basePath: /app/data/dids
-      uniregistrar_driver_did_web_baseUrl: https://did.localhost
+      uniregistrar_driver_did_web_baseUrl: https://annuairedid-be.qcdigitalhub.com
       uniregistrar_driver_did_web_generatedFolder: /generated
     volumes:
       - dids_volume:/app/data/dids
     networks:
-      - annuaire_net
+      - annuaire_staging_net
     logging:
       driver: "json-file"
       options:
         max-size: "50m"
         max-file: "3"
-
-  # did:key (registrar)
-  registrar-driver-did-key:
-    image: universalregistrar/driver-did-key:latest
-    container_name: uni-registrar-driver-did-key
-    restart: unless-stopped
-    networks:
-      - annuaire_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  KEYFACTOR EJBCA — Certificate Authority
-# ═════════════════════════════════════════════════════════════════════════════
-
-  ejbca-database:
-    image: postgres:18
-    container_name: ejbca-database
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ejbca
-      POSTGRES_PASSWORD: ${EJBCA_DB_PASSWORD:-foo@123}
-      POSTGRES_DB: ejbca
-    volumes:
-      - ejbca_db_data:/var/lib/postgresql
-    networks:
-      - ejbca_internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ejbca -d ejbca"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "3"
-
-  ejbca-node1:
-    image: keyfactor/ejbca-ce:latest
-    container_name: ejbca-node1
-    hostname: ejbca-node1
-    restart: unless-stopped
-    depends_on:
-      ejbca-database:
-        condition: service_healthy
-    environment:
-      DATABASE_JDBC_URL: jdbc:postgresql://ejbca-database/ejbca
-      DATABASE_USER: ejbca
-      DATABASE_PASSWORD: ${EJBCA_DB_PASSWORD:-foo@123}
-      LOG_LEVEL: INFO
-      LOG_LEVEL_SETUP: INFO
-      TLS_SETUP_ENABLED: simple
-    ports:
-      - "84:8080"
-      - "446:8443"
-    networks:
-      - annuaire_net
-      - ejbca_internal
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "5"
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  KEYFACTOR SIGNSERVER — Document Signing
-#
-#  Admin UI (direct mTLS): https://localhost:8444/signserver/adminweb/
-#  Via nginx (no mTLS):    https://localhost:8443/signserver/
-#  Internal HTTP:          http://signserver-node:8080/signserver/process
-#
-#
-#  First-run setup:
-#    1. Wait ~90s for container to initialize
-#    2. Access Admin UI at https://localhost:8443/signserver/
-#    3. Create CryptoToken → "Soft Crypto Token"
-#    4. Create Signer worker → "PlainSigner" with ECDSA P-256
-#    5. Link signer to the CryptoToken
-# ═════════════════════════════════════════════════════════════════════════════
-
-  signserver-database:
-    image: mariadb:lts-ubi9
-    container_name: signserver-database
-    restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: ${SIGNSERVER_DB_ROOT_PASSWORD:-signserver_root_secret}
-      MARIADB_DATABASE: signserver
-      MARIADB_USER: signserver
-      MARIADB_PASSWORD: ${SIGNSERVER_DB_PASSWORD:-signserver_secret}
-    volumes:
-      - signserver_db_data:/var/lib/mysql
-    networks:
-      - signserver_internal
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "3"
-
-  signserver-node:
-    image: keyfactor/signserver-ce:latest
-    container_name: signserver
-    hostname: signserver-node
-    restart: unless-stopped
-    depends_on:
-      signserver-database:
-        condition: service_healthy
-    environment:
-      DATABASE_JDBC_URL: "jdbc:mariadb://signserver-database:3306/signserver?characterEncoding=UTF-8"
-      DATABASE_USER: signserver
-      DATABASE_PASSWORD: ${SIGNSERVER_DB_PASSWORD:-signserver_secret}
-      LOG_LEVEL: INFO
-      LOG_LEVEL_SETUP: INFO
-      TLS_SETUP_ENABLED: simple
-      ALLOW_ANY: "true"
-    volumes:
-      - ./keys/ManagementCA.pem:/mnt/external/secrets/tls/cas/ManagementCA.crt:ro
-    ports:
-      - "8880:8080"
-      - "8444:8443"
-    networks:
-      - annuaire_net
-      - signserver_internal
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "5"
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  VOLUMES
-# ═════════════════════════════════════════════════════════════════════════════
 
 volumes:
-  # Backend
   postgres_data:
   redis_data:
   static_volume:
   media_volume:
   dids_volume:
-  # EJBCA
-  ejbca_db_data:
-  # SignServer
-  signserver_db_data:
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  NETWORKS
-# ═════════════════════════════════════════════════════════════════════════════
 
 networks:
-  # Shared network — all services that need to talk to each other
-  annuaire_net:
-    driver: bridge
-
-  # Isolated: EJBCA ↔ its Postgres only
-  ejbca_internal:
-    driver: bridge
-
-  # Isolated: SignServer ↔ its MariaDB only
-  signserver_internal:
-    driver: bridge
+  annuaire_staging_net:
+    external: true

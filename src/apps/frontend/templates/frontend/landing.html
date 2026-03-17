@@ -1,0 +1,124 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnnuaireDID — Decentralized Identity Directory</title>
+  <link rel="stylesheet" href="{% static 'app/css/public.css' %}">
+</head>
+<body class="landing-body">
+
+  <nav class="pub-nav-dark">
+    <a href="/" class="pub-nav-brand"><span>Annuaire</span>DID</a>
+    <div class="pub-nav-links">
+      <a href="/resolve/" class="pub-nav-link">Resolve</a>
+      <a href="/search/" class="pub-nav-link">Search</a>
+      <a href="/register/" class="pub-nav-link">Register</a>
+      <a href="/login/" class="pub-nav-link pub-nav-link--cta">Sign In</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+
+      <div class="hero-tag">
+        <span class="dot"></span>
+        Decentralized Identity Directory
+      </div>
+
+      <h1>Manage <span class="accent">did:web</span><br>identities at scale</h1>
+
+      <p class="hero-sub">
+        Create, sign, and publish W3C-compliant DID documents
+        for your organization. Resolve any DID. Verify any identity.
+      </p>
+
+      <div class="cta-grid">
+        <a href="/login/" class="cta-card">
+          <div class="cta-icon">🔐</div>
+          <h3>Sign In</h3>
+          <p>Access your workspace to manage DID documents, certificates, and team members.</p>
+          <span class="cta-arrow">Go to workspace →</span>
+        </a>
+
+        <a href="/resolve/" class="cta-card">
+          <div class="cta-icon">🔍</div>
+          <h3>Resolve a DID</h3>
+          <p>Look up any <code class="mono" style="font-size:0.8125rem;color:var(--light);">did:web</code> identifier and inspect its DID document and keys.</p>
+          <span class="cta-arrow">Open resolver →</span>
+        </a>
+
+        <a href="/search/" class="cta-card">
+          <div class="cta-icon">📇</div>
+          <h3>Search Directory</h3>
+          <p>Browse published DID documents across all organizations registered on the platform.</p>
+          <span class="cta-arrow">Search DIDs →</span>
+        </a>
+      </div>
+
+      <div class="did-example">
+        <div class="did-example-label">Example DID URI</div>
+        <div class="did-example-uri">
+          <span class="dim">did:web:</span>annuairedid-be.qcdigitalhub.com<span class="dim">:</span>acme-corp<span class="dim">:</span>john-doe<span class="dim">:</span>driving-licence
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="features-inner">
+      <div class="features-header">
+        <h2>Built for trust</h2>
+        <p>Everything you need to manage decentralized identities</p>
+      </div>
+
+      <div class="feature-item">
+        <h3>W3C Compliant</h3>
+        <p>
+          DID documents are created following the W3C DID Core specification.
+          Each published document carries a Data Integrity proof using the
+          <strong>ecdsa-jcs-2019</strong> cryptosuite, ensuring that the content
+          is tamper-evident and cryptographically verifiable by any conformant resolver.
+        </p>
+      </div>
+
+      <div class="feature-item">
+        <h3>Cryptographic Signing</h3>
+        <p>
+          Documents are signed using ECDSA P-256 through Keyfactor SignServer.
+          Signing keys are generated and managed in a dedicated crypto token,
+          and every signature is logged for auditability.
+        </p>
+      </div>
+
+      <div class="feature-item">
+        <h3>Universal Resolution</h3>
+        <p>
+          Resolve <strong>did:web</strong> identifiers through the integrated
+          DIF Universal Resolver. Published DID documents are served as static
+          JSON files at their spec-defined HTTPS paths, making them accessible
+          to any standards-compliant verifier or wallet.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pub-footer-dark">
+    <div class="footer-brand"><span>Annuaire</span>DID</div>
+    <p class="footer-text">Decentralized Identity Directory — QC Digital Hub</p>
+    <div class="footer-links">
+      <a href="/resolve/">Resolve</a>
+      <a href="/search/">Search</a>
+      <a href="/login/">Sign In</a>
+      <a href="/register/">Register</a>
+    </div>
+  </footer>
+
+  <script src="{% static 'app/js/auth.js' %}"></script>
+  <script>
+    if (Auth.isLoggedIn()) window.location.href = "/dashboard/";
+  </script>
+</body>
+</html>

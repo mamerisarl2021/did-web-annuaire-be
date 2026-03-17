@@ -5,6 +5,7 @@ from src.apps.frontend import views
 app_name = "frontend"
 
 urlpatterns = [
+    path("", views.landing_view, name="landing"),
     path("login/", views.login_view, name="login"),
     path("register/", views.register_view, name="register"),
     path("forgot-password/", views.forgot_password_view, name="forgot_password"),

@@ -31,13 +31,3 @@ uniregistrar:
         enumerable: false
         historyAvailable: false
         humanReadable: true
-
-    # ── did:key ─────────────────────────────────────────────────────────────
-    - method: key
-      url: http://uni-registrar-driver-did-key:9080/
-      traits:
-        updatable: false
-        deactivatable: false
-        enumerable: false
-        historyAvailable: false
-        humanReadable: false
