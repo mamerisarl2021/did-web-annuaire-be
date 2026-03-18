@@ -15,7 +15,6 @@ import qrcode
 import structlog
 from django.core.cache import cache
 from django.core.files.uploadedfile import UploadedFile
-from django.utils import timezone
 from django.db import transaction
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
@@ -32,6 +31,7 @@ RESET_TOKEN_TTL = timedelta(hours=1)
 
 
 # ── Registration ────────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def register_user_and_org(
@@ -104,6 +104,7 @@ def register_user_and_org(
 
     logger.info("registration_complete", user_id=str(user.id), org_slug=org.slug)
     from src.apps.emails.tasks import send_superadmin_new_registration_email
+
     send_superadmin_new_registration_email.delay(
         org_name=org_name,
         org_slug=org.slug,
@@ -113,6 +114,7 @@ def register_user_and_org(
 
 
 # ── OTP Setup ───────────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def setup_otp(*, user: User) -> dict:
@@ -143,8 +145,9 @@ def setup_otp(*, user: User) -> dict:
 
 # ── OTP Verification ───────────────────────────────────────────────────
 
+
 @transaction.atomic
-def verify_otp_and_activate(*, user: User, otp_code: str) -> User:
+def verify_otp_and_activate(*, user: User, otp_code: str, password: str) -> User:
     if not user.otp_secret:
         raise ValidationError("OTP has not been set up. Call the setup endpoint first.")
 
@@ -152,14 +155,31 @@ def verify_otp_and_activate(*, user: User, otp_code: str) -> User:
     if not totp.verify(otp_code, valid_window=1):
         raise ValidationError("Invalid OTP code.")
 
+    # Validate and set the new password
+    from django.contrib.auth.password_validation import validate_password
+
+    try:
+        validate_password(password, user)
+    except Exception as e:
+        raise ValidationError(str(e))
+
+    user.set_password(password)
+
     user = activate_user(user=user)
     user.otp_secret = ""
-    user.save(update_fields=["otp_secret", "updated_at"])
+    user.save(update_fields=["otp_secret", "password", "updated_at"])
+
+    _log_auth_audit(
+        actor=user,
+        action="USER_ACTIVATED",
+        description=f"User '{user.email}' activated their account via OTP.",
+    )
     logger.info("otp_verified_and_secret_cleared", user_id=str(user.id))
     return user
 
 
 # ── Token generation ────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def generate_tokens_for_user(*, user: User) -> dict:
@@ -176,17 +196,32 @@ def generate_tokens_for_user(*, user: User) -> dict:
 
 # ── Logout ──────────────────────────────────────────────────────────────
 
+
 @transaction.atomic
 def logout_user(*, refresh_token: str) -> None:
     try:
         token = RefreshToken(refresh_token)
         token.blacklist()
+
+        user_id = token.payload.get("user_id")
+        if user_id:
+            from src.apps.users.selectors import get_user_by_id
+
+            user = get_user_by_id(user_id=user_id)
+            if user:
+                _log_auth_audit(
+                    actor=user,
+                    action="USER_LOGOUT",
+                    description=f"User '{user.email}' logged out.",
+                )
+
         logger.info("user_logged_out", jti=token["jti"])
     except TokenError as e:
         raise ValidationError(f"Invalid or expired token: {e}")
 
 
 # ── Password Reset ──────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def request_password_reset(*, email: str) -> None:
@@ -206,8 +241,10 @@ def request_password_reset(*, email: str) -> None:
     cache.set(cache_key, str(user.id), timeout=int(RESET_TOKEN_TTL.total_seconds()))
 
     from src.apps.emails.tasks import send_password_reset_email
+
     send_password_reset_email.delay(user_id=str(user.id), reset_token=token)
     logger.info("password_reset_token_generated", user_id=str(user.id), token=token)
+
 
 @transaction.atomic
 def confirm_password_reset(*, token: str, new_password: str) -> None:
@@ -234,7 +271,13 @@ def confirm_password_reset(*, token: str, new_password: str) -> None:
     user.save(update_fields=["password", "updated_at"])
     cache.delete(cache_key)
 
+    _log_auth_audit(
+        actor=user,
+        action="USER_PASSWORD_RESET",
+        description=f"User '{user.email}' reset their password.",
+    )
     logger.info("password_reset_confirmed", user_id=str(user.id))
+
 
 @transaction.atomic
 def change_password(*, user: User, old_password: str, new_password: str) -> None:
@@ -250,4 +293,30 @@ def change_password(*, user: User, old_password: str, new_password: str) -> None
 
     user.set_password(new_password)
     user.save(update_fields=["password", "updated_at"])
+
+    _log_auth_audit(
+        actor=user,
+        action="USER_PASSWORD_CHANGED",
+        description=f"User '{user.email}' changed their password.",
+    )
     logger.info("password_changed", user_id=str(user.id))
+
+
+# ── Audit helpers ────────────────────────────────────────────────────────
+
+
+def _log_auth_audit(*, actor, action, description, metadata=None):
+    """Log an audit entry for an authentication action."""
+    try:
+        from src.apps.audits.services import log_action
+
+        log_action(
+            actor=actor,
+            action=action,
+            resource_type="USER",
+            resource_id=actor.id,
+            description=description,
+            metadata=metadata or {},
+        )
+    except Exception as e:
+        logger.warning("auth_audit_log_failed", error=str(e), action=action)

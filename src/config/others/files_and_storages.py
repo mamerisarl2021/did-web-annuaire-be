@@ -11,7 +11,7 @@ STATIC_ROOT = BASE_DIR / "static_root"
 
 STATICFILES_DIRS = [
     BASE_DIR / "staticfiles"
-] # Auto-discovers app static/ dirs if empty list
+]  # Auto-discovers app static/ dirs if empty list
 
 # ── Media files ─────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ MEDIA_ROOT = BASE_DIR / "mediafiles"
 DID_DOCUMENTS_ROOT = BASE_DIR / "data" / "dids"
 
 STORAGES = {
-    "default" : {
+    "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {

@@ -13,6 +13,7 @@ from django.db import models
 class AuditAction(models.TextChoices):
     # Organization lifecycle
     ORG_CREATED = "ORG_CREATED", "Organization created"
+    ORG_UPDATED = "ORG_UPDATED", "Organization updated"
     ORG_APPROVED = "ORG_APPROVED", "Organization approved"
     ORG_REJECTED = "ORG_REJECTED", "Organization rejected"
     ORG_SUSPENDED = "ORG_SUSPENDED", "Organization suspended"
@@ -42,6 +43,9 @@ class AuditAction(models.TextChoices):
 
     # Auth
     USER_LOGIN = "USER_LOGIN", "User login"
+    USER_LOGOUT = "USER_LOGOUT", "User logout"
+    USER_ACTIVATED = "USER_ACTIVATED", "User account activated"
+    USER_UPDATED = "USER_UPDATED", "User account updated"
     USER_PASSWORD_CHANGED = "USER_PASSWORD_CHANGED", "Password changed"
     USER_PASSWORD_RESET = "USER_PASSWORD_RESET", "Password reset"
 
@@ -55,7 +59,7 @@ class ResourceType(models.TextChoices):
     MEMBERSHIP = "MEMBERSHIP", "Membership"
     CERTIFICATE = "CERTIFICATE", "Certificate"
     DID_DOCUMENT = "DID_DOCUMENT", "DID Document"
-    USER = "USER", "User"
+    USER = "USER", "User Account"
 
 
 class AuditLog(models.Model):

@@ -72,16 +72,12 @@ urlpatterns = [
     # APIs
     path("api/v2/", api.urls),
     path("superadmin/api/v2/", superadmin_api.urls),
-
     # Django admin
     path("admin/", admin.site.urls),
-
     # Superadmin frontend (templates)
     path("superadmin/", include("src.apps.superadmin.urls")),
-
     # Org admin frontend (templates)
     path("workspace/", include("src.apps.orgadmin.urls")),
-
     # Public frontend (templates) — must be last (catch-all paths)
     path("", include("src.apps.frontend.urls")),
 ]

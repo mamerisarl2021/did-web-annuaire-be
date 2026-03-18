@@ -58,8 +58,8 @@ class DIDDocument(BaseModel):
         on_delete=models.CASCADE,
         related_name="owned_documents",
         help_text="The user who created and owns this document. "
-                  "Appears in the DID URI as the <user> segment. "
-                  "Only this user can edit the document.",
+        "Appears in the DID URI as the <user> segment. "
+        "Only this user can edit the document.",
     )
 
     status = models.CharField(
@@ -73,13 +73,13 @@ class DIDDocument(BaseModel):
         null=True,
         blank=True,
         help_text="Last published DID document JSON. Immutable once set; "
-                  "overwritten only on next publish.",
+        "overwritten only on next publish.",
     )
     draft_content = models.JSONField(
         null=True,
         blank=True,
         help_text="Working draft. Editable ONLY by the owner. "
-                  "Becomes content on publish.",
+        "Becomes content on publish.",
     )
 
     # ── Review workflow ─────────────────────────────────────────────
@@ -138,7 +138,9 @@ class DIDDocument(BaseModel):
         ]
 
     def __str__(self) -> str:
-        return f"did:web:...:{self.organization.slug}:{self.owner_identifier}:{self.label}"
+        return (
+            f"did:web:...:{self.organization.slug}:{self.owner_identifier}:{self.label}"
+        )
 
     @property
     def owner_identifier(self) -> str:
@@ -150,7 +152,8 @@ class DIDDocument(BaseModel):
             local_part = self.owner.email.split("@")[0]
             # Replace dots and special chars with hyphens for URI safety
             import re
-            return re.sub(r'[^a-zA-Z0-9-]', '-', local_part).strip('-').lower()
+
+            return re.sub(r"[^a-zA-Z0-9-]", "-", local_part).strip("-").lower()
         return "unknown"
 
     @property
@@ -175,10 +178,13 @@ class DIDDocument(BaseModel):
         )
 
     def can_submit_for_review(self, user) -> bool:
-        """Only the owner can submit, and only from DRAFT or REJECTED status."""
+        """Only the owner can submit from DRAFT or REJECTED status, or if updating a PUBLISHED doc."""
         if not self.is_owner(user):
             return False
-        return self.status in (DocumentStatus.DRAFT, DocumentStatus.REJECTED)
+        return (
+            self.status in (DocumentStatus.DRAFT, DocumentStatus.REJECTED)
+            or self.has_pending_draft
+        )
 
     def can_review(self, user) -> bool:
         """
@@ -188,6 +194,18 @@ class DIDDocument(BaseModel):
         if self.is_owner(user):
             return False
         return self.status == DocumentStatus.PENDING_REVIEW
+
+    @property
+    def has_pending_draft(self) -> bool:
+        """
+        True when a document has been published (content exists) and has
+        uncommitted draft changes pending review or republish.
+        """
+        return (
+            self.content is not None
+            and self.draft_content is not None
+            and self.draft_content != self.content
+        )
 
 
 class DIDDocumentVersion(BaseModel):
@@ -261,7 +279,7 @@ class DocumentVerificationMethod(BaseModel):
     method_id_fragment = models.CharField(
         max_length=64,
         help_text="Fragment identifier, e.g. 'key-1'. "
-                  "Full ID: did:web:...:org:user:label#key-1",
+        "Full ID: did:web:...:org:user:label#key-1",
     )
     method_type = models.CharField(
         max_length=64,

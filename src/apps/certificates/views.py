@@ -16,7 +16,11 @@ def certificates_view(request):
 
 @never_cache
 def certificate_detail_view(request, cert_id):
-    return render(request, "certificate_detail.html", {
-        "active_page": "certificates",
-        "cert_id": cert_id,
-    })
+    return render(
+        request,
+        "certificate_detail.html",
+        {
+            "active_page": "certificates",
+            "cert_id": cert_id,
+        },
+    )

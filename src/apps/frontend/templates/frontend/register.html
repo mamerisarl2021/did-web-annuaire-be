@@ -135,16 +135,6 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="user_password">Password <span class="required">*</span></label>
-                    <input id="user_password" type="password" class="form-input" placeholder="Minimum 8 characters"
-                           required>
-                </div>
-
-                <div class="form-group">
-                    <label for="user_confirm">Confirm Password <span class="required">*</span></label>
-                    <input id="user_confirm" type="password" class="form-input" placeholder="Repeat password" required>
-                </div>
 
                 <div class="btn-row">
                     <button type="button" class="btn btn-ghost" onclick="goToStep1();">← Back</button>
@@ -212,8 +202,6 @@
         async function handleRegister() {
             clearAlert("alert-box");
             const btn = document.getElementById("submit-btn");
-            const pw = document.getElementById("user_password").value;
-            const confirm = document.getElementById("user_confirm").value;
 
             if (!document.getElementById("user_email").value.trim()) {
                 showAlert("alert-box", "Email is required.");
@@ -221,14 +209,6 @@
             }
             if (!document.getElementById("user_fullname").value.trim()) {
                 showAlert("alert-box", "Full name is required.");
-                return;
-            }
-            if (pw.length < 8) {
-                showAlert("alert-box", "Password must be at least 8 characters.");
-                return;
-            }
-            if (pw !== confirm) {
-                showAlert("alert-box", "Passwords do not match.");
                 return;
             }
 
@@ -249,7 +229,6 @@
 
             fd.append("email", document.getElementById("user_email").value);
             fd.append("full_name", document.getElementById("user_fullname").value);
-            fd.append("password", pw);
             fd.append("phone", document.getElementById("user_phone").value);
             fd.append("functions", document.getElementById("user_functions").value);
 

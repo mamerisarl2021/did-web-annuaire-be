@@ -106,7 +106,7 @@ class Membership(BaseModel):
     has_audit_access = models.BooleanField(
         default=False,
         help_text="Grant this member access to audit logs. "
-                  "ORG_ADMIN always has audit access regardless of this flag.",
+        "ORG_ADMIN always has audit access regardless of this flag.",
     )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -1,5 +1,7 @@
 """
 Organization services (write operations).
+
+Audit logging wired into every mutating function via _log_org_audit().
 """
 
 import structlog
@@ -18,6 +20,7 @@ logger = structlog.get_logger(__name__)
 
 
 # ── Organization lifecycle ──────────────────────────────────────────────
+
 
 @transaction.atomic
 def create_organization(
@@ -55,55 +58,166 @@ def create_organization(
         created_by=created_by,
     )
 
+    _log_org_audit(
+        actor=created_by,
+        action="ORG_CREATED",
+        organization=org,
+        description=f"Organization '{org.name}' (slug: {org.slug}) created.",
+        metadata={"slug": org.slug, "type": type, "country": country},
+    )
     logger.info("org_created", org_id=str(org.id), slug=org.slug)
     return org
 
+
 @transaction.atomic
-def approve_organization(*, organization: Organization, reviewed_by: User) -> Organization:
+def update_organization(
+    *,
+    organization: Organization,
+    actor: User,
+    name: str | None = None,
+    type: str | None = None,
+    email: str | None = None,
+    country: str | None = None,
+    address: str | None = None,
+    description: str | None = None,
+) -> Organization:
+    """Update organization details (only allowed for ORG_ADMIN)."""
+    update_fields = ["updated_at"]
+    metadata = {}
+
+    if name is not None and name != organization.name:
+        organization.name = name
+        update_fields.append("name")
+        metadata["name"] = name
+
+    if type is not None and type != organization.type:
+        organization.type = type
+        update_fields.append("type")
+        metadata["type"] = type
+
+    if email is not None and email != organization.email:
+        organization.email = email
+        update_fields.append("email")
+        metadata["email"] = email
+
+    if country is not None and country != organization.country:
+        organization.country = country
+        update_fields.append("country")
+        metadata["country"] = country
+
+    if address is not None and address != organization.address:
+        organization.address = address
+        update_fields.append("address")
+        metadata["address"] = address
+
+    if description is not None and description != organization.description:
+        organization.description = description
+        update_fields.append("description")
+        metadata["description"] = description
+
+    if len(update_fields) > 1:
+        organization.save(update_fields=update_fields)
+
+        _log_org_audit(
+            actor=actor,
+            action="ORG_UPDATED",
+            organization=organization,
+            description=f"Organization '{organization.name}' details updated.",
+            metadata=metadata,
+        )
+        logger.info("org_updated", org_id=str(organization.id), metadata=metadata)
+
+    return organization
+
+
+@transaction.atomic
+def approve_organization(
+    *, organization: Organization, reviewed_by: User
+) -> Organization:
     if organization.status != OrgStatus.PENDING_REVIEW:
-        raise ValidationError(f"Organization is '{organization.status}', not PENDING_REVIEW.")
+        raise ValidationError(
+            f"Organization is '{organization.status}', not PENDING_REVIEW."
+        )
 
     organization.status = OrgStatus.APPROVED
     organization.reviewed_by = reviewed_by
     organization.reviewed_at = timezone.now()
-    organization.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
+    organization.save(
+        update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"]
+    )
 
+    _log_org_audit(
+        actor=reviewed_by,
+        action="ORG_APPROVED",
+        organization=organization,
+        description=f"Organization '{organization.name}' approved.",
+    )
     logger.info("org_approved", org_id=str(organization.id))
     return organization
+
 
 @transaction.atomic
 def reject_organization(
     *, organization: Organization, reviewed_by: User, reason: str = ""
 ) -> Organization:
     if organization.status != OrgStatus.PENDING_REVIEW:
-        raise ValidationError(f"Organization is '{organization.status}', not PENDING_REVIEW.")
+        raise ValidationError(
+            f"Organization is '{organization.status}', not PENDING_REVIEW."
+        )
 
     organization.status = OrgStatus.REJECTED
     organization.reviewed_by = reviewed_by
     organization.reviewed_at = timezone.now()
     organization.rejection_reason = reason
     organization.save(
-        update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason", "updated_at"]
+        update_fields=[
+            "status",
+            "reviewed_by",
+            "reviewed_at",
+            "rejection_reason",
+            "updated_at",
+        ]
     )
 
+    _log_org_audit(
+        actor=reviewed_by,
+        action="ORG_REJECTED",
+        organization=organization,
+        description=f"Organization '{organization.name}' rejected.{f' Reason: {reason}' if reason else ''}",
+        metadata={"reason": reason},
+    )
     logger.info("org_rejected", org_id=str(organization.id))
     return organization
 
+
 @transaction.atomic
-def suspend_organization(*, organization: Organization, reviewed_by: User) -> Organization:
+def suspend_organization(
+    *, organization: Organization, reviewed_by: User
+) -> Organization:
     if organization.status != OrgStatus.APPROVED:
-        raise ValidationError(f"Can only suspend APPROVED orgs, got '{organization.status}'.")
+        raise ValidationError(
+            f"Can only suspend APPROVED orgs, got '{organization.status}'."
+        )
 
     organization.status = OrgStatus.SUSPENDED
     organization.reviewed_by = reviewed_by
     organization.reviewed_at = timezone.now()
-    organization.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
+    organization.save(
+        update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"]
+    )
 
+    _log_org_audit(
+        actor=reviewed_by,
+        action="ORG_SUSPENDED",
+        organization=organization,
+        description=f"Organization '{organization.name}' suspended.",
+    )
     logger.info("org_suspended", org_id=str(organization.id))
     return organization
 
 
 # ── Membership management ───────────────────────────────────────────────
+
 
 @transaction.atomic
 def create_membership(
@@ -127,8 +241,22 @@ def create_membership(
         invited_by=invited_by,
     )
 
-    logger.info("membership_created", user=user.email, org=organization.slug, role=role)
+    _log_membership_audit(
+        actor=invited_by or user,
+        action="MEMBER_INVITED",
+        membership=membership,
+        organization=organization,
+        description=f"User '{user.email}' invited to '{organization.slug}' as {role}.",
+        metadata={"role": role, "invited_by": invited_by.email if invited_by else None},
+    )
+    logger.info(
+        "membership_created",
+        user=user.email,
+        org=organization.slug,
+        role=role,
+    )
     return membership
+
 
 @transaction.atomic
 def activate_membership(*, membership: Membership) -> Membership:
@@ -139,8 +267,20 @@ def activate_membership(*, membership: Membership) -> Membership:
     membership.activated_at = timezone.now()
     membership.save(update_fields=["status", "activated_at", "updated_at"])
 
-    logger.info("membership_activated", user=membership.user.email, org=membership.organization.slug)
+    _log_membership_audit(
+        actor=membership.user,
+        action="MEMBER_ACTIVATED",
+        membership=membership,
+        organization=membership.organization,
+        description=f"Membership activated for '{membership.user.email}' in '{membership.organization.slug}'.",
+    )
+    logger.info(
+        "membership_activated",
+        user=membership.user.email,
+        org=membership.organization.slug,
+    )
     return membership
+
 
 @transaction.atomic
 def invite_member(
@@ -157,27 +297,140 @@ def invite_member(
 
     if user is None:
         import secrets
+
         user = create_user(
-            email=email, full_name="", password=secrets.token_urlsafe(32), is_active=False
+            email=email,
+            full_name="",
+            password=secrets.token_urlsafe(32),
+            is_active=False,
         )
 
     membership = create_membership(
-        user=user, organization=organization, role=role,
-        status=MembershipStatus.INVITED, invited_by=invited_by,
+        user=user,
+        organization=organization,
+        role=role,
+        status=MembershipStatus.INVITED,
+        invited_by=invited_by,
     )
     return membership
 
+
 @transaction.atomic
-def change_member_role(*, membership: Membership, new_role: Role, changed_by: User) -> Membership:
+def change_member_role(
+    *, membership: Membership, new_role: Role, changed_by: User
+) -> Membership:
     old_role = membership.role
     membership.role = new_role
     membership.save(update_fields=["role", "updated_at"])
-    logger.info("member_role_changed", old_role=old_role, new_role=new_role)
+
+    _log_membership_audit(
+        actor=changed_by,
+        action="MEMBER_ROLE_CHANGED",
+        membership=membership,
+        organization=membership.organization,
+        description=(
+            f"Role for '{membership.user.email}' in '{membership.organization.slug}' "
+            f"changed from {old_role} to {new_role}."
+        ),
+        metadata={"old_role": old_role, "new_role": new_role},
+    )
+    logger.info(
+        "member_role_changed",
+        user=membership.user.email,
+        old_role=old_role,
+        new_role=new_role,
+    )
     return membership
 
+
 @transaction.atomic
-def deactivate_membership(*, membership: Membership, deactivated_by: User) -> Membership:
+def deactivate_membership(
+    *, membership: Membership, deactivated_by: User
+) -> Membership:
     membership.status = MembershipStatus.DEACTIVATED
     membership.save(update_fields=["status", "updated_at"])
-    logger.info("member_deactivated", user=membership.user.email)
+
+    _log_membership_audit(
+        actor=deactivated_by,
+        action="MEMBER_DEACTIVATED",
+        membership=membership,
+        organization=membership.organization,
+        description=(
+            f"Membership for '{membership.user.email}' in "
+            f"'{membership.organization.slug}' deactivated."
+        ),
+        metadata={"deactivated_by": deactivated_by.email},
+    )
+    logger.info(
+        "member_deactivated",
+        user=membership.user.email,
+        org=membership.organization.slug,
+    )
     return membership
+
+
+@transaction.atomic
+def cancel_membership_invitation(*, membership: Membership, canceled_by: User) -> None:
+    if membership.status != MembershipStatus.INVITED:
+        raise ValidationError("Only INVITED memberships can be canceled.")
+
+    org = membership.organization
+    user_email = membership.user.email
+
+    _log_membership_audit(
+        actor=canceled_by,
+        action="MEMBER_INVITE_CANCELED",
+        membership=membership,
+        organization=org,
+        description=f"Invitation for '{user_email}' was canceled.",
+        metadata={"canceled_by": canceled_by.email},
+    )
+
+    membership.delete()
+
+    logger.info(
+        "membership_invitation_canceled",
+        user=user_email,
+        org=org.slug,
+    )
+
+
+# ── Audit helpers ────────────────────────────────────────────────────────
+
+
+def _log_org_audit(*, actor, action, organization, description, metadata=None):
+    """Log an audit entry for an organization-level action."""
+    try:
+        from src.apps.audits.services import log_action
+
+        log_action(
+            actor=actor,
+            action=action,
+            resource_type="ORGANIZATION",
+            resource_id=organization.id,
+            organization=organization,
+            description=description,
+            metadata=metadata or {},
+        )
+    except Exception as e:
+        logger.warning("audit_log_failed", error=str(e), action=action)
+
+
+def _log_membership_audit(
+    *, actor, action, membership, organization, description, metadata=None
+):
+    """Log an audit entry for a membership-level action."""
+    try:
+        from src.apps.audits.services import log_action
+
+        log_action(
+            actor=actor,
+            action=action,
+            resource_type="MEMBERSHIP",
+            resource_id=membership.id,
+            organization=organization,
+            description=description,
+            metadata=metadata or {},
+        )
+    except Exception as e:
+        logger.warning("audit_log_failed", error=str(e), action=action)

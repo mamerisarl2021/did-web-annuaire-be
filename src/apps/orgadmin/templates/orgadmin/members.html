@@ -35,11 +35,16 @@
                 <input id="inv-name" class="oa-input" placeholder="Jean Dupont">
             </div>
             <div class="oa-form-group">
-                <label>Role <span class="req">*</span></label>
-                <select id="inv-role" class="oa-select">
-                    <option value="ORG_MEMBER">Member — can manage documents & certificates</option>
-                    <option value="AUDITOR">Auditor — read-only access</option>
-                </select>
+                <label>Phone</label>
+                <input id="inv-phone" class="oa-input" placeholder="+33 6 12 34 56 78">
+            </div>
+            <div class="oa-form-group">
+                <label>Job Title / Function</label>
+                <input id="inv-functions" class="oa-input" placeholder="CTO">
+            </div>
+            <div class="oa-form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem;">
+                <input type="checkbox" id="inv-audit-access" style="width: 1rem; height: 1rem; cursor: pointer;">
+                <label for="inv-audit-access" style="margin-bottom: 0; cursor: pointer;">Grant Audit Access</label>
             </div>
 
             <div class="oa-modal-actions">
@@ -55,7 +60,7 @@
     </div>
 
     <!-- ── Role Change Modal ────────────────────────────────────────── -->
-    <div class="oa-modal-overlay hidden" id="role-overlay" onclick="closeRole(event)">
+    <!-- <div class="oa-modal-overlay hidden" id="role-overlay" onclick="closeRole(event)">
         <div class="oa-modal" onclick="event.stopPropagation()">
             <h3>Change Role</h3>
             <p class="desc" id="role-desc">Update role for this member.</p>
@@ -78,6 +83,40 @@
                 <button class="oa-btn oa-btn-primary" onclick="handleRoleChange()">Update Role</button>
             </div>
         </div>
+    </div> -->
+
+    <!-- ── Edit Member Modal ────────────────────────────────────────── -->
+    <div class="oa-modal-overlay hidden" id="edit-overlay" onclick="closeEdit(event)">
+        <div class="oa-modal" onclick="event.stopPropagation()">
+            <h3>Edit Member</h3>
+            <p class="desc" id="edit-desc">Update details for this member.</p>
+
+            <div id="edit-alert"></div>
+
+            <div class="oa-form-group">
+                <label>Full Name</label>
+                <input id="edit-name" class="oa-input" placeholder="Jean Dupont">
+            </div>
+            <div class="oa-form-group">
+                <label>Phone</label>
+                <input id="edit-phone" class="oa-input" placeholder="+33 6 12 34 56 78">
+            </div>
+            <div class="oa-form-group">
+                <label>Job Title / Function</label>
+                <input id="edit-functions" class="oa-input" placeholder="CTO">
+            </div>
+            <div class="oa-form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+                <input type="checkbox" id="edit-audit-access" style="width: 1rem; height: 1rem; cursor: pointer;">
+                <label for="edit-audit-access" style="margin-bottom: 0; cursor: pointer;">Has Audit Access</label>
+            </div>
+
+            <div class="oa-modal-actions" style="margin-top: 1.5rem;">
+                <button class="oa-btn oa-btn-ghost"
+                        onclick="document.getElementById('edit-overlay').classList.add('hidden')">Cancel
+                </button>
+                <button class="oa-btn oa-btn-primary" id="edit-submit" onclick="handleEditMember()">Update Member</button>
+            </div>
+        </div>
     </div>
 {% endblock %}
 
@@ -86,6 +125,7 @@
         let allMembers = [];
         let currentMembershipId = null;
         let openMenuId = null;
+        let currentUserEmail = null;
 
         const org = getCurrentOrg();
         if (!org) window.location.href = "/login/";
@@ -94,7 +134,12 @@
 
         async function loadMembers() {
             try {
-                allMembers = await OA.listMembers(org.id);
+                const [members, me] = await Promise.all([
+                    OA.listMembers(org.id),
+                    Auth.me()
+                ]);
+                allMembers = members;
+                currentUserEmail = me.email;
                 renderMembers();
             } catch (err) {
                 oaAlert("alert-box", err.detail || "Failed to load members.", "error");
@@ -138,12 +183,20 @@
         <td style="font-size:0.8125rem;color:var(--oa-text-muted);">${m.functions || "—"}</td>
         <td style="font-size:0.8125rem;">${oaFormatDate(m.created_at)}</td>
         <td class="oa-actions-cell">
-          <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="toggleMenu('${m.id}', event)"
+          ${m.email === currentUserEmail ? 
+          `<span style="display:inline-block;padding:0.25rem 0.5rem;font-size:0.75rem;color:var(--oa-text-light);background:var(--oa-surface);border-radius:4px;">You</span>` 
+          : 
+          `<button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="toggleMenu('${m.id}', event)"
                   style="padding:0.25rem 0.5rem;font-size:0.75rem;">⋯</button>
           <div class="oa-action-menu hidden" id="menu-${m.id}">
-            <button onclick="openRoleModal('${m.id}', '${m.email}', '${m.role}')">Change role</button>
-            <button class="danger" onclick="handleDeactivate('${m.id}', '${m.email}')">Deactivate</button>
-          </div>
+            <button onclick="openEditModal('${m.id}')">Edit member</button>
+            <!-- <button onclick="openRoleModal('${m.id}', '${m.email}', '${m.role}')">Change role</button> -->
+            ${m.status === 'INVITED' 
+              ? `<button class="danger" onclick="handleCancelInvite('${m.id}', '${m.email}')">Cancel invitation</button>`
+              : `<button class="danger" onclick="handleDeactivate('${m.id}', '${m.email}')">Deactivate</button>`
+            }
+          </div>`
+          }
         </td>
       </tr>
     `;
@@ -169,7 +222,15 @@
           <td><div class="member-name">${m.full_name || "—"}</div><div class="member-email">${m.email}</div></td>
           <td>${roleBadge(m.role)}</td>
           <td>${statusBadge(m.status)}</td>
+          <td style="font-size:0.8125rem;">${m.functions || "—"}</td>
           <td style="font-size:0.8125rem;">${oaFormatDate(m.created_at)}</td>
+          <td class="oa-actions-cell" style="opacity:1;">
+            <button class="oa-btn oa-btn-ghost oa-btn-sm" onclick="toggleMenu('${m.id}', event)"
+                    style="padding:0.25rem 0.5rem;font-size:0.75rem;">⋯</button>
+            <div class="oa-action-menu hidden" id="menu-${m.id}">
+              <button onclick="handleReactivate('${m.id}', '${m.email}')">Reactivate</button>
+            </div>
+          </td>
         </tr>
       `;
                 });
@@ -205,7 +266,9 @@
         function openInviteModal() {
             document.getElementById("inv-email").value = "";
             document.getElementById("inv-name").value = "";
-            document.getElementById("inv-role").value = "ORG_MEMBER";
+            document.getElementById("inv-phone").value = "";
+            document.getElementById("inv-functions").value = "";
+            document.getElementById("inv-audit-access").checked = false;
             oaClearAlert("invite-alert");
             document.getElementById("invite-overlay").classList.remove("hidden");
             document.getElementById("inv-email").focus();
@@ -220,7 +283,9 @@
         async function handleInvite() {
             const email = document.getElementById("inv-email").value.trim();
             const fullName = document.getElementById("inv-name").value.trim();
-            const role = document.getElementById("inv-role").value;
+            const phone = document.getElementById("inv-phone").value.trim();
+            const functions = document.getElementById("inv-functions").value.trim();
+            const has_audit_access = document.getElementById("inv-audit-access").checked;
 
             oaClearAlert("invite-alert");
 
@@ -238,7 +303,13 @@
             if (label) label.style.display = "none";
 
             try {
-                await OA.inviteMember(org.id, {email, full_name: fullName, role});
+                await OA.inviteMember(org.id, {
+                    email,
+                    full_name: fullName,
+                    phone,
+                    functions,
+                    has_audit_access
+                });
                 document.getElementById("invite-overlay").classList.add("hidden");
                 oaAlert("alert-box", `Invitation sent to ${email}.`, "success");
                 await loadMembers();
@@ -304,10 +375,119 @@
 
             try {
                 const res = await OA.deactivateMember(org.id, membershipId);
-                oaAlert("alert-box", res.message, "success");
+                oaAlert("alert-box", "Member has been deactivated.", "success");
                 await loadMembers();
             } catch (err) {
                 oaAlert("alert-box", err.detail || "Failed to deactivate member.", "error");
+            }
+        }
+
+        async function handleCancelInvite(membershipId, email) {
+            // Close action menu
+            if (openMenuId) {
+                document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+                openMenuId = null;
+            }
+
+            if (!confirm(`Cancel the invitation for ${email}?`)) return;
+
+            try {
+                await OA.cancelInvitation(org.id, membershipId);
+                oaAlert("alert-box", "Invitation has been canceled.", "success");
+                await loadMembers();
+                
+                // Update sidebar count if needed
+                const stats = await OA.getStats(org.id);
+                document.getElementById("nav-member-count").textContent = stats.total_members;
+            } catch (err) {
+                oaAlert("alert-box", err.detail || "Failed to cancel invitation.", "error");
+            }
+        }
+
+        // ── Reactivate ──────────────────────────────────────────────────
+
+        async function handleReactivate(membershipId, email) {
+            // Close action menu
+            if (openMenuId) {
+                document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+                openMenuId = null;
+            }
+
+            if (!confirm(`Reactivate ${email}?\n\nThey will regain access to this organization.`)) return;
+
+            try {
+                await OA.reactivateMember(org.id, membershipId);
+                oaAlert("alert-box", "Member has been reactivated.", "success");
+                await loadMembers();
+            } catch (err) {
+                oaAlert("alert-box", err.detail || "Failed to reactivate member.", "error");
+            }
+        }
+
+        // ── Edit Member ──────────────────────────────────────────────────
+
+        function openEditModal(membershipId) {
+            // Close action menu
+            if (openMenuId) {
+                document.getElementById(`menu-${openMenuId}`)?.classList.add("hidden");
+                openMenuId = null;
+            }
+
+            const member = allMembers.find(m => m.id === membershipId);
+            if (!member) return;
+
+            currentMembershipId = membershipId;
+            document.getElementById("edit-desc").textContent = `Update details for ${member.email}`;
+            document.getElementById("edit-name").value = member.full_name || "";
+            document.getElementById("edit-phone").value = member.phone || "";
+            document.getElementById("edit-functions").value = member.functions || "";
+            
+            const auditCheckbox = document.getElementById("edit-audit-access");
+            // If they are ORG_ADMIN, they have audit access implicitly, so we might want to grey it out,
+            // but for simplicity we'll just check it if they are ORG_ADMIN or have explicit access.
+            if (member.role === "ORG_ADMIN") {
+                auditCheckbox.checked = true;
+                auditCheckbox.disabled = true;
+            } else {
+                auditCheckbox.checked = !!member.has_audit_access;
+                auditCheckbox.disabled = false;
+            }
+
+            oaClearAlert("edit-alert");
+            document.getElementById("edit-overlay").classList.remove("hidden");
+        }
+
+        function closeEdit(e) {
+            if (e.target === e.currentTarget) {
+                document.getElementById("edit-overlay").classList.add("hidden");
+            }
+        }
+
+        async function handleEditMember() {
+            oaClearAlert("edit-alert");
+            const btn = document.getElementById("edit-submit");
+            btn.disabled = true;
+
+            const payload = {
+                full_name: document.getElementById("edit-name").value.trim() || null,
+                phone: document.getElementById("edit-phone").value.trim() || null,
+                functions: document.getElementById("edit-functions").value.trim() || null,
+            };
+
+            const auditCheckbox = document.getElementById("edit-audit-access");
+            if (!auditCheckbox.disabled) {
+                payload.has_audit_access = auditCheckbox.checked;
+            }
+
+            try {
+                await OA.updateMember(org.id, currentMembershipId, payload);
+                document.getElementById("edit-overlay").classList.add("hidden");
+                oaAlert("alert-box", "Member updated successfully.", "success");
+                await loadMembers();
+            } catch (err) {
+                oaAlert("edit-alert", err.detail || "Failed to update member.");
+            } finally {
+                btn.disabled = false;
             }
         }
 

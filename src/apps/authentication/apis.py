@@ -12,6 +12,8 @@ from ninja import File, Form, Router, UploadedFile
 from ninja_jwt.authentication import JWTAuth
 
 from src.apps.authentication import services as auth_services
+from src.apps.organizations.services import activate_membership
+from src.apps.users.services import update_user_profile
 from src.apps.authentication.schemas import (
     ActivateSetupResponseSchema,
     ActivateVerifyRequestSchema,
@@ -24,6 +26,7 @@ from src.apps.authentication.schemas import (
     PasswordResetConfirmSchema,
     PasswordResetRequestSchema,
     RegisterResponseSchema,
+    UpdateProfileSchema,
     UserResponseSchema,
 )
 from src.apps.organizations.selectors import get_membership_by_invitation_token
@@ -37,7 +40,11 @@ router = Router(tags=["Authentication"])
 
 @router.post(
     "/register",
-    response={201: RegisterResponseSchema, 400: ErrorResponseSchema, 409: ErrorResponseSchema},
+    response={
+        201: RegisterResponseSchema,
+        400: ErrorResponseSchema,
+        409: ErrorResponseSchema,
+    },
     summary="Register a new user and organization (multipart)",
 )
 def register(
@@ -55,14 +62,21 @@ def register(
     # ── User fields (step 2 of the frontend form) ──────────────────
     email: str = Form(...),
     full_name: str = Form(...),
-    password: str = Form(...),
+    password: str = Form(""),
     phone: str = Form(""),
     functions: str = Form(""),
-):
+) -> dict:
     """
     Creates a new user (inactive) and an organization (PENDING_REVIEW).
     Accepts multipart/form-data with PDF file uploads.
+    Password is optional — if not provided a random unusable placeholder is
+    generated. The real password is always set during account activation.
     """
+    import secrets as _secrets
+
+    if not password:
+        password = _secrets.token_hex(32)
+
     user = auth_services.register_user_and_org(
         org_name=org_name,
         org_slug=org_slug,
@@ -112,7 +126,11 @@ def activate_setup(request: HttpRequest, invitation_token: UUID):
 
 @router.post(
     "/activate/{invitation_token}/verify",
-    response={200: ActivateVerifyResponseSchema, 400: ErrorResponseSchema, 404: ErrorResponseSchema},
+    response={
+        200: ActivateVerifyResponseSchema,
+        400: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+    },
     summary="Verify OTP code and activate account",
 )
 def activate_verify(
@@ -127,9 +145,9 @@ def activate_verify(
     user = auth_services.verify_otp_and_activate(
         user=membership.user,
         otp_code=payload.otp_code,
+        password=payload.password,
     )
 
-    from src.apps.organizations.services import activate_membership
     activate_membership(membership=membership)
 
     tokens = auth_services.generate_tokens_for_user(user=user)
@@ -169,6 +187,30 @@ def me(request: HttpRequest):
     return request.auth
 
 
+@router.patch(
+    "/me",
+    response={200: UserResponseSchema, 400: ErrorResponseSchema},
+    auth=JWTAuth(),
+    summary="Update current user profile (full_name, phone only — functions is admin-managed)",
+)
+def update_me(request: HttpRequest, payload: UpdateProfileSchema):
+    """
+    Update the current user's personal information.
+
+    Only `full_name`, `phone`, and `email` are editable by the user. The `functions`
+    (job title) field is set by an org admin and cannot be changed here.
+    """
+
+    user = update_user_profile(
+        user=request.auth,
+        full_name=payload.full_name,
+        phone=payload.phone,
+        email=payload.email,
+        # functions intentionally excluded
+    )
+    return 200, user
+
+
 # ── Password Reset (public) ─────────────────────────────────────────────
 
 
@@ -179,7 +221,9 @@ def me(request: HttpRequest):
 )
 def password_reset_request(request: HttpRequest, payload: PasswordResetRequestSchema):
     auth_services.request_password_reset(email=payload.email)
-    return 200, {"message": "If an account with that email exists, a reset link has been sent."}
+    return 200, {
+        "message": "If an account with that email exists, a reset link has been sent."
+    }
 
 
 @router.post(
@@ -188,7 +232,9 @@ def password_reset_request(request: HttpRequest, payload: PasswordResetRequestSc
     summary="Confirm password reset with token",
 )
 def password_reset_confirm(request: HttpRequest, payload: PasswordResetConfirmSchema):
-    auth_services.confirm_password_reset(token=payload.token, new_password=payload.new_password)
+    auth_services.confirm_password_reset(
+        token=payload.token, new_password=payload.new_password
+    )
     return 200, {"message": "Password has been reset successfully."}
 
 

@@ -47,6 +47,37 @@
                                 oninput="this.value = this.value.replace(/\D/g, '').slice(0, 6);"
                         >
                     </div>
+
+                    <hr style="border: none; border-top: 1px solid var(--border, #e2e8f0); margin: 1.25rem 0;">
+                    <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 500;">
+                        🔒 Set your account password
+                    </p>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input
+                                id="password"
+                                type="password"
+                                class="form-input"
+                                placeholder="At least 8 characters"
+                                autocomplete="new-password"
+                                required
+                                minlength="8"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input
+                                id="confirm_password"
+                                type="password"
+                                class="form-input"
+                                placeholder="Repeat your password"
+                                autocomplete="new-password"
+                                required
+                                minlength="8"
+                        >
+                    </div>
+
                     <button type="submit" id="verify-btn" class="btn btn-primary">
                         <span class="btn-label">Activate Account</span>
                         <span class="htmx-indicator spinner"></span>
@@ -104,9 +135,21 @@
             e.preventDefault();
             const btn = document.getElementById("verify-btn");
             const code = document.getElementById("otp_code").value;
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirm_password").value;
 
             if (code.length !== 6) {
                 showAlert("alert-box", "Enter a 6-digit code.");
+                return;
+            }
+
+            if (password.length < 8) {
+                showAlert("alert-box", "Password must be at least 8 characters.");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showAlert("alert-box", "Passwords do not match.");
                 return;
             }
 
@@ -114,7 +157,7 @@
             setLoading(btn, true);
 
             try {
-                const data = await Auth.activateVerify(INVITATION_TOKEN, code);
+                const data = await Auth.activateVerify(INVITATION_TOKEN, code, password, confirmPassword);
 
                 // Tokens are saved by Auth.activateVerify already
                 document.getElementById("otp-section").classList.add("hidden");
@@ -124,7 +167,7 @@
                     window.location.href = "{% url 'frontend:dashboard' %}";
                 }, 1500);
             } catch (err) {
-                showAlert("alert-box", err.detail || "Invalid OTP code. Try again.");
+                showAlert("alert-box", err.detail || "Activation failed. Check your OTP code and password.");
             } finally {
                 setLoading(btn, false);
             }

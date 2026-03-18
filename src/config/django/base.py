@@ -4,6 +4,7 @@ Base Django settings.
 Imports split configuration from src/config/others/*.py to keep this file lean.
 Production and test settings override specific values from here.
 """
+
 import os
 
 from src.config.env import env, BASE_DIR
@@ -21,10 +22,13 @@ ASGI_APPLICATION = "src.asgi.application"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
+CSRF_TRUSTED_ORIGINS = env.CSRF_TRUSTED_ORIGINS
+
 # ── Others ──────────────────────────────────────────────────────
 
 PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
 CSRF_COOKIE_SECURE = env.CSRF_COOKIE_SECURE
+_DOMAIN = "localhost"
 
 # ── External Services ──────────────────────────────────────────────────────
 
@@ -32,7 +36,7 @@ UNIVERSAL_REGISTRAR_URL = env.UNIVERSAL_REGISTRAR_URL
 SIGNSERVER_URL = env.SIGNSERVER_URL
 SIGNSERVER_WORKER_NAME = env.SIGNSERVER_WORKER_NAME
 JWK_EXTRACTOR_JAR = env.JWK_EXTRACTOR_JAR
-
+PLATFORM_DOMAIN_WITHOUT_SCHEME = env.PLATFORM_DOMAIN_WITHOUT_SCHEME
 
 # ── Installed Apps ──────────────────────────────────────────────────────
 
@@ -69,7 +73,7 @@ LOCAL_APPS = [
     "src.apps.certificates",
     "src.apps.documents",
     "src.apps.audits",
-    "src.seeders",
+    "src.bootstrap",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -80,6 +84,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "src.common.middleware.RequestContextMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -92,15 +97,15 @@ MIDDLEWARE = [
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [os.path.join(BASE_DIR, "templates")],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
                 "django.template.context_processors.debug",
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -138,17 +143,25 @@ CACHES = {
 # ── Auth ────────────────────────────────────────────────────────────────
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 # ── i18n ────────────────────────────────────────────────────────────────
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 # LANGUAGE_CODE = 'fr-fr'
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
@@ -166,6 +179,7 @@ USE_TZ = True
 # Each file exports top-level Django settings variables.
 
 from src.config.others.jwt import *  # noqa: E402, F401, F403
+
 # from src.config.others.session import *  # noqa: E402, F401, F403
 from src.config.others.cors import *  # noqa: E402, F401, F403
 from src.config.others.celery_conf import *  # noqa: E402, F401, F403

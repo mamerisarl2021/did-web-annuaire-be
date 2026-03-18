@@ -13,14 +13,11 @@ from ninja_jwt.authentication import JWTAuth
 from src.apps.organizations.models import Membership, Organization
 from src.apps.organizations.selectors import (
     get_organization_by_id,
-    get_organization_members,
 )
 from src.apps.organizations import services as org_services
 from src.apps.superadmin.schemas import (
-    AdminUserSchema,
     DashboardStatsSchema,
     ErrorSchema,
-    FileResponseSchema,
     MessageSchema,
     OrgDetailSchema,
     OrgListItemSchema,
@@ -30,7 +27,7 @@ from src.apps.superadmin.schemas import (
 from src.apps.users.models import User
 from src.common.exceptions import NotFoundError
 from src.common.permissions import require_superadmin
-from src.common.types import MembershipStatus, OrgStatus, Role
+from src.common.types import OrgStatus, Role
 
 router = Router(tags=["Superadmin"])
 
@@ -52,10 +49,18 @@ def dashboard_stats(request: HttpRequest):
     _ensure_superadmin(request)
 
     return {
-        "pending_count": Organization.objects.filter(status=OrgStatus.PENDING_REVIEW).count(),
-        "approved_count": Organization.objects.filter(status=OrgStatus.APPROVED).count(),
-        "rejected_count": Organization.objects.filter(status=OrgStatus.REJECTED).count(),
-        "suspended_count": Organization.objects.filter(status=OrgStatus.SUSPENDED).count(),
+        "pending_count": Organization.objects.filter(
+            status=OrgStatus.PENDING_REVIEW
+        ).count(),
+        "approved_count": Organization.objects.filter(
+            status=OrgStatus.APPROVED
+        ).count(),
+        "rejected_count": Organization.objects.filter(
+            status=OrgStatus.REJECTED
+        ).count(),
+        "suspended_count": Organization.objects.filter(
+            status=OrgStatus.SUSPENDED
+        ).count(),
         "total_users": User.objects.count(),
         "active_users": User.objects.filter(is_active=True).count(),
     }
@@ -72,7 +77,10 @@ def dashboard_stats(request: HttpRequest):
 )
 def list_organizations(
     request: HttpRequest,
-    status: str = Query(None, description="Filter by status: PENDING_REVIEW, APPROVED, REJECTED, SUSPENDED"),
+    status: str = Query(
+        None,
+        description="Filter by status: PENDING_REVIEW, APPROVED, REJECTED, SUSPENDED",
+    ),
 ):
     _ensure_superadmin(request)
 
@@ -83,21 +91,27 @@ def list_organizations(
     results = []
     for org in qs:
         # Get the org admin email
-        admin_membership = Membership.objects.filter(
-            organization=org, role=Role.ORG_ADMIN
-        ).select_related("user").first()
+        admin_membership = (
+            Membership.objects.filter(organization=org, role=Role.ORG_ADMIN)
+            .select_related("user")
+            .first()
+        )
 
-        results.append({
-            "id": org.id,
-            "name": org.name,
-            "slug": org.slug,
-            "type": org.type,
-            "country": org.country,
-            "email": org.email,
-            "status": org.status,
-            "created_at": org.created_at.isoformat(),
-            "admin_email": admin_membership.user.email if admin_membership else None,
-        })
+        results.append(
+            {
+                "id": org.id,
+                "name": org.name,
+                "slug": org.slug,
+                "type": org.type,
+                "country": org.country,
+                "email": org.email,
+                "status": org.status,
+                "created_at": org.created_at.isoformat(),
+                "admin_email": admin_membership.user.email
+                if admin_membership
+                else None,
+            }
+        )
 
     return results
 
@@ -115,8 +129,12 @@ def get_organization(request: HttpRequest, org_id: UUID):
     _ensure_superadmin(request)
 
     org = (
-        Organization.objects
-        .select_related("authorization_document", "justification_document", "created_by", "reviewed_by")
+        Organization.objects.select_related(
+            "authorization_document",
+            "justification_document",
+            "created_by",
+            "reviewed_by",
+        )
         .filter(id=org_id)
         .first()
     )
@@ -125,8 +143,7 @@ def get_organization(request: HttpRequest, org_id: UUID):
 
     # Get org admin
     admin_membership = (
-        Membership.objects
-        .filter(organization=org, role=Role.ORG_ADMIN)
+        Membership.objects.filter(organization=org, role=Role.ORG_ADMIN)
         .select_related("user")
         .first()
     )
@@ -198,9 +215,11 @@ def approve_organization(request: HttpRequest, org_id: UUID):
     org = org_services.approve_organization(organization=org, reviewed_by=request.auth)
 
     # Send activation email to the org admin
-    admin_membership = Membership.objects.filter(
-        organization=org, role=Role.ORG_ADMIN
-    ).select_related("user").first()
+    admin_membership = (
+        Membership.objects.filter(organization=org, role=Role.ORG_ADMIN)
+        .select_related("user")
+        .first()
+    )
 
     if admin_membership:
         from src.apps.emails.tasks import send_activation_email
@@ -231,13 +250,17 @@ def reject_organization(request: HttpRequest, org_id: UUID, payload: OrgRejectSc
         raise NotFoundError("Organization not found.")
 
     org = org_services.reject_organization(
-        organization=org, reviewed_by=request.auth, reason=payload.reason,
+        organization=org,
+        reviewed_by=request.auth,
+        reason=payload.reason,
     )
 
     # Send rejection email
-    admin_membership = Membership.objects.filter(
-        organization=org, role=Role.ORG_ADMIN
-    ).select_related("user").first()
+    admin_membership = (
+        Membership.objects.filter(organization=org, role=Role.ORG_ADMIN)
+        .select_related("user")
+        .first()
+    )
 
     if admin_membership:
         from src.apps.emails.tasks import send_rejection_email

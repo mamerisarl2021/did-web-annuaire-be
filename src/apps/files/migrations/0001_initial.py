@@ -7,29 +7,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='File',
+            name="File",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('file', models.FileField(blank=True, null=True, upload_to=src.apps.files.utils.file_generate_upload_path)),
-                ('original_file_name', models.TextField()),
-                ('file_name', models.CharField(max_length=255, unique=True)),
-                ('file_type', models.CharField(max_length=255)),
-                ('file_size', models.PositiveBigIntegerField(default=0)),
-                ('upload_finished_at', models.DateTimeField(blank=True, null=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        db_index=True, default=django.utils.timezone.now
+                    ),
+                ),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "file",
+                    models.FileField(
+                        blank=True,
+                        null=True,
+                        upload_to=src.apps.files.utils.file_generate_upload_path,
+                    ),
+                ),
+                ("original_file_name", models.TextField()),
+                ("file_name", models.CharField(max_length=255, unique=True)),
+                ("file_type", models.CharField(max_length=255)),
+                ("file_size", models.PositiveBigIntegerField(default=0)),
+                ("upload_finished_at", models.DateTimeField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'files',
-                'ordering': ['-created_at'],
+                "db_table": "files",
+                "ordering": ["-created_at"],
             },
         ),
     ]

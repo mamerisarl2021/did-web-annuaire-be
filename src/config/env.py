@@ -77,23 +77,24 @@ class AppSettings(BaseSettings):
 
     @property
     def CELERY_RESULT_BACKEND(self) -> str:
-        return 'django-db'
-        #return f"{self.REDIS_URL}/1"
+        return "django-db"
+        # return f"{self.REDIS_URL}/1"
 
     @property
     def CACHE_REDIS_URL(self) -> str:
         return f"{self.REDIS_URL}/2"
 
-    #@property
-    #def SESSION_REDIS_URL(self) -> str:
+    # @property
+    # def SESSION_REDIS_URL(self) -> str:
     #    return f"{self.REDIS_URL}/3"
 
     # ── Session / Cookies ───────────────────────────────────────────────
-    # SESSION_COOKIE_NAME: str = "annuaire_session"
-    # SESSION_COOKIE_AGE: int = 86400  # 24h
-    # SESSION_COOKIE_SECURE: bool = False
-    # SESSION_COOKIE_DOMAIN: str = ""
+    SESSION_COOKIE_NAME: str = "annuaire_session"
+    SESSION_COOKIE_AGE: int = 86400  # 24h
+    SESSION_COOKIE_SECURE: bool = False
+    SESSION_COOKIE_DOMAIN: str = ""
     CSRF_COOKIE_SECURE: bool = False
+    CSRF_TRUSTED_ORIGINS: list[str] = [""]
 
     # ── JWT ─────────────────────────────────────────────────────────────
 
@@ -112,14 +113,15 @@ class AppSettings(BaseSettings):
     JWK_EXTRACTOR_JAR: str = "path/to/ecdsa-extractor.jar"
 
     # ── Platform ────────────────────────────────────────────────────────
-    PLATFORM_DOMAIN: str = "localhost:8000"
+    PLATFORM_DOMAIN: str = "http://localhost:8000"
+    PLATFORM_DOMAIN_WITHOUT_SCHEME: str = "localhost"
     SUPERADMIN_EMAIL: str = ""
     SUPERADMIN_PASSWORD: str = ""
     SUPERADMIN_FULL_NAME: str = ""
 
     @property
     def PLATFORM_DID(self) -> str:
-        return f"did:web:{self.PLATFORM_DOMAIN}"
+        return f"did:web:{self.PLATFORM_DOMAIN_WITHOUT_SCHEME}"
 
     # ── Email ───────────────────────────────────────────────────────────
     EMAIL_BACKEND: str = "django.core.mail.backends.console.EmailBackend"

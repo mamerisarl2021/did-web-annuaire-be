@@ -14,15 +14,31 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Profile", {"fields": ("full_name",)}),
-        ("Activation", {"fields": ("is_active", "activation_method", "otp_secret", "account_activated_at")}),
-        ("Permissions", {"fields": ("is_staff", "is_superadmin", "groups", "user_permissions")}),
+        (
+            "Activation",
+            {
+                "fields": (
+                    "is_active",
+                    "activation_method",
+                    "otp_secret",
+                    "account_activated_at",
+                )
+            },
+        ),
+        (
+            "Permissions",
+            {"fields": ("is_staff", "is_superadmin", "groups", "user_permissions")},
+        ),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
     readonly_fields = ("created_at", "updated_at", "account_activated_at")
 
     add_fieldsets = (
-        (None, {
-            "classes": ("wide",),
-            "fields": ("email", "full_name", "password1", "password2"),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("email", "full_name", "password1", "password2"),
+            },
+        ),
     )

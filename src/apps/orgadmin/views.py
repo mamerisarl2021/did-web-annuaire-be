@@ -21,3 +21,8 @@ def members_view(request):
 @never_cache
 def settings_view(request):
     return render(request, "orgadmin/settings.html", {"active_page": "settings"})
+
+
+@never_cache
+def audits_view(request):
+    return render(request, "orgadmin/audits.html", {"active_page": "audits"})

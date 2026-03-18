@@ -21,7 +21,6 @@ Revocation flow:
 """
 
 from datetime import datetime
-from uuid import UUID
 
 import structlog
 from django.core.files.uploadedfile import UploadedFile
@@ -29,10 +28,14 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from src.apps.certificates.models import Certificate, CertificateStatus, CertificateVersion
+from src.apps.certificates.models import (
+    Certificate,
+    CertificateStatus,
+    CertificateVersion,
+)
 from src.apps.files.services import upload_certificate_file
 from src.apps.users.models import User
-from src.common.exceptions import ConflictError, NotFoundError, ValidationError
+from src.common.exceptions import ConflictError, ValidationError
 from src.integrations.cert_service import extract_metadata
 
 logger = structlog.get_logger(__name__)
@@ -64,7 +67,9 @@ def upload_certificate(
         raise ValidationError("Certificate label is required.")
 
     if certificate_label_exists(organization_id=organization.id, label=label):
-        raise ConflictError(f"Certificate label '{label}' already exists in this organization.")
+        raise ConflictError(
+            f"Certificate label '{label}' already exists in this organization."
+        )
 
     # 1. Save file
     file_instance = upload_certificate_file(file=file, uploaded_by=uploaded_by)
@@ -101,7 +106,7 @@ def upload_certificate(
         action="CERT_UPLOADED",
         certificate=cert,
         description=f"Certificate '{label}' uploaded ({metadata.get('key_type', '?')} "
-                    f"{metadata.get('key_curve', metadata.get('key_size', ''))})",
+        f"{metadata.get('key_curve', metadata.get('key_size', ''))})",
         metadata={
             "key_type": metadata.get("key_type"),
             "key_curve": metadata.get("key_curve", ""),
@@ -207,6 +212,7 @@ def revoke_certificate(
 
     # Cascade to verification methods
     from src.apps.documents.models import DocumentVerificationMethod
+
     affected = DocumentVerificationMethod.objects.filter(
         certificate=certificate,
         is_active=True,
@@ -218,8 +224,8 @@ def revoke_certificate(
         action="CERT_REVOKED",
         certificate=certificate,
         description=f"Certificate '{certificate.label}' revoked. "
-                    f"{affected} verification method(s) deactivated."
-                    f"{f' Reason: {reason}' if reason else ''}",
+        f"{affected} verification method(s) deactivated."
+        f"{f' Reason: {reason}' if reason else ''}",
         metadata={
             "old_status": old_status,
             "reason": reason,
@@ -236,6 +242,7 @@ def revoke_certificate(
 
 
 # ── Internal helpers ─────────────────────────────────────────────────────
+
 
 def _create_version(
     *,
@@ -283,6 +290,7 @@ def _log_cert_audit(*, actor, action, certificate, description, metadata):
     """Log audit entry for certificate operations."""
     try:
         from src.apps.audits.services import log_action
+
         log_action(
             actor=actor,
             action=action,

@@ -21,16 +21,13 @@ from src.common.exceptions import ValidationError
 
 logger = structlog.get_logger(__name__)
 
-DEFAULT_JAVA_BIN = "java"
-DEFAULT_JAR_PATH = "/opt/ecdsa-extractor.jar"
-
 
 def _get_java_bin() -> str:
-    return getattr(settings, "JWK_EXTRACTOR_JAVA", DEFAULT_JAVA_BIN)
+    return "java"
 
 
 def _get_jar_path() -> str:
-    return getattr(settings, "JWK_EXTRACTOR_JAR", DEFAULT_JAR_PATH)
+    return settings.JWK_EXTRACTOR_JAR
 
 
 def extract_jwk(*, cert_pem_bytes: bytes, p12_password: str | None = None) -> dict:
@@ -76,7 +73,9 @@ def extract_metadata(*, cert_pem_bytes: bytes, p12_password: str | None = None) 
         raise ValidationError(f"Failed to parse metadata output: {e}")
 
 
-def _run_extractor(mode: str, cert_bytes: bytes, p12_password: str | None = None) -> str:
+def _run_extractor(
+    mode: str, cert_bytes: bytes, p12_password: str | None = None
+) -> str:
     """
     Write cert to a temp file and call the JAR.
     """

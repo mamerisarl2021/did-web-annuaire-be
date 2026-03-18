@@ -53,6 +53,7 @@ class OrgListItemSchema(Schema):
     created_at: str
     admin_email: str | None = None
 
+
 class OrgDetailSchema(Schema):
     id: UUID
     name: str

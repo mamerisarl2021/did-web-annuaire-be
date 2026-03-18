@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0002_initial'),
+        ("organizations", "0002_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='membership',
-            name='has_audit_access',
-            field=models.BooleanField(default=False, help_text='Grant this member access to audit logs. ORG_ADMIN always has audit access regardless of this flag.'),
+            model_name="membership",
+            name="has_audit_access",
+            field=models.BooleanField(
+                default=False,
+                help_text="Grant this member access to audit logs. ORG_ADMIN always has audit access regardless of this flag.",
+            ),
         ),
     ]

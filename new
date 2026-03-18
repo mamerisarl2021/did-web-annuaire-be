@@ -1,0 +1,848 @@
+Keystore is created at /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.storepasswd.
+ejbca-node1                    | 2026-03-09 12:43:27,980+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Keystore password saved at /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.storepasswd. Please sa
+
+ejbca-node1                    | 2026-03-09 12:43:00,325+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:00+00:00;CRYPTOTOKEN_CREATE;SUCCESS;CRYPTOTOKEN;CORE;ejbca;1064298073;;;msg=Created CryptoToken with id 1064298073;name=ManagementCA;encProviderName=BC;signProviderName=BC;autoActivation=added;autoActivationPinProtection=legacy;added:tokenName=ManagementCA
+ejbca-node1                    | 2026-03-09 12:43:00,361+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:00+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/cryptotoken/keys/generate/1064298073
+ejbca-node1                    | 2026-03-09 12:43:01,448+0000 INFO  [com.keyfactor.util.keys.SignWithWorkingAlgorithm] (default task-1) Signature algorithm 'SHA256WithRSA' working for provider 'BC version 1.8'.
+ejbca-node1                    | 2026-03-09 12:43:01,636+0000 INFO  [com.keyfactor.util.keys.SignWithWorkingAlgorithm] (default task-1) Signature algorithm 'SHA1WithRSA' working for provider 'BC version 1.8'.
+ejbca-node1                    | 2026-03-09 12:43:01,794+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:01+00:00;CRYPTOTOKEN_GEN_KEYPAIR;SUCCESS;CRYPTOTOKEN;CORE;ejbca;1064298073;;;msg=Generated new keypair in CryptoToken 1064298073;keyAlias=signKey;keySpecification=3072
+ejbca-node1                    | 2026-03-09 12:43:01,821+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:01+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/cryptotoken/keys/generate/1064298073
+ejbca-node1                    | 2026-03-09 12:43:02,475+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:02+00:00;CRYPTOTOKEN_GEN_KEYPAIR;SUCCESS;CRYPTOTOKEN;CORE;ejbca;1064298073;;;msg=Generated new keypair in CryptoToken 1064298073;keyAlias=encryptKey;keySpecification=3072
+ejbca-node1                    | 2026-03-09 12:43:02,792+0000 INFO  [org.ejbca.core.ejb.ca.caadmin.CAAdminSessionBean] (default task-1) Creating an X509 CA: ManagementCA
+ejbca-node1                    | 2026-03-09 12:43:02,829+0000 INFO  [org.cesecore.certificates.ca.CaSessionBean] (default task-1) cryptoTokenId: 1064298073
+ejbca-node1                    | 2026-03-09 12:43:02,830+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:02+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/add_ca;resource1=/cryptotoken/use/1064298073
+ejbca-node1                    | 2026-03-09 12:43:02,881+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:02+00:00;CA_CREATION;SUCCESS;CA;CORE;ejbca;1280856766;;;msg=CA with id 1280856766 and name ManagementCA added, status: 1. ;tokenproperties={certSignKey=signKey, crlSignKey=signKey, defaultKey=encryptKey};tokensequence=00000
+ejbca-node1                    | 2026-03-09 12:43:02,882+0000 INFO  [org.cesecore.certificates.ca.CaSessionBean] (default task-1) Created CA with subject DN: UID=c-0tm0glo7tebit2jkp,CN=ManagementCA,O=EJBCA Container Quickstart
+ejbca-node1                    | 2026-03-09 12:43:02,967+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:02+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/edit_ca;resource1=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:02,968+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:02+00:00;CA_EDITING;SUCCESS;CA;CORE;ejbca;1280856766;;;msg=CA with id 1280856766 and name ManagementCA edited., 1;removed:expiretime=Thu Jan 01 00:00:00 UTC 1970;added:certificatechain=[MIIEszCCAxugAwIBAgIUepb4ZVVOpIzxfQ5pQnsHgb+HHnIwDQYJKoZIhvcNAQEL
+ejbca-node1                    | BQAwYTEjMCEGCgmSJomT8ixkAQEME2MtMHRtMGdsbzd0ZWJpdDJqa3AxFTATBgNV
+ejbca-node1                    | BAMMDE1hbmFnZW1lbnRDQTEjMCEGA1UECgwaRUpCQ0EgQ29udGFpbmVyIFF1aWNr
+ejbca-node1                    | c3RhcnQwHhcNMjYwMzA5MTI0MzAyWhcNMzYwMzA4MTI0MzAxWjBhMSMwIQYKCZIm
+ejbca-node1                    | iZPyLGQBAQwTYy0wdG0wZ2xvN3RlYml0MmprcDEVMBMGA1UEAwwMTWFuYWdlbWVu
+ejbca-node1                    | dENBMSMwIQYDVQQKDBpFSkJDQSBDb250YWluZXIgUXVpY2tzdGFydDCCAaIwDQYJ
+ejbca-node1                    | KoZIhvcNAQEBBQADggGPADCCAYoCggGBAKQaCbsMwUYN4F8OUCjp4BzJlmnAt9O9
+ejbca-node1                    | WCozXCUa7OF114yDpYLbxcfrQrJnOdGwxWoDjR6E7FOIpLYTpI7TEm3daLamv30w
+ejbca-node1                    | Ym7b5pfC4u8wAMtpSLT1sWNQhVvIUKEFy1Z0iJbbZ/frRdJe2+ih6hqzluOYYF30
+ejbca-node1                    | 5tv2F6QLw5gZUHoXnLhOoxUQtoQ4+SUEFTPYKWHpWjcSaTxmec/DLxa/4rbYKDtm
+ejbca-node1                    | f887WOpDJc5BH+15ZnFPQjFcqGG8t4SLc5GfaHV1s9H80bBk7DMZ03guhWFo/xe5
+ejbca-node1                    | OqXFwX6W8UtSGbHmLnfpHyUbTRXFzF0ImruflThhNSiFP/pokN/mvzZm/qAqwp2H
+ejbca-node1                    | Kz930PGA1acKRx8XXL9yfGzgqi4FJjYvnr+NoYqvjaqBpKA2ApBjB5XtD5BZZPma
+ejbca-node1                    | 1niLIAbzMQ6yu9QK07RWNolE0PleM33moprCc8JwTXhWTJXAd4WfRKNOZC/68+5W
+ejbca-node1                    | zWdFOoJk0dFd9HGbk3dQjAczJsqZNPQmZwIDAQABo2MwYTAPBgNVHRMBAf8EBTAD
+ejbca-node1                    | AQH/MB8GA1UdIwQYMBaAFBZjkS0qpfWk67zr1JhKDlkpJ/AEMB0GA1UdDgQWBBQW
+ejbca-node1                    | Y5EtKqX1pOu869SYSg5ZKSfwBDAOBgNVHQ8BAf8EBAMCAYYwDQYJKoZIhvcNAQEL
+ejbca-node1                    | BQADggGBAJiwdJdyqbAZp+JhdoxNWscQVBbRjHyXR9d1tLgLIf9O9a9FsJFCUKnX
+ejbca-node1                    | oZjp3ZOgOKcdhTpvlox8fMs16IhjLyXnn6TzO4fwXj88RLUE63Wf5rK7unk2MxjB
+ejbca-node1                    | f00+Mp8g0F2Z+UVQIiIQ7POUNISJGC1JusD2rYV/3p3IcpB4KTkF2sQBPVs6f4s9
+ejbca-node1                    | L+1VhusdRt4TZWy3WyhECScuzz5Chx+Ia59DESK1dpdik0swuPeaVb9AXj3LDuT1
+ejbca-node1                    | dtk0ixYNldeU3Abd8wuBeGTjTO8zlYDMMHLvGhfjBM9+2vjAezftJ443h0sr+94h
+ejbca-node1                    | yzRtq6NRhPavZP31wkQLILQATdkB9QAn4cxYWT3LNckx+2aM2ssmaNwAGTORRx6D
+ejbca-node1                    | V7CZ2MvHIwrtEA95w/8tQoqc4okhDRsFrfrgPilplH21awq8P856agWIkfxG1Z8s
+ejbca-node1                    | O1OmoxYqM0cInVD6zZND6fWo7yZ5jzbPhnzzikkg71IqyvbJZGwvUpJ1wcuDGKzG
+ejbca-node1                    | FWw/VwMX2g==];tokenproperties={certSignKey=signKey, crlSignKey=signKey, defaultKey=encryptKey};tokensequence=00000
+ejbca-node1                    | 2026-03-09 12:43:03,033+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,045+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;CERT_STORED;SUCCESS;CERTIFICATE;CORE;ejbca;1280856766;7A96F865554EA48CF17D0E69427B0781BF871E72;SYSTEMCA;msg=Certificate stored for username 'SYSTEMCA', fp=9cabc1cd646393f3cae440b8cb6e789d32a6c55a, subjectDN 'UID=c-0tm0glo7tebit2jkp,CN=ManagementCA,O=EJBCA Container Quickstart', issuerDN 'UID=c-0tm0glo7tebit2jkp,CN=ManagementCA,O=EJBCA Container Quickstart', serialNo=7A96F865554EA48CF17D0E69427B0781BF871E72, accountBindingId=.
+ejbca-node1                    | 2026-03-09 12:43:03,100+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,102+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/edit_ca;resource1=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,167+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,396+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/create_crl
+ejbca-node1                    | 2026-03-09 12:43:03,431+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,437+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;CRL_STORED;SUCCESS;CRL;CORE;ejbca;1280856766;;;msg=Stored CRL with CRLNumber=1, fingerprint=89ba406406d2110c213a6df04606afef29ada4e2, issuerDN 'UID=c-0tm0glo7tebit2jkp,CN=ManagementCA,O=EJBCA Container Quickstart'.
+ejbca-node1                    | 2026-03-09 12:43:03,438+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;CRL_CREATION;SUCCESS;CRL;CORE;ejbca;1280856766;;;msg=Created CRL with number 1 for CA 'ManagementCA' with DN 'UID=c-0tm0glo7tebit2jkp,CN=ManagementCA,O=EJBCA Container Quickstart'.
+ejbca-node1                    | 2026-03-09 12:43:03,441+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,442+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,444+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,459+0000 INFO  [org.ejbca.core.ejb.crl.PublishingCrlSessionBean] (default task-1) Delta Crl in CA ManagementCA, 1280856766 is not enabled. Delta CRL can not be created.
+ejbca-node1                    | 2026-03-09 12:43:03,524+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:03+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:42:58,120+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Initializing CA
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Generating rootCA keystore:
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA Type:x509
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA name: ManagementCA
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) SuperAdmin CN: null
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) DN: UID=c-0tm0glo7tebit2jkp,CN=ManagementCA,O=EJBCA Container Quickstart
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA token type: soft
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA token password: hidden
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Keytype: RSA
+ejbca-node1                    | 2026-03-09 12:42:58,121+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Keyspec: 3072
+ejbca-node1                    | 2026-03-09 12:42:58,122+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Validity: 3652d
+ejbca-node1                    | 2026-03-09 12:42:58,122+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Policy ID: null
+ejbca-node1                    | 2026-03-09 12:42:58,122+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Signature alg: SHA256WithRSA
+ejbca-node1                    | 2026-03-09 12:42:58,122+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Certificate profile: ROOTCA
+ejbca-node1                    | 2026-03-09 12:42:58,122+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA token properties: {}
+ejbca-node1                    | 2026-03-09 12:42:58,122+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Signed by: Self signed
+ejbca-node1                    | 2026-03-09 12:42:58,134+0000 INFO  [org.ejbca.ui.cli.ca.BaseCaAdminCommand] (main) Initalizing authorization module with caid=1280856766 and superadmin CN 'null'.
+ejbca-node1                    | 2026-03-09 12:43:02,705+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Creating CA...
+ejbca-node1                    | 2026-03-09 12:43:03,543+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CAId for created CA: 1280856766
+ejbca-node1                    | 2026-03-09 12:43:03,544+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Created and published initial CRL.
+ejbca-node1                    | 2026-03-09 12:43:03,544+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) CA initialized
+ejbca-node1                    | 2026-03-09 12:43:03,544+0000 INFO  [org.ejbca.ui.cli.ca.CaInitCommand] (main) Note that open browser sessions may have to be restarted to interact with this CA.
+ejbca-node1                    | 2026-03-09 12:43:08,061+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:08+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:12,273+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:12+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:12,320+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:12+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:17,108+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:17+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:17,197+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:17+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/endentityprofilesrules/1/create_end_entity;resource1=/ra_functionality/create_end_entity
+ejbca-node1                    | 2026-03-09 12:43:17,225+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:17+00:00;RA_ADDENDENTITY;SUCCESS;RA;CORE;ejbca;1280856766;;ejbca-node1;msg=Added end entity ejbca-node1.;caid=1280856766;cardnumber=;certificateprofileid=9;endentityprofileid=1;status=10;subjectAltName=dnsName=ejbca-node1;subjectDN=UID=c-0tm0glo7tebit2jkp,CN=ejbca-node1,O=EJBCA Container Quickstart;subjectEmail=;tokentype=3;type=1;username=B64:ZWpiY2Etbm9kZTE=
+ejbca-node1                    | 2026-03-09 12:43:17,171+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Using certificate profile: SERVER, with id: 9
+ejbca-node1                    | 2026-03-09 12:43:17,177+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Trying to add end entity:
+ejbca-node1                    | 2026-03-09 12:43:17,177+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Username: ejbca-node1
+ejbca-node1                    | 2026-03-09 12:43:17,177+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Password: <password hidden>
+ejbca-node1                    | 2026-03-09 12:43:17,177+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) DN: CN=ejbca-node1,O=EJBCA Container Quickstart,UID=c-0tm0glo7tebit2jkp
+ejbca-node1                    | 2026-03-09 12:43:17,177+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) CA Name: ManagementCA
+ejbca-node1                    | 2026-03-09 12:43:17,177+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) SubjectAltName: dnsName=ejbca-node1
+ejbca-node1                    | 2026-03-09 12:43:17,177+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Email: null
+ejbca-node1                    | 2026-03-09 12:43:17,178+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Type: 1
+ejbca-node1                    | 2026-03-09 12:43:17,178+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Token: JKS
+ejbca-node1                    | 2026-03-09 12:43:17,178+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Certificate profile: 9
+ejbca-node1                    | 2026-03-09 12:43:17,178+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) End entity profile: 1
+ejbca-node1                    | 2026-03-09 12:43:17,312+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) User 'ejbca-node1' has been added.
+ejbca-node1                    | 2026-03-09 12:43:17,313+0000 INFO  [org.ejbca.ui.cli.ra.AddEndEntityCommand] (main) Note: If batch processing should be possible, also use 'ra setclearpwd ejbca-node1 <pwd>'.
+ejbca-node1                    | 2026-03-09 12:43:20,307+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:20+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/endentityprofilesrules/1/edit_end_entity;resource1=/ra_functionality/edit_end_entity
+ejbca-node1                    | 2026-03-09 12:43:20,308+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:20+00:00;RA_EDITENDENTITY;SUCCESS;RA;CORE;ejbca;1280856766;;ejbca-node1;msg=Edited end entity ejbca-node1, new status 10.
+ejbca-node1                    | 2026-03-09 12:43:20,325+0000 INFO  [org.ejbca.ui.cli.ra.SetEndEntityStatusCommand] (main) New status for end entity ejbca-node1 is 10
+ejbca-node1                    | 2026-03-09 12:43:23,688+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:23+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/endentityprofilesrules/1/edit_end_entity;resource1=/ra_functionality/edit_end_entity
+ejbca-node1                    | 2026-03-09 12:43:23,689+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:23+00:00;RA_EDITENDENTITY;SUCCESS;RA;CORE;ejbca;1280856766;;ejbca-node1;msg=Password changed for end entity ejbca-node1.
+ejbca-node1                    | 2026-03-09 12:43:23,676+0000 INFO  [org.ejbca.ui.cli.ra.SetCleartextPasswordCommand] (main) Setting clear text password for user ejbca-node1
+ejbca-node1                    | 2026-03-09 12:43:27,492+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:27+00:00;CA_USERAUTH;SUCCESS;CA;EJBCA;ejbca;1280856766;;ejbca-node1;msg=Authenticated user ejbca-node1.
+ejbca-node1                    | 2026-03-09 12:43:27,503+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:27+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/ca_functionality/create_certificate;resource1=/ca/1280856766
+ejbca-node1                    | 2026-03-09 12:43:27,503+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:27+00:00;CERT_REQUEST;SUCCESS;CERTIFICATE;CORE;ejbca;1280856766;;ejbca-node1;subjectdn=UID=c-0tm0glo7tebit2jkp,CN=ejbca-node1,O=EJBCA Container Quickstart;requestX500name=null;subjectaltname=B64:ZG5zTmFtZT1lamJjYS1ub2RlMQ==;certprofile=9;keyusage=-1;notbefore=;notafter=;sequence=;publickey=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7UVN3HA8hcfgOTZNNyKWu6a6eA04dI4JZI0t9pgfbriMQ85SjPRfsPgPbWyPuYw84zk63wZnnwj9n2SiaQqw6SOM3ukV7NudqA+S0kZNGwd8pjYhTjmDa2w1/gib56vSIet/2zlKXFhei4isZ+8M6pRRExfkZZifZNX50qqY/3LEDV6k52yW80HkA2KRGldasU/WbIqfX+f/FWPg7bOBVOMjMq4ne5NptP2hwAUNgkat3Zx0GiMb/mSMvhvwDFe/FemsqZ6uyn9GJGwIQePXORMLcDP1Pq8U0TdWcTj/wMZvKv4LQLK3Ml2XYJ9k952JJv9uPQLxUFQNfsPYhwTltQIDAQAB
+ejbca-node1                    | 2026-03-09 12:43:27,522+0000 INFO  [org.cesecore.certificates.ca.internal.CertificateValidity] (default task-1) Limiting validity of certificate because requested start of validity (Mon Mar 09 12:33:27 UTC 2026) is before CA start of validity (Mon Mar 09 12:43:02 UTC 2026).
+ejbca-node1                    | 2026-03-09 12:43:27,541+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:27+00:00;CERT_STORED;SUCCESS;CERTIFICATE;CORE;ejbca;1280856766;43CED63B499ED0B3368AD17D02B26912E840A36A;ejbca-node1;msg=Certificate stored for username 'ejbca-node1', fp=768d387711fcc164f46a15b2bc073cd591cc4605, subjectDN 'UID=c-0tm0glo7tebit2jkp,CN=ejbca-node1,O=EJBCA Container Quickstart', issuerDN 'UID=c-0tm0glo7tebit2jkp,CN=ManagementCA,O=EJBCA Container Quickstart', serialNo=43CED63B499ED0B3368AD17D02B26912E840A36A, accountBindingId=.
+ejbca-node1                    | 2026-03-09 12:43:27,542+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:27+00:00;CERT_CREATION;SUCCESS;CERTIFICATE;CORE;ejbca;1280856766;43CED63B499ED0B3368AD17D02B26912E840A36A;ejbca-node1;subjectdn=UID=c-0tm0glo7tebit2jkp,CN=ejbca-node1,O=EJBCA Container Quickstart;certprofile=9;issuancerevocationreason=-1;cert=MIIEXjCCAsagAwIBAgIUQ87WO0me0LM2itF9ArJpEuhAo2owDQYJKoZIhvcNAQELBQAwYTEjMCEGCgmSJomT8ixkAQEME2MtMHRtMGdsbzd0ZWJpdDJqa3AxFTATBgNVBAMMDE1hbmFnZW1lbnRDQTEjMCEGA1UECgwaRUpCQ0EgQ29udGFpbmVyIFF1aWNrc3RhcnQwHhcNMjYwMzA5MTI0MzAyWhcNMjgwMzA4MTIzMzI2WjBgMSMwIQYKCZImiZPyLGQBAQwTYy0wdG0wZ2xvN3RlYml0MmprcDEUMBIGA1UEAwwLZWpiY2Etbm9kZTExIzAhBgNVBAoMGkVKQkNBIENvbnRhaW5lciBRdWlja3N0YXJ0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7UVN3HA8hcfgOTZNNyKWu6a6eA04dI4JZI0t9pgfbriMQ85SjPRfsPgPbWyPuYw84zk63wZnnwj9n2SiaQqw6SOM3ukV7NudqA+S0kZNGwd8pjYhTjmDa2w1/gib56vSIet/2zlKXFhei4isZ+8M6pRRExfkZZifZNX50qqY/3LEDV6k52yW80HkA2KRGldasU/WbIqfX+f/FWPg7bOBVOMjMq4ne5NptP2hwAUNgkat3Zx0GiMb/mSMvhvwDFe/FemsqZ6uyn9GJGwIQePXORMLcDP1Pq8U0TdWcTj/wMZvKv4LQLK3Ml2XYJ9k952JJv9uPQLxUFQNfsPYhwTltQIDAQABo4GOMIGLMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUFmORLSql9aTrvOvUmEoOWSkn8AQwFgYDVR0RBA8wDYILZWpiY2Etbm9kZTEwEwYDVR0lBAwwCgYIKwYBBQUHAwEwHQYDVR0OBBYEFKDKxBabyTvktdKBnuGyxucrcFzmMA4GA1UdDwEB/wQEAwIFoDANBgkqhkiG9w0BAQsFAAOCAYEAEoCPECmN+12UY+asU5qnpO4/oAqzfBAK8CzPCrUazK5HdiKs8+/co1wD+rhBT0JmiNauZrhADYKuN2h3jVUmv3RBaO7Iqs8Zmei+zlCrWJrvJhIzNe7UdIxNqxAbgljGb4YGUusY2+tjZ2YdoXgu1WMZo5QSFTXTXTWhY+4fPIH5YW0Q971MmGplJSEG+Bvfn3YNTJj5fODHAu4PeQm8NCzN7Ui9OA2l/7TaVfFbNUaoV+gssk3wjGxvRlUlpCAiihbVA97oZ9eLq1Y399VcDq21ner1EAygU7f9UbrY8bDOkcxD9Rj3w/j6GT1XitAL70hfCouFxOgv81ZVHRU4oy4Z/EGFqNG5xX+0n/CQYzvZoPeYPmJxAE9Dnm+GGbMCWzJkcRZikBY9iLdjzwyro4wSvfGkNiIo8qk52beZZYXugx27d/VC17XUi7WFoAnrv6SVrggdoJ8rZCXUfWatkokok+/HLiKBvN6wDFcxS9zYt1sxnQV6VRe5428syIrA
+ejbca-node1                    | 2026-03-09 12:43:27,543+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:27+00:00;RA_EDITENDENTITY;SUCCESS;RA;CORE;Local admin call from EndEntityManagementSession.decRequestCounter;1280856766;;ejbca-node1;msg=Edited end entity ejbca-node1, new status 40.
+ejbca-node1                    | 2026-03-09 12:43:27,544+0000 INFO  [org.ejbca.core.ejb.ra.EndEntityManagementSessionBean] (default task-1) Changed status for user 'ejbca-node1' to STATUS_GENERATED.
+ejbca-node1                    | 2026-03-09 12:43:27,634+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:27+00:00;ACCESS_CONTROL;SUCCESS;ACCESSCONTROL;CORE;ejbca;;;;resource0=/endentityprofilesrules/1/edit_end_entity;resource1=/ra_functionality/edit_end_entity
+ejbca-node1                    | 2026-03-09 12:43:27,634+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:27+00:00;RA_EDITENDENTITY;SUCCESS;RA;CORE;ejbca;1280856766;;ejbca-node1;msg=Password changed for end entity ejbca-node1.
+ejbca-node1                    | 2026-03-09 12:43:26,785+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) Generating keys in directory /opt/keyfactor/tmp/tmp.orgeDTQRGB.
+ejbca-node1                    | 2026-03-09 12:43:26,824+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) Loading configuration from defaults.
+ejbca-node1                    | 2026-03-09 12:43:26,824+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) Generating RSA keys of size 2048 for ejbca-node1.
+ejbca-node1                    | 2026-03-09 12:43:27,344+0000 INFO  [com.keyfactor.util.RandomHelper] (main) Using FIPS/SP800 compliant Bouncy Castle Hybrid serialNumber RNG algorithm.
+ejbca-node1                    | 2026-03-09 12:43:27,602+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) Created Keystore for 'ejbca-node1'.
+ejbca-node1                    | 2026-03-09 12:43:27,646+0000 INFO  [org.ejbca.ui.cli.batch.BatchMakeP12Command] (main) New user generated successfully - ejbca-node1.
+ejbca-node1                    | 2026-03-09 12:43:27,975+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) ********************************************************************************************
+ejbca-node1                    | 2026-03-09 12:43:27,978+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Keystore is created at /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.storepasswd.
+ejbca-node1                    | 2026-03-09 12:43:27,980+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Keystore password saved at /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.storepasswd. Please save both of these files for later.
+ejbca-node1                    | 2026-03-09 12:43:27,982+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) We recommend using 'APPSERVER_KEYSTORE_SECRET' env variable to set the TLS keystore password on next boot.
+ejbca-node1                    | 2026-03-09 12:43:27,986+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) ********************************************************************************************
+ejbca-node1                    | 2026-03-09 12:43:27,988+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Certificate stored in file </opt/keyfactor/tmp/tmp.orgeDTQRGB/keystore.der>
+ejbca-node1                    | 2026-03-09 12:43:28,192+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Generated TLS certificate with fingerprint 57cec8dff32f830340010d97b3b4cb5787a5ab9a339b8c6673fa83d41a4290a1.
+ejbca-node1                    | 2026-03-09 12:43:28,194+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) ********************************************************************************************
+ejbca-node1                    | 2026-03-09 12:43:28,197+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Keystore password found at /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.storepasswd
+ejbca-node1                    | 2026-03-09 12:43:28,199+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) We recommend using 'APPSERVER_KEYSTORE_SECRET' env variable to set the TLS keystore password.
+ejbca-node1                    | 2026-03-09 12:43:28,202+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) ********************************************************************************************
+ejbca-node1                    | 2026-03-09 12:43:28,205+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) No key password file were detected at '/opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.keypasswd'. Keystore password will also be used to access private key.
+ejbca-node1                    | 2026-03-09 12:43:28,209+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Importing keystore /opt/keyfactor/secrets/persistent/tls/ejbca-node1/server.jks to /opt/keyfactor/tmp/tmp.orgeDTQRGB/keystore.jks...
+ejbca-node1                    | 2026-03-09 12:43:28,209+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Entry for alias ejbca-node1 successfully imported.
+ejbca-node1                    | 2026-03-09 12:43:28,209+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Entry for alias cacert successfully imported.
+ejbca-node1                    | 2026-03-09 12:43:28,209+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Import command completed:  2 entries successfully imported, 0 entries failed or cancelled
+ejbca-node1                    | 2026-03-09 12:43:44,836+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Will use application provided server side TLS keystore.
+ejbca-node1                    | 2026-03-09 12:43:50,857+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Adding initial application RoleMember (";PublicAccessAuthenticationToken:TRANSPORT_CONFIDENTIAL;").
+ejbca-node1                    | 2026-03-09 12:43:55,584+0000 INFO  [org.cesecore.audit.impl.log4j.Log4jDevice] (default task-1) 2026-03-09 12:43:55+00:00;ROLE_ACCESS_USER_ADDITION;SUCCESS;ROLES;CORE;ejbca;;;;msg=Added administrator aspect(s)  to role Super Administrator Role.;id=181644835;tokenType=PublicAccessAuthenticationToken;tokenIssuerId=0;tokenProviderId=0;tokenMatchKey=TRANSPORT_CONFIDENTIAL (2);tokenMatchOperator=TYPE_UNUSED (0);tokenMatchValue=;roleId=1;nameSpace=;roleName=Super Administrator Role;description=Initial RoleMember.
+ejbca-node1                    | 2026-03-09 12:43:55,701+0000 INFO  [org.ejbca.ui.cli.roles.AddRoleMemberCommand] (main) Role member was successfully added.
+ejbca-node1                    | 2026-03-09 12:43:56,038+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) No truststore and/or password file were detected at '/opt/keyfactor/secrets/external/tls/ts/truststore.[jks|storepasswd]'. Check mount points and file permissions if this is not what you expected.
+ejbca-node1                    | 2026-03-09 12:43:59,775+0000 INFO  [org.ejbca.ui.cli.ca.GetAdminTruststoreCommand] (main) /opt/keyfactor/tmp/tmp.orgeDTQRGB/truststore.jks created.
+ejbca-node1                    | 2026-03-09 12:44:02,706+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Enabling HTTPS listener on 0.0.0.0:8443 with optional client certificate authentication.
+ejbca-node1                    | 2026-03-09 12:44:08,199+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Enabling HTTP listener on 0.0.0.0:8080.
+ejbca-node1                    | 2026-03-09 12:44:10,984+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Enabling HSTS
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #######################################################################################################
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # Whenever you are ready for production:                                                              #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # Try out the commercially supported EJBCA Enterprise Cloud on AWS or Azure, fully featured with:     #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - Additional enrollment APIs such as a complete REST API, EST, ACME and more.                       #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - Support for external Registration Authority and OCSP responders                                   #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - Hardware Security Module support                                                                  #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - Application updates                                                                               #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # - ...and more!                                                                                      #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # Feel free to contact us directly for a cloud, on-prem, SaaS, embedded or hybrid solution that fits  #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) # your specific needs.                                                                                #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #           https://aws.amazon.com/marketplace/seller-profile?id=7edf9048-58e6-4086-9d98-b8e0c1d78fce #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #     https://azuremarketplace.microsoft.com/en-us/marketplace/apps/primekey.ejbca_enterprise_cloud_2 #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                           https://www.keyfactor.com #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                 sales@keyfactor.com #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #                                                                                                     #
+ejbca-node1                    | 2026-03-09 12:44:18,060+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) #######################################################################################################
+ejbca-node1                    | 2026-03-09 12:44:18,180+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Waiting 5 seconds before signaling application readiness to ensure proper handling of PublicAccessAuthenticationToken.
+ejbca-node1                    | 2026-03-09 12:44:23,184+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) Health check now reports application status at /ejbca/publicweb/healthcheck/ejbcahealth
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *****************************************************************************************
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *                                                                                       *
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) * A fresh installation was detected and a ManagementCA was created for your initial     *
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) * access to the system.                                                                 *
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *                                                                                       *
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *   URL:      https://ejbca-node1:443/ejbca/adminweb/                                   *
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *                                                                                       *
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) * If you use different port mapping or a proxy, please adapt the URL above accordingly. *
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *                                                                                       *
+ejbca-node1                    | 2026-03-09 12:44:23,188+0000 INFO  [/opt/keyfactor/bin/start.sh] (process:1) *****************************************************************************************
+ejbca-database                 | 2026-03-09 12:44:30.143 UTC [32] LOG:  checkpoint starting: time
+annuaire-db                    | 2026-03-09 12:44:30.554 UTC [30] LOG:  checkpoint starting: time
+annuaire-db                    | 2026-03-09 12:44:30.680 UTC [30] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.101 s, sync=0.009 s, total=0.126 s; sync files=1, longest=0.009 s, average=0.009 s; distance=0 kB, estimate=1786 kB; lsn=0/1DBFCD0, redo lsn=0/1DBFC78
+ejbca-database                 | 2026-03-09 12:44:40.327 UTC [32] LOG:  checkpoint complete: wrote 101 buffers (0.6%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=10.146 s, sync=0.019 s, total=10.184 s; sync files=63, longest=0.009 s, average=0.001 s; distance=238 kB, estimate=238 kB; lsn=0/1D68880, redo lsn=0/1D687F0
+
+https://localhost:446/ejbca/adminweb/index.xhtml
+
+https://localhost:8443/signserver/
+
+Quick Test Plan After docker compose up -d
+
+https://localhost:8443/ → should hit Django (or login page)
+https://localhost:8443/.well-known/did.json → root DID if exists
+https://localhost:8443/resolver/1.0/identifiers/did:key:z6M... (test a known did:key)
+https://localhost:8444/signserver/adminweb/
+https://localhost:446/ejbca/ → EJBCA
+Create a test DID via POST to https://localhost:8443/registrar/1.0/create (with driver-did-web) → check generated file in volume + resolution via :8080
+
+One-time SignServer setup:
+
+Create a Soft CryptoToken (stores the key pair in DB)
+Generate an Ed25519 key in that CryptoToken
+Create a PlainSigner worker linked to the CryptoToken
+Activate the worker
+
+Per DID document signing (Django backend):
+
+Build the DID document (without proof)
+Canonicalize it with JCS (RFC 8785)
+POST the canonicalized bytes to SignServer's /signserver/process HTTP API
+Get back raw Ed25519 signature bytes
+Construct the Data Integrity proof object (type, verificationMethod, proofValue, created, proofPurpose)
+Attach proof to the DID document
+Write the final did.json to the dids volume
+
+difference between ecdsa-jcs-2019 and eddsa-jcs-2022
+
+Yes, that's the right flow. Let me be precise about the split of responsibilities though, because SignServer only handles one part:
+SignServer's job (raw crypto only): hold the private key and sign bytes you send it. It returns a raw signature. It does not know anything about DID documents, JCS, or Linked Data Proofs.
+Your Django backend's job: everything else — canonicalization, constructing the proof, attaching it.
+So the full flow is:
+One-time SignServer setup:
+
+Create a Soft CryptoToken (stores the key pair in DB)
+Generate an Ed25519 key in that CryptoToken
+Create a PlainSigner worker linked to the CryptoToken
+Activate the worker
+
+Per DID document signing (Django backend):
+
+Build the DID document (without proof)
+Canonicalize it with JCS (RFC 8785)
+POST the canonicalized bytes to SignServer's /signserver/process HTTP API
+Get back raw Ed25519 signature bytes
+Construct the Data Integrity proof object (type, verificationMethod, proofValue, created, proofPurpose)
+Attach proof to the DID document
+Write the final did.json to the dids volume
+
+Does that match what you had in mind? Want to start with the SignServer CryptoToken and signer setup, or with the Django signing logic?Yeah you've got it. But i hope i'm on the right path.
+If yes let's do the One-time SignServer setup first10:47 PMCharted SignServer setup path and verified Ed25519 compatibility concernsCharted SignServer setup path and verified Ed25519 compatibility concernsYou're on the right path. Before we set up the workers, let me quickly verify SignServer CE supports Ed25519 — it depends on the Java version and crypto provider bundled.Reconciled Ed25519 limitations and validated ECDSA alternative approachReconciled Ed25519 limitations and validated ECDSA alternative approachHere's an important finding from the research. Ed25519 and Ed448 are now supported in the Plain signer, but Keyfactor use of the EdDSA algorithms requires utilizing the P11NG crypto token as well as HSM support for the selected algorithm. That means Ed25519 won't work with a Soft CryptoToken (PKCS12) in SignServer CE — it needs a hardware security module.
+So you have two practical options:
+Option A: Use ECDSA P-256 through SignServer — fully supported with the soft crypto token, and the W3C Data Integrity spec defines ecdsa-jcs-2019 as a standard cryptosuite. This keeps SignServer as your key custodian.
+Option B: Handle Ed25519 entirely in Django (using PyNaCl or the cryptography library) — gives you eddsa-jcs-2022 proofs but SignServer is bypassed for signing.
+Both produce valid, verifiable DID document proofs per W3C specs.Q: Which approach do you want to go with?
+A: ECDSA P-256 via SignServer (ecdsa-jcs-2019)10:51 PMOrchestrated sequential setup steps for cryptographic infrastructureOrchestrated sequential setup steps for cryptographic infrastructureGood choice. Let's walk through the setup step by step in the SignServer Admin Web UI you already have open.
+Step 1 — Create the CryptoToken (key store)
+
+On the Workers page, click Add
+Choose FROM TEMPLATE
+Select keystore-crypto.properties → click Next
+In the config that appears, change this line:
+
+   WORKERGENID1.KEYSTORETYPE=PKCS12
+to:
+   WORKERGENID1.KEYSTORETYPE=INTERNAL
+This stores the keys in SignServer's database rather than a file.
+5. Click Apply
+You should see a new worker called "CryptoTokenP12" in the list.
+Step 2 — Generate the ECDSA P-256 key
+
+Select the CryptoTokenP12 worker → click Crypto Token
+Click Generate key
+For New Key Alias, enter: DIDSigner
+For Key Algorithm, select: ECDSA
+For Key Specification, select: prime256v1
+Click Generate
+
+Step 3 — Create the PlainSigner worker
+
+Go back to Workers → click Add
+Choose FROM TEMPLATE
+Select plainsigner.properties → click Next
+Change WORKERGENID1.DEFAULTKEY=00003 to WORKERGENID1.DEFAULTKEY=DIDSigner
+Click Apply
+
+The PlainSigner will show as OFFLINE because it needs a signing certificate — that's expected. We'll issue one from EJBCA next.
+Go ahead with Steps 1–3 and let me know how it goes. After that we'll create the certificate profile in EJBCA and wire everything up.I'm stuck at point 2 of step 2.
+There's no Generate key button here10:59 PMPinpointed missing interface tab for accessing key generation functionalityPinpointed missing interface tab for accessing key generation functionalityYou're on the Status Summary tab. Click the Crypto Token tab (the last tab in the row: Status Summary → Status Properties → Configuration → Authorization → Crypto Token). That's where the key generation interface lives with the Generate key button.
+But first — the token shows "Crypto Token is disconnected". You'll likely need to activate it first. When you click the Crypto Token tab, you should see an Activate button. Click it, and if it asks for a password/pin, try an empty string or foo123 (the default for the keystore-crypto template). Once it's active, the Generate key option will appear.done step 1 to 311:03 PMCharted next steps for issuing signing certificateCharted next steps for issuing signing certificateNow let's issue a signing certificate from EJBCA to activate the PlainSigner.
+Step 4 — Generate a CSR from SignServer
+
+Go to Workers → select the PlainSigner worker
+Click GENERATE CSR...
+For Key Alias, select DIDSigner
+For Signature Algorithm, select SHA256withECDSA
+For Subject DN, enter: CN=DIDSigner
+Click Generate → download the .p10 file
+
+Step 5 — Create a Certificate Profile in EJBCA
+
+Go to EJBCA Admin (https://localhost:446/ejbca/)
+Under CA Functions → click Certificate Profiles
+At the bottom, type DIDSigner → click Add
+Click Edit on the new profile:
+
+Available Key Algorithms: select only ECDSA
+Available Bit Lengths / EC Curves: select P-256 / prime256v1
+Key Usage: check only Digital Signature
+Extended Key Usage: uncheck Use
+Validity: 1y
+
+
+Click Save
+
+Step 6 — Create an End Entity Profile in EJBCA
+
+Under RA Functions → click End Entity Profiles
+Type DIDSigner → click Add
+Click Edit:
+
+Under Available Certificate Profiles, select DIDSigner
+Under Default CA, select your ManagementCA
+Under Available CAs, select ManagementCA
+
+
+Click Save
+
+Step 7 — Issue the certificate
+
+Under RA Functions → click Make New Request
+For Certificate Type, select DIDSigner
+For Key-pair generation, select Provided by user
+Upload the .p10 CSR file from Step 4
+For Username, enter DIDSigner
+Click Download PEM – full chain
+
+Step 8 — Install the certificate in SignServer
+
+Back in SignServer, go to Workers → select PlainSigner
+Click INSTALL CERTIFICATES...
+Browse and select the PEM file you just downloaded
+Click Add then Install
+
+The PlainSigner should now show as ACTIVE. Let me know when you get there or if you hit any snags along the way.successful11:42 PMVerified system readiness and charted backend implementation pathVerified system readiness and charted backend implementation pathBoth workers ACTIVE — SignServer is fully set up. Now let's move to the Django backend side. You can quickly verify signing works by testing from your terminal:
+bash
+echo -n "hello world" | curl -s -k \
+  -X POST \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @- \
+  "http://localhost:8880/signserver/process?workerName=PlainSigner" \
+  -o /dev/stdout | xxd | head
+If you get binary output back, the signer is working. If you get an error, paste it and we'll fix it before moving to the Django integration.
+Once confirmed, we'll build the Django signing service that does: JCS canonicalize → POST to SignServer → construct ecdsa-jcs-2019 proof → attach to DID document.
+
+uni-registrar-web  | 2026-03-10T13:47:33,931 INFO  [main] u.w.c.WebAppConfig: Added driver for method 'web' at http://driver-did-web:9080/1.0/create and http://driver-did-web:9080/1.0/update and http://driver-did-web:9080/1.0/deactivate and http://driver-did-web:9080/1.0/execute (http://driver-did-web:9080/1.0/properties) (false)
+
+TODO: noticed healthchecks that are not used
+TODO: AUDIT LOGGING NOT WIRED
+TODO: Pagination not used
+{ data : [
+{},
+{}],
+meta: {
+}}
+
+did-web-annuaire-be on  work [!?⇡] is 📦 v0.1.0 via 🐍 v3.12.3
+❯ docker compose logs driver-did-web -f
+uni-registrar-driver-did-web  | 2026-03-10 18:05:02.944:INFO :oejs.Server:main: jetty-11.0.17; built: 2023-10-09T18:39:14.424Z; git: 48e7716b9462bebea6732b885dbebb4300787a5c; jvm 17.0.9+9
+uni-registrar-driver-did-web  | 2026-03-10 18:05:03.011:INFO :oejdp.ScanningAppProvider:main: Deployment monitor [file:///var/lib/jetty/webapps/]
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.122:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.Log scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/Log.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/Log.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.124:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.LogConfigurationException scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/LogConfigurationException.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/LogConfigurationException.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.124:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.LogFactory scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/LogFactory.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/LogFactory.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.127:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.impl.NoOpLog scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/impl/NoOpLog.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/impl/NoOpLog.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:04.128:WARN :oeja.AnnotationParser:qtp1791868405-21: org.apache.commons.logging.impl.SimpleLog scanned from multiple locations: jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/commons-logging-1.3.5.jar!/org/apache/commons/logging/impl/SimpleLog.class, jar:file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/WEB-INF/lib/jcl-over-slf4j-2.0.17.jar!/org/apache/commons/logging/impl/SimpleLog.class
+uni-registrar-driver-did-web  | 2026-03-10 18:05:05.553:INFO :oejshC.ROOT_war:main: No Spring WebApplicationInitializer types detected on classpath
+uni-registrar-driver-did-web  | 2026-03-10 18:05:05.570:INFO :oejss.DefaultSessionIdManager:main: Session workerName=node0
+uni-registrar-driver-did-web  | [main] DEBUG web.DidWebDriver (getPropertiesFromEnvironment) - Loading from environment: {PATH=/usr/local/jetty/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin, LANGUAGE=en_US:en, JETTY_BASE=/var/lib/jetty, JETTY_TGZ_URL=https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/11.0.17/jetty-home-11.0.17.tar.gz, uniregistrar_driver_did_web_basePath=/app/data/dids, JAVA_HOME=/opt/java/openjdk, LANG=en_US.UTF-8, JETTY_GPG_KEYS=AED5EE6C45D0FE8D5D1B164F27DED4BF6216DB8F 	2A684B57436A81FA8706B53C61C3351A438A3B7D 	5989BAF76217B843D66BE55B2D0E1FB8FE4B68B4 	B59B67FD7904984367F931800818D9D68FB67BAC 	BFBB21C246D7776836287A48A04E0C74ABB35FEA 	8B096546B1A8F02656B15D3B1677D141BCF3584D 	F254B35617DC255D9344BCFA873A8E86B4372146 	E22488CC94F63E3FC928536C4241C08270D999C3, TMPDIR=/tmp/jetty, uniregistrar_driver_did_web_baseUrl=https://localhost:8443, HOSTNAME=4c2456057ee8, LC_ALL=en_US.UTF-8, JETTY_HOME=/usr/local/jetty, JETTY_VERSION=11.0.17, uniregistrar_driver_did_web_generatedFolder=/generated, PWD=/var/lib/jetty, JAVA_VERSION=jdk-17.0.9+9, HOME=/var/lib/jetty}
+uni-registrar-driver-did-web  | 2026-03-10 18:05:06.674:INFO :oejsh.ContextHandler:main: Started o.e.j.w.WebAppContext@62230c58{uni-registrar-driver-did-web,/,file:///tmp/jetty-0_0_0_0-9080-ROOT_war-_-any-9490560965268043877/webapp/,AVAILABLE}{/var/lib/jetty/webapps/ROOT.war}
+uni-registrar-driver-did-web  | [main] DEBUG web.DidWebDriver (configureFromProperties) - Configuring from properties: {generatedFolder=/generated, basePath=/app/data/dids, baseUrl=https://localhost:8443}
+uni-registrar-driver-did-web  | [main] DEBUG web.DidWebDriver (<init>) - Driver properties set with: {baseUrl=https://localhost:8443, basePath=/app/data/dids, generatedFolder=/generated}
+uni-registrar-driver-did-web  | [main] INFO servlet.InitServlet (init) - Loaded driver: class uniregistrar.driver.did.web.DidWebDriver
+uni-registrar-driver-did-web  | 2026-03-10 18:05:06.694:INFO :oejs.AbstractConnector:main: Started ServerConnector@6f857be8{HTTP/1.1, (http/1.1)}{0.0.0.0:9080}
+uni-registrar-driver-did-web  | 2026-03-10 18:05:06.726:INFO :oejs.Server:main: Started Server@557caf28{STARTING}[11.0.17,sto=5000] @9242ms
+uni-registrar-driver-did-web  | [qtp1791868405-15] INFO servlet.CreateServlet (doPost) - Driver: Incoming create request: class CreateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     didDocument: class DidDocument {
+uni-registrar-driver-did-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |         controller: null
+uni-registrar-driver-did-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-driver-did-web  |         service: null
+uni-registrar-driver-did-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  | }
+uni-registrar-driver-did-web  | [qtp1791868405-15] DEBUG web.DidWebDriver (create) - Create request for: class CreateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     didDocument: class DidDocument {
+uni-registrar-driver-did-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |         controller: null
+uni-registrar-driver-did-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-driver-did-web  |         service: null
+uni-registrar-driver-did-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  | }
+uni-registrar-driver-did-web  | [qtp1791868405-15] INFO web.DidWebDriver (create) - Validated path: /app/data/dids/acme-corporation/cakowucy/driving-licence
+uni-registrar-driver-did-web  | [qtp1791868405-15] DEBUG web.DidWebDriver (create) - Registration is finished: class CreateState {
+uni-registrar-driver-did-web  |     class RegistrarState {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         didState: class DidStateFinished {
+uni-registrar-driver-did-web  |             class DidState {
+uni-registrar-driver-did-web  |                 state: finished
+uni-registrar-driver-did-web  |                 did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |                 secret: null
+uni-registrar-driver-did-web  |                 didDocument: class DidDocument {
+uni-registrar-driver-did-web  |                     id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |                     controller: null
+uni-registrar-driver-did-web  |                     verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-driver-did-web  |                     service: null
+uni-registrar-driver-did-web  |                     additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-driver-did-web  |                 }
+uni-registrar-driver-did-web  |                 additionalProperties: null
+uni-registrar-driver-did-web  |             }
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         didRegistrationMetadata: null
+uni-registrar-driver-did-web  |         didDocumentMetadata: null
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  | }
+uni-registrar-driver-did-web  | [qtp1791868405-15] INFO servlet.CreateServlet (doPost) - Driver: Create state for class CreateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     didDocument: class DidDocument {
+uni-registrar-driver-did-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  |         controller: null
+uni-registrar-driver-did-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-driver-did-web  |         service: null
+uni-registrar-driver-did-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  | }: {"didState":{"state":"finished","did":"did:web:localhost:acme-corporation:cakowucy:driving-licence","didDocument":{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence","verificationMethod":[{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","type":"JsonWebKey2020","controller":"did:web:localhost:acme-corporation:cakowucy:driving-licence","publicKeyJwk":{"x":"HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc","y":"bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII","alg":"ES256","crv":"P-256","kty":"EC","use":"sig"}}],"assertionMethod":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"],"proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-jcs-2019","proofPurpose":"assertionMethod","verificationMethod":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","created":"2026-03-10T18:08:07Z","proofValue":"uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ"},"@context":["https://www.w3.org/ns/did/v1","https://w3id.org/security/suites/jws-2020/v1","https://w3id.org/security/data-integrity/v2"],"authentication":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"]}}}
+uni-registrar-driver-did-web  | [qtp1791868405-15] DEBUG servlet.ServletUtil (sendResponse) - Sending response with status 200 and headers {Content-Type=application/json} and body (class java.lang.String)
+
+uni-registrar-web  | 2026-03-10T18:08:08,338 INFO  [qtp2017603323-40] u.w.WebUniRegistrar: Incoming CREATE request for method web: {jobId=null, options={}, secret={}, didDocument={id=did:web:localhost:acme-corporation:cakowucy:driving-licence, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], verificationMethod=[{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}}}
+uni-registrar-web  | 2026-03-10T18:08:08,340 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: For extension stage 'beforeReadCreate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T18:08:08,462 INFO  [qtp2017603323-40] u.w.WebUniRegistrar: Parsed CREATE request for method web: class CreateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     didDocument: class DidDocument {
+uni-registrar-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |         controller: null
+uni-registrar-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |         service: null
+uni-registrar-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T18:08:08,463 DEBUG [qtp2017603323-40] u.w.WebUniRegistrar: Incoming X-Config: header string: null
+uni-registrar-web  | 2026-03-10T18:08:08,464 INFO  [qtp2017603323-40] u.w.WebUniRegistrar: Using options: class RequestOptions {
+uni-registrar-web  |     clientSecretMode: null
+uni-registrar-web  |     storeSecrets: null
+uni-registrar-web  |     returnSecrets: null
+uni-registrar-web  |     requestVerificationMethod: null
+uni-registrar-web  |     additionalProperties: null
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T18:08:08,466 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: EXTENSIONS (beforeCreate), TRYING: []
+uni-registrar-web  | 2026-03-10T18:08:08,467 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: EXTENSIONS (beforeCreate), EXECUTED: [], SKIPPED: [], INAPPLICABLE: []
+uni-registrar-web  | 2026-03-10T18:08:08,468 INFO  [qtp2017603323-40] u.l.LocalUniRegistrar: Executing create with request class CreateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     didDocument: class DidDocument {
+uni-registrar-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |         controller: null
+uni-registrar-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |         service: null
+uni-registrar-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |     }
+uni-registrar-web  | } with driver HttpDriver
+uni-registrar-web  | 2026-03-10T18:08:08,487 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: For extension stage 'beforeDriverWriteCreate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T18:08:08,496 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Driver request for CREATE REQUEST {"didDocument":{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence","verificationMethod":[{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","type":"JsonWebKey2020","controller":"did:web:localhost:acme-corporation:cakowucy:driving-licence","publicKeyJwk":{"x":"HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc","y":"bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII","alg":"ES256","crv":"P-256","kty":"EC","use":"sig"}}],"assertionMethod":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"],"proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-jcs-2019","proofPurpose":"assertionMethod","verificationMethod":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","created":"2026-03-10T18:08:07Z","proofValue":"uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ"},"@context":["https://www.w3.org/ns/did/v1","https://w3id.org/security/suites/jws-2020/v1","https://w3id.org/security/data-integrity/v2"],"authentication":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"]},"options":{},"secret":{}} to: http://driver-did-web:9080/1.0/create
+uni-registrar-web  | 2026-03-10T18:08:08,829 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Driver response HTTP status from http://driver-did-web:9080/1.0/create: 200 OK
+uni-registrar-web  | 2026-03-10T18:08:08,830 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Driver response HTTP content type from http://driver-did-web:9080/1.0/create: application/json / ISO-8859-1
+uni-registrar-web  | 2026-03-10T18:08:08,831 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Driver response HTTP body from http://driver-did-web:9080/1.0/create: {"didState":{"state":"finished","did":"did:web:localhost:acme-corporation:cakowucy:driving-licence","didDocument":{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence","verificationMethod":[{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","type":"JsonWebKey2020","controller":"did:web:localhost:acme-corporation:cakowucy:driving-licence","publicKeyJwk":{"x":"HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc","y":"bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII","alg":"ES256","crv":"P-256","kty":"EC","use":"sig"}}],"assertionMethod":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"],"proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-jcs-2019","proofPurpose":"assertionMethod","verificationMethod":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","created":"2026-03-10T18:08:07Z","proofValue":"uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ"},"@context":["https://www.w3.org/ns/did/v1","https://w3id.org/security/suites/jws-2020/v1","https://w3id.org/security/data-integrity/v2"],"authentication":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"]}}}
+uni-registrar-web  | 2026-03-10T18:08:08,832 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: For extension stage 'beforeDriverReadCreate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T18:08:08,859 DEBUG [qtp2017603323-40] u.d.h.HttpDriver: Retrieved CREATE STATE for create request class CreateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     didDocument: class DidDocument {
+uni-registrar-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |         controller: null
+uni-registrar-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |         service: null
+uni-registrar-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |     }
+uni-registrar-web  | } (http://driver-did-web:9080/1.0/create): class CreateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: class DidDocument {
+uni-registrar-web  |                     id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                     controller: null
+uni-registrar-web  |                     verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |                     service: null
+uni-registrar-web  |                     additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |                 }
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T18:08:08,860 INFO  [qtp2017603323-40] u.l.LocalUniRegistrar: Executed create with state class CreateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: class DidDocument {
+uni-registrar-web  |                     id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                     controller: null
+uni-registrar-web  |                     verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |                     service: null
+uni-registrar-web  |                     additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |                 }
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | } with driver HttpDriver
+uni-registrar-web  | 2026-03-10T18:08:08,861 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: EXTENSIONS (afterCreate), TRYING: []
+uni-registrar-web  | 2026-03-10T18:08:08,861 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: EXTENSIONS (afterCreate), EXECUTED: [], SKIPPED: [], INAPPLICABLE: []
+uni-registrar-web  | 2026-03-10T18:08:08,868 INFO  [qtp2017603323-40] u.w.s.CreateServlet: CREATE state for class CreateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     didDocument: class DidDocument {
+uni-registrar-web  |         id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |         controller: null
+uni-registrar-web  |         verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |         service: null
+uni-registrar-web  |         additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |     }
+uni-registrar-web  | }: class CreateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: class DidDocument {
+uni-registrar-web  |                     id: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  |                     controller: null
+uni-registrar-web  |                     verificationMethod: [{id=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, type=JsonWebKey2020, controller=did:web:localhost:acme-corporation:cakowucy:driving-licence, publicKeyJwk={x=HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc, y=bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII, alg=ES256, crv=P-256, kty=EC, use=sig}}]
+uni-registrar-web  |                     service: null
+uni-registrar-web  |                     additionalProperties: {assertionMethod=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1], proof={type=DataIntegrityProof, cryptosuite=ecdsa-jcs-2019, proofPurpose=assertionMethod, verificationMethod=did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1, created=2026-03-10T18:08:07Z, proofValue=uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ}, @context=[https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1, https://w3id.org/security/data-integrity/v2], authentication=[did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1]}
+uni-registrar-web  |                 }
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {duration=398, method=web}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T18:08:08,868 DEBUG [qtp2017603323-40] u.l.LocalUniRegistrar: For extension stage 'beforeWriteCreate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T18:08:08,870 DEBUG [qtp2017603323-40] u.d.u.HttpBindingServerUtil: HTTP body for stream result: {"didState":{"state":"finished","did":"did:web:localhost:acme-corporation:cakowucy:driving-licence","didDocument":{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence","verificationMethod":[{"id":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","type":"JsonWebKey2020","controller":"did:web:localhost:acme-corporation:cakowucy:driving-licence","publicKeyJwk":{"x":"HL_NQbchvcCva3DXXP5R1mYrW9Vq0g1vd1Hgt4eQZFc","y":"bRkUlxfj3Dt3dlU80UfYUwMbnCOcwqeisULW1h3hqII","alg":"ES256","crv":"P-256","kty":"EC","use":"sig"}}],"assertionMethod":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"],"proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-jcs-2019","proofPurpose":"assertionMethod","verificationMethod":"did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1","created":"2026-03-10T18:08:07Z","proofValue":"uypLdtaYLbkXsq_fr8sbDjhu3BWmS_42UFOYfUopJCXeWizcyXw8jazK_U8CQF1PzC8kvo-ULKlych5ShPbSeDQ"},"@context":["https://www.w3.org/ns/did/v1","https://w3id.org/security/suites/jws-2020/v1","https://w3id.org/security/data-integrity/v2"],"authentication":["did:web:localhost:acme-corporation:cakowucy:driving-licence#key-1"]}},"didRegistrationMetadata":{"duration":398,"method":"web"},"didDocumentMetadata":{}}
+uni-registrar-web  | 2026-03-10T18:08:08,871 INFO  [qtp2017603323-40] u.w.s.ServletUtil: Sending response with status 201 and headers {Content-Type=application/json} and body (1271)
+
+uni-registrar-web  | 2026-03-10T18:08:08,871 INFO  [qtp2017603323-40] u.w.s.ServletUtil: Sending response with status 201 and headers {Content-Type=application/json} and body (1271)
+uni-registrar-web  | 2026-03-10T21:00:59,930 INFO  [qtp2017603323-35] u.w.WebUniRegistrar: Found DID in DEACTIVATE request: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | 2026-03-10T21:00:59,939 INFO  [qtp2017603323-35] u.w.WebUniRegistrar: Incoming DEACTIVATE request for method web: {jobId=null, did=did:web:localhost:acme-corporation:cakowucy:driving-licence, options={}, secret={}}
+uni-registrar-web  | 2026-03-10T21:00:59,940 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: For extension stage 'beforeReadDeactivate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T21:00:59,941 INFO  [qtp2017603323-35] u.w.WebUniRegistrar: Parsed DEACTIVATE request for method web: class DeactivateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T21:00:59,941 DEBUG [qtp2017603323-35] u.w.WebUniRegistrar: Incoming X-Config: header string: null
+uni-registrar-web  | 2026-03-10T21:00:59,941 INFO  [qtp2017603323-35] u.w.WebUniRegistrar: Using options: class RequestOptions {
+uni-registrar-web  |     clientSecretMode: null
+uni-registrar-web  |     storeSecrets: null
+uni-registrar-web  |     returnSecrets: null
+uni-registrar-web  |     requestVerificationMethod: null
+uni-registrar-web  |     additionalProperties: null
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T21:00:59,942 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: EXTENSIONS (beforeDeactivate), TRYING: []
+uni-registrar-web  | 2026-03-10T21:00:59,942 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: EXTENSIONS (beforeDeactivate), EXECUTED: [], SKIPPED: [], INAPPLICABLE: []
+uni-registrar-web  | 2026-03-10T21:00:59,942 INFO  [qtp2017603323-35] u.l.LocalUniRegistrar: Executing deactivate with request class DeactivateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | } with driver HttpDriver
+uni-registrar-web  | 2026-03-10T21:00:59,945 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: For extension stage 'beforeDriverWriteDeactivate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T21:00:59,946 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Driver request for DEACTIVATE REQUEST {"did":"did:web:localhost:acme-corporation:cakowucy:driving-licence","options":{},"secret":{}} to: http://driver-did-web:9080/1.0/deactivate
+uni-registrar-web  | 2026-03-10T21:00:59,957 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Driver response HTTP status from http://driver-did-web:9080/1.0/deactivate: 200 OK
+uni-registrar-web  | 2026-03-10T21:00:59,957 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Driver response HTTP content type from http://driver-did-web:9080/1.0/deactivate: application/json / ISO-8859-1
+uni-registrar-web  | 2026-03-10T21:00:59,957 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Driver response HTTP body from http://driver-did-web:9080/1.0/deactivate: {"didState":{"state":"finished"}}
+uni-registrar-web  | 2026-03-10T21:00:59,958 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: For extension stage 'beforeDriverReadDeactivate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T21:00:59,959 DEBUG [qtp2017603323-35] u.d.h.HttpDriver: Retrieved DEACTIVATE STATE for deactivate request class DeactivateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | } (http://driver-did-web:9080/1.0/deactivate): class DeactivateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: null
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: null
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T21:00:59,959 INFO  [qtp2017603323-35] u.l.LocalUniRegistrar: Executed deactivate with state class DeactivateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: null
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: null
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | } with driver HttpDriver
+uni-registrar-web  | 2026-03-10T21:00:59,961 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: EXTENSIONS (afterDeactivate), TRYING: []
+uni-registrar-web  | 2026-03-10T21:00:59,961 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: EXTENSIONS (afterDeactivate), EXECUTED: [], SKIPPED: [], INAPPLICABLE: []
+uni-registrar-web  | 2026-03-10T21:00:59,964 INFO  [qtp2017603323-35] u.w.s.DeactivateServlet: DEACTIVATE state for class DeactivateRequest {
+uni-registrar-web  |     class RegistrarRequest {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         options: class RequestOptions {
+uni-registrar-web  |             clientSecretMode: null
+uni-registrar-web  |             storeSecrets: null
+uni-registrar-web  |             returnSecrets: null
+uni-registrar-web  |             requestVerificationMethod: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |         secret: class RequestSecret {
+uni-registrar-web  |             verificationMethod: null
+uni-registrar-web  |             signingResponse: null
+uni-registrar-web  |             decryptionResponse: null
+uni-registrar-web  |             additionalProperties: null
+uni-registrar-web  |         }
+uni-registrar-web  |     }
+uni-registrar-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-web  | }: class DeactivateState {
+uni-registrar-web  |     class RegistrarState {
+uni-registrar-web  |         jobId: null
+uni-registrar-web  |         didState: class DidStateFinished {
+uni-registrar-web  |             class DidState {
+uni-registrar-web  |                 state: finished
+uni-registrar-web  |                 did: null
+uni-registrar-web  |                 secret: null
+uni-registrar-web  |                 didDocument: null
+uni-registrar-web  |                 additionalProperties: null
+uni-registrar-web  |             }
+uni-registrar-web  |         }
+uni-registrar-web  |         didRegistrationMetadata: {duration=20, method=web}
+uni-registrar-web  |         didDocumentMetadata: {}
+uni-registrar-web  |     }
+uni-registrar-web  | }
+uni-registrar-web  | 2026-03-10T21:00:59,965 DEBUG [qtp2017603323-35] u.l.LocalUniRegistrar: For extension stage 'beforeWriteDeactivate' trying the following extensions: []
+uni-registrar-web  | 2026-03-10T21:00:59,966 DEBUG [qtp2017603323-35] u.d.u.HttpBindingServerUtil: HTTP body for stream result: {"didState":{"state":"finished"},"didRegistrationMetadata":{"duration":20,"method":"web"},"didDocumentMetadata":{}}
+uni-registrar-web  | 2026-03-10T21:00:59,966 INFO  [qtp2017603323-35] u.w.s.ServletUtil: Sending response with status 200 and headers {Content-Type=application/json} and body (115)
+
+uni-registrar-driver-did-web  | [qtp1791868405-17] INFO servlet.DeactivateServlet (doPost) - Driver: Incoming deactivate request: class DeactivateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  | }
+uni-registrar-driver-did-web  | [qtp1791868405-17] INFO servlet.DeactivateServlet (doPost) - Driver: Deactivate state for class DeactivateRequest {
+uni-registrar-driver-did-web  |     class RegistrarRequest {
+uni-registrar-driver-did-web  |         jobId: null
+uni-registrar-driver-did-web  |         options: class RequestOptions {
+uni-registrar-driver-did-web  |             clientSecretMode: null
+uni-registrar-driver-did-web  |             storeSecrets: null
+uni-registrar-driver-did-web  |             returnSecrets: null
+uni-registrar-driver-did-web  |             requestVerificationMethod: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |         secret: class RequestSecret {
+uni-registrar-driver-did-web  |             verificationMethod: null
+uni-registrar-driver-did-web  |             signingResponse: null
+uni-registrar-driver-did-web  |             decryptionResponse: null
+uni-registrar-driver-did-web  |             additionalProperties: null
+uni-registrar-driver-did-web  |         }
+uni-registrar-driver-did-web  |     }
+uni-registrar-driver-did-web  |     did: did:web:localhost:acme-corporation:cakowucy:driving-licence
+uni-registrar-driver-did-web  | }: {"didState":{"state":"finished"}}
+uni-registrar-driver-did-web  | [qtp1791868405-17] DEBUG servlet.ServletUtil (sendResponse) - Sending response with status 200 and headers {Content-Type=application/json} and body (class java.lang.String)
+
+curl -s http://localhost:8080/1.0/identifiers/did:web:localhost:8443:acme-corporation:cakowucy:corporate-auth | python3 -m json.tool

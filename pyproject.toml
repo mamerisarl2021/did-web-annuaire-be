@@ -17,6 +17,7 @@ dependencies = [
     "django-ninja-jwt>=5.4.4",
     "django-structlog>=10.0.0",
     "gunicorn>=25.1.0",
+    "jcs>=0.2.1",
     "psycopg[c]>=3.3.3",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
@@ -31,4 +32,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "rav>=0.4.3",
+    "ruff>=0.15.5",
 ]

@@ -1,20 +1,10 @@
-###############################################################################
-# Annuaire DID Backend Stack
-# Location on VPS: ~/app/did-web-annuaire-backend/staging/
-#
-# This stack owns the shared network and named volumes.
-# Keyfactor (~/app/keyfactor/) and DIF (~/DIF/) stacks join the same network.
-#
-# CI/CD only restarts THIS stack. Keyfactor/DIF stacks stay running.
-###############################################################################
-
 services:
 
   # ── Reverse proxy ─────────────────────────────────────────────────────────
   nginx:
-    image: nginx:1.28-alpine
+    image: nginx:latest
     container_name: annuaire-nginx
-    restart: unless-stopped
+    restart: no
     ports:
       - "8086:80"
     volumes:
@@ -23,23 +13,20 @@ services:
       - media_volume:/media:ro
       - dids_volume:/app/data/dids:ro
     depends_on:
-      - annuaire-backend
+      annuaire-backend:
+        condition: service_healthy
     networks:
       - annuaire_staging_net
 
   # ── Django backend ────────────────────────────────────────────────────────
   annuaire-backend:
+    build: .
     image: ctrldaviddee/annuaire_did_be:staging-prime-latest
     container_name: annuaire-backend
-    restart: unless-stopped
-    user: "0"
+    restart: no
     env_file:
       - .env.backend
     volumes:
-      # FIX: Mount volume at /app/static_root (STATIC_ROOT — collectstatic output)
-      #      NOT at /app/staticfiles (source CSS/JS baked into the image).
-      #      The old mount at /app/staticfiles shadowed the source files with
-      #      an empty volume, causing the manifest error.
       - static_volume:/app/static_root
       - media_volume:/app/mediafiles
       - dids_volume:/app/data/dids
@@ -48,25 +35,31 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    #healthcheck:
+    #  test: ["CMD-SHELL", "curl -sf http://localhost:8899/api/health/ || exit 1"]
+    #  interval: 15s
+    #  timeout: 5s
+    #  retries: 5
+    #  start_period: 30s
     logging:
       driver: "json-file"
       options:
         max-size: "100m"
         max-file: "5"
     networks:
-      - annuaire_staging_net
+      - annuaire_net
 
-  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  # ── PostgreSQL ──────────────────────────────────────────────────
   db:
     image: postgres:18
     container_name: annuaire-db
-    restart: unless-stopped
+    restart: no
     env_file:
       - .env.backend
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-annuaire} -d annuaire_did" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-annuaire} -d ${POSTGRES_DB:-annuaire_did}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,24 +69,25 @@ services:
         max-size: "100m"
         max-file: "5"
     networks:
-      - annuaire_staging_net
+      - annuaire_net
 
-  # ── Redis (replaces RabbitMQ) ─────────────────────────────────────────────
+  # ── Redis ─────────────────────────────────────────────────────────────────
   redis:
     image: redis:8.4.1-alpine
     container_name: annuaire-redis
-    restart: unless-stopped
+    restart: no
     env_file:
       - .env.backend
     command: >
       redis-server
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
-      --requirepass ${REDIS_PASSWORD:-OykJKrnF94ZFZu3evGA}
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-redisallow-alex@123}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping" ]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -103,21 +97,21 @@ services:
         max-size: "50m"
         max-file: "3"
     networks:
-      - annuaire_staging_net
+      - annuaire_net
 
   # ── Celery worker ─────────────────────────────────────────────────────────
-  # FIX: Uncommented — without this, all async tasks (emails, etc.) are lost.
   celery:
     image: ctrldaviddee/annuaire_did_be:staging-prime-latest
     container_name: annuaire-celery
-    restart: unless-stopped
+    restart: no
     command: celery -A src.config.celery_app worker -l info --without-gossip --without-mingle --without-heartbeat
-    user: "0"
     env_file:
       - .env.backend
     volumes:
       - media_volume:/app/mediafiles
     depends_on:
+      #annuaire-backend:
+      #  condition: service_healthy
       db:
         condition: service_healthy
       redis:
@@ -128,7 +122,7 @@ services:
         max-size: "170m"
         max-file: "5"
     networks:
-      - annuaire_staging_net
+      - annuaire_net
 
   # ── Celery beat scheduler ─────────────────────────────────────────────────
   celery-beat:
@@ -136,12 +130,13 @@ services:
     container_name: annuaire-celery-beat
     restart: unless-stopped
     command: celery -A src.config.celery_app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    user: "0"
     env_file:
       - .env.backend
     volumes:
       - media_volume:/app/mediafiles
     depends_on:
+      #annuaire-backend:
+      #  condition: service_healthy
       db:
         condition: service_healthy
       redis:
@@ -152,20 +147,14 @@ services:
         max-size: "170m"
         max-file: "5"
     networks:
-      - annuaire_staging_net
+      - annuaire_net
 
-# ── Named volumes (shared with Keyfactor & DIF stacks) ─────────────────────
 volumes:
   postgres_data:
-    name: annuaire_postgres_data
   redis_data:
-    name: annuaire_redis_data
   static_volume:
-    name: annuaire_static_volume
   media_volume:
-    name: annuaire_media_volume
   dids_volume:
-    name: annuaire_dids_volume
 
 networks:
   annuaire_staging_net:

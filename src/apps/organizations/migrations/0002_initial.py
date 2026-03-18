@@ -6,53 +6,90 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('files', '0002_initial'),
-        ('organizations', '0001_initial'),
+        ("files", "0002_initial"),
+        ("organizations", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='membership',
-            name='invited_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='sent_invitations', to=settings.AUTH_USER_MODEL),
+            model_name="membership",
+            name="invited_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="sent_invitations",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='membership',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memberships', to=settings.AUTH_USER_MODEL),
+            model_name="membership",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="memberships",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='organization',
-            name='authorization_document',
-            field=models.ForeignKey(blank=True, help_text='Required. Administrative proof for platform registration.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='org_authorization_docs', to='files.file'),
+            model_name="organization",
+            name="authorization_document",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Required. Administrative proof for platform registration.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="org_authorization_docs",
+                to="files.file",
+            ),
         ),
         migrations.AddField(
-            model_name='organization',
-            name='created_by',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='founded_orgs', to=settings.AUTH_USER_MODEL),
+            model_name="organization",
+            name="created_by",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="founded_orgs",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='organization',
-            name='justification_document',
-            field=models.ForeignKey(blank=True, help_text='Optional. Additional justification document.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='org_justification_docs', to='files.file'),
+            model_name="organization",
+            name="justification_document",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Optional. Additional justification document.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="org_justification_docs",
+                to="files.file",
+            ),
         ),
         migrations.AddField(
-            model_name='organization',
-            name='reviewed_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reviewed_orgs', to=settings.AUTH_USER_MODEL),
+            model_name="organization",
+            name="reviewed_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="reviewed_orgs",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='membership',
-            name='organization',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memberships', to='organizations.organization'),
+            model_name="membership",
+            name="organization",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="memberships",
+                to="organizations.organization",
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='membership',
-            unique_together={('user', 'organization')},
+            name="membership",
+            unique_together={("user", "organization")},
         ),
     ]

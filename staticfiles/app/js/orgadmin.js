@@ -32,13 +32,33 @@ const OA = (() => {
   return {
     listOrgs: () => apiCall("/organizations"),
     getOrg: (id) => apiCall(`/organizations/${id}`),
-    getStats: (id) => apiCall(`/organizations/${id}/stats`),
+    getStats: (id, scope) => apiCall(`/organizations/${id}/stats${scope ? `?scope=${scope}` : ""}`),
     listMembers: (id) => apiCall(`/organizations/${id}/members`),
+    listAudits: (id, page = 1) => apiCall(`/organizations/${id}/audits?page=${page}`),
     inviteMember: (orgId, data) => apiCall(`/organizations/${orgId}/members/invite`, { method: "POST", body: data }),
     changeRole: (orgId, memberId, role) => apiCall(`/organizations/${orgId}/members/${memberId}/role`, { method: "PUT", body: { role } }),
+    updateMember: (orgId, memberId, data) => apiCall(`/organizations/${orgId}/members/${memberId}`, { method: "PATCH", body: data }),
     deactivateMember: (orgId, memberId) => apiCall(`/organizations/${orgId}/members/${memberId}/deactivate`, { method: "POST" }),
+    reactivateMember: (orgId, memberId) => apiCall(`/organizations/${orgId}/members/${memberId}/reactivate`, { method: "POST" }),
   };
 })();
+
+// ── User profile update (PATCH /api/v2/auth/me) ─────────────────────────
+
+async function oaUpdateMe(data) {
+  const { access } = Auth.getTokens();
+  const res = await fetch("/api/v2/auth/me", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access}`,
+    },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw { status: res.status, detail: json.detail || "Update failed." };
+  return json;
+}
 
 // ── UI helpers ──────────────────────────────────────────────────────────
 

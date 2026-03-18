@@ -3,6 +3,7 @@ ASGI config for project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 """
+
 import os
 
 from src.config.env import env
