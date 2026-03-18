@@ -30,3 +30,23 @@ def organization_detail_view(request, org_id):
             "org_id": str(org_id),
         },
     )
+
+
+@never_cache
+def users_view(request):
+    return render(request, "superadmin/users.html", {"active_page": "users"})
+
+
+@never_cache
+def audits_view(request):
+    return render(request, "superadmin/audits.html", {"active_page": "audits"})
+
+
+@never_cache
+def did_documents_view(request):
+    return render(request, "superadmin/did_documents.html", {"active_page": "did_documents"})
+
+
+@never_cache
+def certificates_view(request):
+    return render(request, "superadmin/certificates.html", {"active_page": "certificates"})

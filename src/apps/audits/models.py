@@ -17,6 +17,7 @@ class AuditAction(models.TextChoices):
     ORG_APPROVED = "ORG_APPROVED", "Organization approved"
     ORG_REJECTED = "ORG_REJECTED", "Organization rejected"
     ORG_SUSPENDED = "ORG_SUSPENDED", "Organization suspended"
+    ORG_DELETED = "ORG_DELETED", "Organization deleted"
 
     # Membership
     MEMBER_INVITED = "MEMBER_INVITED", "Member invited"

@@ -1,0 +1,169 @@
+{% extends "base_superadmin.html" %}
+{% block title %}Certificates{% endblock %}
+
+{% block content %}
+<div class="sa-page-header">
+  <div>
+    <h2>Certificates</h2>
+    <p>Manage all Certificates across the platform.</p>
+  </div>
+</div>
+
+<div id="alert-box"></div>
+
+<!-- Toolbar -->
+<div class="sa-toolbar" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; justify-content: space-between; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <div style="display: flex; gap: 1rem; flex: 1;">
+      <input type="text" id="cert-search" placeholder="Search by label or org..." class="sa-input" oninput="handleSearch(this.value)" style="flex: 1; max-width: 400px; padding: 0.5rem; border: 1px solid var(--sa-border); border-radius: 4px;">
+      
+      <select id="status-filter" class="sa-input" onchange="handleFilter(this.value)" style="padding: 0.5rem; border: 1px solid var(--sa-border); border-radius: 4px; min-width: 150px;">
+        <option value="">All Statuses</option>
+      </select>
+  </div>
+</div>
+
+<div id="certs-table">
+  <div class="sa-empty"><p>Loading...</p></div>
+</div>
+
+<style>
+.cert-meta { font-family: monospace; font-size: 0.75rem; background: #f3f4f6; padding: 0.1rem 0.3rem; border-radius: 4px; color: #4b5563; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allCerts = [];
+let searchQuery = "";
+let statusFilter = "";
+let sortKey = "created_at";
+let sortOrder = -1;
+
+async function loadCertificates() {
+  try {
+    allCerts = await SA.listCertificates();
+    populateFilters();
+    renderTable();
+  } catch (err) {
+    saShowAlert("alert-box", err.detail || "Failed to load certificates.", "error");
+  }
+}
+
+function populateFilters() {
+    const statuses = new Set(allCerts.map(c => c.status));
+    const select = document.getElementById("status-filter");
+    select.innerHTML = '<option value="">All Statuses</option>';
+    Array.from(statuses).sort().forEach(st => {
+        select.innerHTML += `<option value="${st}">${badgeLabel(st)}</option>`;
+    });
+}
+
+function handleSearch(query) {
+  searchQuery = query.toLowerCase();
+  renderTable();
+}
+
+function handleFilter(val) {
+  statusFilter = val;
+  renderTable();
+}
+
+function setSort(key) {
+  if (sortKey === key) {
+    sortOrder = sortOrder * -1;
+  } else {
+    sortKey = key;
+    sortOrder = 1;
+  }
+  renderTable();
+}
+
+function renderTable() {
+  let filtered = allCerts;
+  
+  if (statusFilter) {
+      filtered = filtered.filter(c => c.status === statusFilter);
+  }
+
+  if (searchQuery) {
+    filtered = filtered.filter(c => 
+      (c.label || "").toLowerCase().includes(searchQuery) ||
+      (c.organization_name || "").toLowerCase().includes(searchQuery) ||
+      (c.org_slug || "").toLowerCase().includes(searchQuery)
+    );
+  }
+
+  filtered.sort((a, b) => {
+    let valA = a[sortKey] || "";
+    let valB = b[sortKey] || "";
+    if (typeof valA === "string") valA = valA.toLowerCase();
+    if (typeof valB === "string") valB = valB.toLowerCase();
+    
+    if (valA < valB) return -1 * sortOrder;
+    if (valA > valB) return 1 * sortOrder;
+    return 0;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById("certs-table").innerHTML = `
+      <div class="sa-empty">
+        <div class="icon">🔐</div>
+        <p>No certificates found</p>
+      </div>`;
+    return;
+  }
+
+  const rows = filtered.map(cert => {
+    let actions = "";
+    if (cert.status === "ACTIVE") {
+        actions += `<button class="sa-btn sa-btn-sm sa-btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: #f59e0b; color: #b45309;" onclick="deleteCert('${cert.id}', true)">Revoke</button>`;
+    } else {
+        actions += `<button class="sa-btn sa-btn-sm sa-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="deleteCert('${cert.id}', false)">Delete</button>`;
+    }
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 600;">${cert.label}</div>
+          <div class="cert-meta">${cert.key_type || "Unknown type"} • Expires: ${cert.not_valid_after ? formatDate(cert.not_valid_after) : "—"}</div>
+        </td>
+        <td>
+            <div>${cert.organization_name}</div>
+        </td>
+        <td><span class="sa-badge ${badgeClass(cert.status)}">${badgeLabel(cert.status)}</span></td>
+        <td>${formatDate(cert.created_at)}</td>
+        <td>${actions}</td>
+      </tr>
+    `}).join("");
+
+  document.getElementById("certs-table").innerHTML = `
+    <div class="sa-table-wrap">
+      <table class="sa-table">
+        <thead><tr>
+          <th style="cursor:pointer; width: 35%;" onclick="setSort('label')">Certificate ${sortKey === 'label' ? (sortOrder === 1 ? '▲' : '▼') : ''}</th>
+          <th style="cursor:pointer; width: 25%;" onclick="setSort('organization_name')">Organization ${sortKey === 'organization_name' ? (sortOrder === 1 ? '▲' : '▼') : ''}</th>
+          <th style="cursor:pointer; width: 15%;" onclick="setSort('status')">Status ${sortKey === 'status' ? (sortOrder === 1 ? '▲' : '▼') : ''}</th>
+          <th style="cursor:pointer; width: 15%;" onclick="setSort('created_at')">Created ${sortKey === 'created_at' ? (sortOrder === 1 ? '▲' : '▼') : ''}</th>
+          <th style="width: 10%;">Actions</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+async function deleteCert(id, isRevoke) {
+  const msg = isRevoke ? "WARNING: This will revoke the certificate, which will deactivate all linked verification methods in DID Documents. Are you sure?" : "WARNING: This will permanently delete the certificate. Are you sure?";
+  if (!confirm(msg)) return;
+  
+  try {
+    await SA.deleteCertificate(id);
+    saShowAlert("alert-box", isRevoke ? "Certificate revoked." : "Certificate deleted.", "success");
+    loadCertificates();
+  } catch(err) {
+    saShowAlert("alert-box", err.detail || "Error processing action", "error");
+  }
+}
+
+loadCertificates();
+</script>
+{% endblock %}

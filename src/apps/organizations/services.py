@@ -216,6 +216,18 @@ def suspend_organization(
     return organization
 
 
+@transaction.atomic
+def delete_organization(*, organization: Organization, deleted_by: User) -> None:
+    _log_org_audit(
+        actor=deleted_by,
+        action="ORG_DELETED",
+        organization=organization,
+        description=f"Organization '{organization.name}' deleted.",
+    )
+    logger.info("org_deleted", org_id=str(organization.id))
+    organization.delete()
+
+
 # ── Membership management ───────────────────────────────────────────────
 
 

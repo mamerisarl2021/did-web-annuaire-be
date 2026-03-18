@@ -31,6 +31,15 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 # Auto-discover tasks.py in each app
 app.autodiscover_tasks()
 
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    "clear-blacklisted-tokens-daily": {
+        "task": "src.apps.authentication.tasks.clear_blacklisted_tokens",
+        "schedule": crontab(hour=0, minute=0),
+    },
+}
+
 
 @setup_logging.connect
 def configure_structlog_for_celery(**kwargs):

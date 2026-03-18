@@ -40,6 +40,16 @@ const SA = (() => {
     approveOrg: (id) => apiCall(`/organizations/${id}/approve`, { method: "POST" }),
     rejectOrg: (id, reason) => apiCall(`/organizations/${id}/reject`, { method: "POST", body: { reason } }),
     suspendOrg: (id, reason) => apiCall(`/organizations/${id}/suspend`, { method: "POST", body: { reason } }),
+    deleteOrg: (id) => apiCall(`/organizations/${id}`, { method: "DELETE" }),
+    listUsers: () => apiCall(`/users`),
+    deleteUser: (id) => apiCall(`/users/${id}`, { method: "DELETE" }),
+    cancelInvite: (userId, orgId) => apiCall(`/users/${userId}/cancel-invite/${orgId}`, { method: "POST" }),
+    addUserToOrg: (userId, orgId, role) => apiCall(`/users/${userId}/add-to-org`, { method: "POST", body: { org_id: orgId, role } }),
+    listAudits: () => apiCall(`/audits`),
+    listDocuments: () => apiCall(`/documents`),
+    deleteDocument: (id) => apiCall(`/documents/${id}`, { method: "DELETE" }),
+    listCertificates: () => apiCall(`/certificates`),
+    deleteCertificate: (id) => apiCall(`/certificates/${id}`, { method: "DELETE" }),
   };
 })();
 

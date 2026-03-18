@@ -31,13 +31,23 @@
           </a>
         </li>
         <li>
-          <a href="#" class="{% if active_page == 'users' %}active{% endif %}">
+          <a href="{% url 'superadmin:sa_users' %}" class="{% if active_page == 'users' %}active{% endif %}">
             <span class="icon">👤</span> Users
           </a>
         </li>
         <li>
-          <a href="#" class="{% if active_page == 'audits' %}active{% endif %}">
+          <a href="{% url 'superadmin:sa_audits' %}" class="{% if active_page == 'audits' %}active{% endif %}">
             <span class="icon">📋</span> Audit Log
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'superadmin:sa_did_documents' %}" class="{% if active_page == 'did_documents' %}active{% endif %}">
+            <span class="icon">📄</span> DID Docs
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'superadmin:sa_certificates' %}" class="{% if active_page == 'certificates' %}active{% endif %}">
+            <span class="icon">🔐</span> Certificates
           </a>
         </li>
       </ul>
