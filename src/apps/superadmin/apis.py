@@ -13,14 +13,11 @@ from ninja_jwt.authentication import JWTAuth
 from src.apps.organizations.models import Membership, Organization
 from src.apps.organizations.selectors import (
     get_organization_by_id,
-    get_organization_members,
 )
 from src.apps.organizations import services as org_services
 from src.apps.superadmin.schemas import (
-    AdminUserSchema,
     DashboardStatsSchema,
     ErrorSchema,
-    FileResponseSchema,
     MessageSchema,
     OrgDetailSchema,
     OrgListItemSchema,
@@ -30,7 +27,7 @@ from src.apps.superadmin.schemas import (
 from src.apps.users.models import User
 from src.common.exceptions import NotFoundError
 from src.common.permissions import require_superadmin
-from src.common.types import MembershipStatus, OrgStatus, Role
+from src.common.types import OrgStatus, Role
 
 router = Router(tags=["Superadmin"])
 

@@ -44,6 +44,7 @@ def log_action(
     # Auto-read IP from middleware context if not explicitly provided
     if ip_address is None:
         from src.common.request_context import get_request_ip
+
         ip_address = get_request_ip()
 
     entry = AuditLog.objects.create(

@@ -21,7 +21,6 @@ Revocation flow:
 """
 
 from datetime import datetime
-from uuid import UUID
 
 import structlog
 from django.core.files.uploadedfile import UploadedFile
@@ -36,7 +35,7 @@ from src.apps.certificates.models import (
 )
 from src.apps.files.services import upload_certificate_file
 from src.apps.users.models import User
-from src.common.exceptions import ConflictError, NotFoundError, ValidationError
+from src.common.exceptions import ConflictError, ValidationError
 from src.integrations.cert_service import extract_metadata
 
 logger = structlog.get_logger(__name__)

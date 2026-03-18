@@ -5,7 +5,7 @@ Low-level HTTP client for the SignServer CE PlainSigner worker.
 Sends raw bytes and receives a raw DER-encoded ECDSA signature.
 
 The higher-level ecdsa-jcs-2019 proof construction lives in
-``src.apps.documents.assembler``.
+``src.common.did.assembler``.
 
 Configuration (environment / Django settings):
   SIGNSERVER_URL          — e.g. "http://signserver-node:8080"
@@ -14,8 +14,6 @@ Configuration (environment / Django settings):
 If SIGNSERVER_URL is not set, a deterministic stub signature is returned
 so the rest of the pipeline can be exercised in development.
 """
-
-import json
 
 import structlog
 from django.conf import settings

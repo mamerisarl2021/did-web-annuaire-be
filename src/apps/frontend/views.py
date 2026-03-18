@@ -9,9 +9,11 @@ No session auth, no server-side auth checks.
 from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 
+
 @never_cache
 def landing_view(request):
     return render(request, "frontend/landing.html", {})
+
 
 @never_cache
 def login_view(request):

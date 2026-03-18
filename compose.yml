@@ -59,7 +59,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-annuaire_did}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-annuaire} -d ${POSTGRES_DB:-annuaire_did}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -148,78 +148,6 @@ services:
         max-file: "5"
     networks:
       - annuaire_net
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  DIF UNIVERSAL RESOLVER
-# ═════════════════════════════════════════════════════════════════════════════
-
-  uni-resolver-web:
-    image: universalresolver/uni-resolver-web:latest
-    container_name: uni-resolver-web
-    restart: unless-stopped
-    #ports:
-    #  - "8080:8080"
-    volumes:
-      - ./application-uniresolver.yml:/opt/uni-resolver-java/uni-resolver-web/application.yml:ro
-    networks:
-      - annuaire_staging_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-  # did:web + did:ethr + did:ens + did:peer (uPort/Veramo driver)
-  uni-resolver-driver-did-uport:
-    image: uport/uni-resolver-driver-did-uport:5.0.3
-    container_name: uni-resolver-driver-did-uport
-    restart: unless-stopped
-    networks:
-      - annuaire_staging_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  DIF UNIVERSAL REGISTRAR
-# ═════════════════════════════════════════════════════════════════════════════
-
-  uni-registrar-web:
-    image: universalregistrar/uni-registrar-web:latest
-    container_name: uni-registrar-web
-    restart: unless-stopped
-    #ports:
-    #  - "9080:9080"
-    volumes:
-      - ./application-uniregistrar.yml:/opt/uni-registrar-java/uni-registrar-web/application.yml:ro
-    networks:
-      - annuaire_staging_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-  # did:web driver — writes DID docs to the shared volume
-  driver-did-web:
-    image: universalregistrar/driver-did-web:latest
-    container_name: uni-registrar-driver-did-web
-    restart: unless-stopped
-    environment:
-      uniregistrar_driver_did_web_basePath: /app/data/dids
-      uniregistrar_driver_did_web_baseUrl: https://annuairedid-be.qcdigitalhub.com
-      uniregistrar_driver_did_web_generatedFolder: /generated
-    volumes:
-      - dids_volume:/app/data/dids
-    networks:
-      - annuaire_staging_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
 
 volumes:
   postgres_data:

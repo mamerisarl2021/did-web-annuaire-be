@@ -89,10 +89,10 @@ class AppSettings(BaseSettings):
     #    return f"{self.REDIS_URL}/3"
 
     # ── Session / Cookies ───────────────────────────────────────────────
-    # SESSION_COOKIE_NAME: str = "annuaire_session"
-    # SESSION_COOKIE_AGE: int = 86400  # 24h
-    # SESSION_COOKIE_SECURE: bool = False
-    # SESSION_COOKIE_DOMAIN: str = ""
+    SESSION_COOKIE_NAME: str = "annuaire_session"
+    SESSION_COOKIE_AGE: int = 86400  # 24h
+    SESSION_COOKIE_SECURE: bool = False
+    SESSION_COOKIE_DOMAIN: str = ""
     CSRF_COOKIE_SECURE: bool = False
     CSRF_TRUSTED_ORIGINS: list[str] = [""]
 

@@ -151,12 +151,15 @@
             const isAdmin = currentUserRole === "ORG_ADMIN";
 
             const canEdit = isOwner && ["DRAFT", "REJECTED", "PUBLISHED"].includes(d.status);
-            // ORG_MEMBER submits for review; ORG_ADMIN publishes directly
-            const canSubmit = isOwner && !isAdmin && d.status === "DRAFT";
+            // ORG_MEMBER submits updates for review; ORG_ADMIN publishes directly
+            const isDraftSubmit = ["DRAFT", "REJECTED"].includes(d.status);
+            const isUpdateSubmit = d.status === "PUBLISHED" && d.has_pending_draft;
+            const canSubmit = isOwner && !isAdmin && (isDraftSubmit || isUpdateSubmit);
+            
             const canDirectPublish = isAdmin && d.status === "DRAFT";
             const canReview = isAdmin && !isOwner && d.status === "PENDING_REVIEW";
             const canPublish = (isOwner || isAdmin) && d.status === "APPROVED";
-            const canRepublish = (isOwner || isAdmin) && d.status === "PUBLISHED" && d.has_pending_draft;
+            const canRepublish = isAdmin && d.status === "PUBLISHED" && d.has_pending_draft;
             const canDeactivate = (isOwner || isAdmin) && d.status === "PUBLISHED";
 
             // ── Header + actions
@@ -263,7 +266,7 @@
             html += `</div>`;
 
             // Draft/Published JSON
-            const hasPendingDraft = d.status === "PUBLISHED" && d.draft_content && d.has_pending_draft;
+            const hasPendingDraft = !!(d.content && d.draft_content && d.has_pending_draft);
 
             if (hasPendingDraft) {
                 // Show draft (pending changes) first, then live content
@@ -569,8 +572,6 @@
             let msg;
             if (docData?.status === "PUBLISHED") {
                 msg = "Re-sign and publish a new version with the pending changes?";
-            } else if (currentUserRole === "ORG_ADMIN" && docData?.status === "DRAFT") {
-                msg = "Sign and publish this document directly? (Skipping review)";
             } else {
                 msg = "Sign and publish this document? The DID will become publicly resolvable.";
             }

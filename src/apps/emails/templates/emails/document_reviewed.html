@@ -1,0 +1,29 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>Document {{ action|title }}</h2>
+<p>
+    Hello {{ submitter_name }},
+</p>
+<p>
+    Your document <code style="padding:0.25rem 0.5rem;background:#f1f5f9;border-radius:4px;color:#0f172a;font-size:0.875rem;">{{ doc_label }}</code> in the organization <strong>{{ org_name }}</strong> has been <strong>{{ action }}</strong> by {{ reviewer_name }}.
+</p>
+
+{% if reason %}
+<div class="box" style="margin-top:20px;margin-bottom:20px;">
+    <strong>Reviewer Comment:</strong><br>
+    <span style="color:var(--text-muted);">{{ reason }}</span>
+</div>
+{% endif %}
+
+<p>
+    You can log in to view the current status of your document.
+</p>
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{ doc_url }}" class="button">View Document</a>
+</p>
+<p>
+    Best regards,<br>
+    The AnnuaireDID Team
+</p>
+{% endblock %}

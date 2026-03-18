@@ -178,10 +178,13 @@ class DIDDocument(BaseModel):
         )
 
     def can_submit_for_review(self, user) -> bool:
-        """Only the owner can submit, and only from DRAFT or REJECTED status."""
+        """Only the owner can submit from DRAFT or REJECTED status, or if updating a PUBLISHED doc."""
         if not self.is_owner(user):
             return False
-        return self.status in (DocumentStatus.DRAFT, DocumentStatus.REJECTED)
+        return (
+            self.status in (DocumentStatus.DRAFT, DocumentStatus.REJECTED)
+            or self.has_pending_draft
+        )
 
     def can_review(self, user) -> bool:
         """
@@ -191,6 +194,18 @@ class DIDDocument(BaseModel):
         if self.is_owner(user):
             return False
         return self.status == DocumentStatus.PENDING_REVIEW
+
+    @property
+    def has_pending_draft(self) -> bool:
+        """
+        True when a document has been published (content exists) and has
+        uncommitted draft changes pending review or republish.
+        """
+        return (
+            self.content is not None
+            and self.draft_content is not None
+            and self.draft_content != self.content
+        )
 
 
 class DIDDocumentVersion(BaseModel):

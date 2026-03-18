@@ -82,9 +82,16 @@
         <div class="label">Pending Invites</div>
         <div class="value warn">${stats.invited_members}</div>
       </div>
-      <div class="oa-stat">
-        <div class="label">DID Documents</div>
-        <div class="value">${stats.total_documents}</div>
+      <div class="oa-stat" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="label">DID Documents</div>
+          <div class="value">${stats.total_documents}</div>
+        </div>
+        <div style="text-align:right;font-size:0.8125rem;color:var(--oa-text-muted);display:flex;flex-direction:column;gap:0.25rem;">
+          <div><span style="font-weight:600;color:var(--oa-text);">${stats.draft_documents}</span> Drafts</div>
+          <div><span style="font-weight:600;color:var(--oa-text);">${stats.signed_documents}</span> Signed</div>
+          <div><span style="font-weight:600;color:var(--oa-text);">${stats.published_documents}</span> Authored</div>
+        </div>
       </div>
       <div class="oa-stat">
         <div class="label">Certificates</div>
@@ -99,16 +106,18 @@
         <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">Manage Members</div>
         <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Invite, roles &amp; access</div>
       </a>
-      <div class="oa-card" style="opacity:0.6;">
+      <a href="/workspace/documents/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
+         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">📄</div>
-        <div style="font-weight:600;font-size:0.9375rem;">DID Documents</div>
-        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Coming soon</div>
-      </div>
-      <div class="oa-card" style="opacity:0.6;">
+        <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">DID Documents</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Create & manage DIDs</div>
+      </a>
+      <a href="/workspace/certificates/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
+         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">🔐</div>
-        <div style="font-weight:600;font-size:0.9375rem;">Certificates</div>
-        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Coming soon</div>
-      </div>
+        <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">Certificates</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Manage X.509 certs</div>
+      </a>
       <a href="/workspace/settings/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
          onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚙️</div>
@@ -151,9 +160,16 @@
             const stats = await OA.getStats(org.id, "me");
 
             document.getElementById("stats-grid").innerHTML = `
-      <div class="oa-stat">
-        <div class="label">My DID Documents</div>
-        <div class="value">${stats.total_documents}</div>
+      <div class="oa-stat" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="label">My DID Documents</div>
+          <div class="value">${stats.total_documents}</div>
+        </div>
+        <div style="text-align:right;font-size:0.8125rem;color:var(--oa-text-muted);display:flex;flex-direction:column;gap:0.25rem;">
+          <div><span style="font-weight:600;color:var(--oa-text);">${stats.draft_documents}</span> Drafts</div>
+          <div><span style="font-weight:600;color:var(--oa-text);">${stats.signed_documents}</span> Signed</div>
+          <div><span style="font-weight:600;color:var(--oa-text);">${stats.published_documents}</span> Authored</div>
+        </div>
       </div>
       <div class="oa-stat">
         <div class="label">My Certificates</div>
@@ -162,16 +178,18 @@
     `;
 
             document.getElementById("quick-actions").innerHTML = `
-      <div class="oa-card" style="opacity:0.6;">
+      <a href="/workspace/documents/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
+         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">📄</div>
-        <div style="font-weight:600;font-size:0.9375rem;">DID Documents</div>
-        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Coming soon</div>
-      </div>
-      <div class="oa-card" style="opacity:0.6;">
+        <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">DID Documents</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">View & manage your DIDs</div>
+      </a>
+      <a href="/workspace/certificates/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
+         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">🔐</div>
-        <div style="font-weight:600;font-size:0.9375rem;">Certificates</div>
-        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">Coming soon</div>
-      </div>
+        <div style="font-weight:600;font-size:0.9375rem;color:var(--oa-text);">Certificates</div>
+        <div style="font-size:0.8125rem;color:var(--oa-text-muted);margin-top:0.25rem;">View & manage your certs</div>
+      </a>
       <a href="/workspace/settings/" class="oa-card" style="text-decoration:none;transition:box-shadow 0.2s;cursor:pointer;"
          onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
         <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚙️</div>

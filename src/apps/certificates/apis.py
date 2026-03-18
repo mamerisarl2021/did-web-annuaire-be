@@ -14,7 +14,6 @@ Upload and rotate use multipart form data (file + metadata).
 
 from uuid import UUID
 
-from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpRequest
 from ninja import File, Form, Router, UploadedFile as NinjaFile
 from ninja_jwt.authentication import JWTAuth
@@ -129,14 +128,7 @@ def _version_detail(v: CertificateVersion) -> dict:
 
 
 def _cert_detail(cert) -> dict:
-    from src.apps.documents.models import DocumentVerificationMethod
-
-    linked = (
-        DocumentVerificationMethod.objects.filter(certificate=cert)
-        .values("document_id")
-        .distinct()
-        .count()
-    )
+    linked = cert_selectors.count_linked_documents_for_cert(cert_id=cert.id)
 
     return {
         "id": cert.id,

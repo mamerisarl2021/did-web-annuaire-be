@@ -8,6 +8,7 @@ request Schema for it — the API endpoint uses Form() and File() parameters dir
 from uuid import UUID
 
 from ninja import Schema
+from pydantic import model_validator
 from ninja_jwt.schema import TokenObtainPairInputSchema
 from ninja_jwt.tokens import RefreshToken
 
@@ -32,6 +33,14 @@ class CustomTokenObtainPairInput(TokenObtainPairInputSchema):
 
 class ActivateVerifyRequestSchema(Schema):
     otp_code: str
+    password: str
+    confirm_password: str
+
+    @model_validator(mode="after")
+    def passwords_must_match(self):
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match.")
+        return self
 
 
 class LogoutRequestSchema(Schema):
@@ -61,6 +70,7 @@ class UpdateProfileSchema(Schema):
 
     full_name: str | None = None
     phone: str | None = None
+    email: str | None = None
 
 
 # ── Response schemas ────────────────────────────────────────────────────

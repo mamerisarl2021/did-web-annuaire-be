@@ -8,16 +8,14 @@ Permission checks use the RBAC system from common/permissions.py.
 from typing import Optional
 from uuid import UUID
 
-from django.db import transaction
 from django.http import HttpRequest
 from ninja import Router
 from ninja_jwt.authentication import JWTAuth
 
 from src.apps.certificates.models import Certificate
-from src.apps.documents.models import DIDDocument
+from src.apps.documents.models import DIDDocument, DocumentStatus
 from src.apps.organizations.models import Membership, Organization
 from src.apps.organizations.selectors import (
-    get_active_membership,
     get_organization_by_id,
     get_organization_members,
     get_user_organizations,
@@ -32,10 +30,10 @@ from src.apps.orgadmin.schemas import (
     OrgDetailSchema,
     OrgStatsSchema,
     OrgSummarySchema,
-    AuditLogSchema,
     UpdateMemberSchema,
+    UpdateOrgSchema,
 )
-from src.common.exceptions import NotFoundError, PermissionDeniedError, ValidationError
+from src.common.exceptions import NotFoundError, ValidationError
 from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import Permission, require_permission
 from src.common.types import MembershipStatus, Role, AuditAction
@@ -137,6 +135,59 @@ def get_organization_detail(request: HttpRequest, org_id: UUID):
     }
 
 
+@router.patch(
+    "/organizations/{org_id}",
+    response={200: OrgDetailSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Update organization details",
+)
+def update_organization(
+    request: HttpRequest,
+    org_id: UUID,
+    payload: UpdateOrgSchema,
+):
+    """Update organization information (requires ORG_ADMIN via MANAGE_MEMBERS generic)."""
+    # Assuming MANAGE_MEMBERS is equivalent to ORG_ADMIN role for updates here.
+    require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
+
+    org = get_organization_by_id(org_id=org_id)
+    if org is None:
+        raise NotFoundError("Organization not found.")
+
+    org = org_services.update_organization(
+        organization=org,
+        actor=request.auth,
+        name=payload.name,
+        type=payload.type,
+        email=payload.email,
+        country=payload.country,
+        address=payload.address,
+        description=payload.description,
+    )
+
+    member_count = (
+        Membership.objects.filter(organization=org)
+        .exclude(status=MembershipStatus.DEACTIVATED)
+        .count()
+    )
+
+    return {
+        "id": org.id,
+        "name": org.name,
+        "slug": org.slug,
+        "type": org.type,
+        "description": org.description,
+        "country": org.country,
+        "address": org.address,
+        "email": org.email,
+        "status": org.status,
+        "created_at": org.created_at.isoformat(),
+        "member_count": member_count,
+        "document_count": DIDDocument.objects.filter(organization_id=org.id).count(),
+        "certificate_count": Certificate.objects.filter(organization_id=org.id).count(),
+    }
+
+
 # ── Org stats ────────────────────────────────────────────────────────────
 
 
@@ -161,12 +212,16 @@ def get_organization_stats(
 
     if scope == "me":
         user = request.auth
+        my_docs = DIDDocument.objects.filter(organization_id=org_id, owner=user)
         return {
             "total_members": 0,
             "active_members": 0,
             "invited_members": 0,
-            "total_documents": DIDDocument.objects.filter(
-                organization_id=org_id, owner=user
+            "total_documents": my_docs.count(),
+            "draft_documents": my_docs.filter(status=DocumentStatus.DRAFT).count(),
+            "signed_documents": my_docs.filter(status=DocumentStatus.SIGNED).count(),
+            "published_documents": my_docs.filter(
+                status=DocumentStatus.PUBLISHED
             ).count(),
             "total_certificates": Certificate.objects.filter(
                 organization_id=org_id, created_by=user
@@ -176,12 +231,16 @@ def get_organization_stats(
         }
 
     members = Membership.objects.filter(organization_id=org_id)
+    org_docs = DIDDocument.objects.filter(organization_id=org_id)
 
     return {
         "total_members": members.exclude(status=MembershipStatus.DEACTIVATED).count(),
         "active_members": members.filter(status=MembershipStatus.ACTIVE).count(),
         "invited_members": members.filter(status=MembershipStatus.INVITED).count(),
-        "total_documents": DIDDocument.objects.filter(organization_id=org_id).count(),
+        "total_documents": org_docs.count(),
+        "draft_documents": org_docs.filter(status=DocumentStatus.DRAFT).count(),
+        "signed_documents": org_docs.filter(status=DocumentStatus.SIGNED).count(),
+        "published_documents": org_docs.filter(status=DocumentStatus.PUBLISHED).count(),
         "total_certificates": Certificate.objects.filter(
             organization_id=org_id
         ).count(),
@@ -190,9 +249,24 @@ def get_organization_stats(
     }
 
 
+def _audit_dict(a) -> dict:
+    return {
+        "id": a.id,
+        "action": a.action,
+        "resource_type": a.resource_type,
+        "resource_id": a.resource_id,
+        "description": a.description,
+        "metadata": a.metadata,
+        "actor_email": a.actor_email,
+        "created_at": a.created_at.isoformat(),
+        "ip_address": a.ip_address,
+    }
+
+
 @router.get(
-    "/{org_id}/audits",
+    "/organizations/{org_id}/audits",
     response=PaginatedResponse,
+    auth=JWTAuth(),
     summary="List organization audits",
 )
 def list_audits(
@@ -219,8 +293,9 @@ def list_audits(
 
     return {
         "count": total,
-        "results": list(sliced_qs),
+        "results": [_audit_dict(a) for a in sliced_qs],
     }
+
 
 # ── Members list ─────────────────────────────────────────────────────────
 
@@ -252,27 +327,32 @@ def invite_member(request: HttpRequest, org_id: UUID, payload: InviteMemberSchem
     membership = require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
     org = membership.organization
 
-    # Validate role
-    try:
-        role = Role(payload.role)
-    except ValueError:
-        raise ValidationError(
-            f"Invalid role: {payload.role}. Use ORG_MEMBER or AUDITOR."
-        )
-
     new_membership = org_services.invite_member(
         organization=org,
         email=payload.email,
-        role=role,
+        role=Role.ORG_MEMBER,
         invited_by=request.auth,
     )
 
-    # If full_name was provided and user has no name yet, set it
+    # Apply optional profile fields to the created user
+    profile_updates = {}
     if payload.full_name and not new_membership.user.full_name:
+        profile_updates["full_name"] = payload.full_name
+    if payload.phone:
+        profile_updates["phone"] = payload.phone
+    if payload.functions:
+        profile_updates["functions"] = payload.functions
+
+    if profile_updates:
         from src.apps.users.services import update_user_profile
 
-        update_user_profile(user=new_membership.user, full_name=payload.full_name)
+        update_user_profile(user=new_membership.user, **profile_updates)
         new_membership.user.refresh_from_db()
+
+    # Apply has_audit_access directly on the membership
+    if payload.has_audit_access:
+        new_membership.has_audit_access = True
+        new_membership.save(update_fields=["has_audit_access"])
 
     from src.apps.emails.tasks import send_member_invitation_email
 
@@ -280,11 +360,15 @@ def invite_member(request: HttpRequest, org_id: UUID, payload: InviteMemberSchem
         user_id=str(new_membership.user.id),
         invitation_token=str(new_membership.invitation_token),
         org_name=org.name,
-        role=payload.role,
+        role="ORG_MEMBER",
         invited_by_name=request.auth.full_name or request.auth.email,
     )
 
-    return 201, _member_dict(new_membership)
+    return 201, _member_dict(
+        Membership.objects.filter(id=new_membership.id)
+        .select_related("user", "invited_by")
+        .first()
+    )
 
 
 # ── Change member role ───────────────────────────────────────────────────
@@ -384,6 +468,37 @@ def deactivate_member(request: HttpRequest, org_id: UUID, membership_id: UUID):
     return {"message": f"Member {target.user.email} has been deactivated."}
 
 
+# ── Cancel invitation ───────────────────────────────────────────────────
+
+
+@router.post(
+    "/organizations/{org_id}/members/{membership_id}/cancel",
+    response={200: MessageSchema, 400: ErrorSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Cancel a pending member invitation",
+)
+def cancel_invitation(request: HttpRequest, org_id: UUID, membership_id: UUID):
+    require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
+
+    target = (
+        Membership.objects.filter(id=membership_id, organization_id=org_id)
+        .select_related("user")
+        .first()
+    )
+
+    if target is None:
+        raise NotFoundError("Membership not found.")
+
+    if target.status != MembershipStatus.INVITED:
+        raise ValidationError("Only pending invitations can be canceled.")
+
+    org_services.cancel_membership_invitation(
+        membership=target, canceled_by=request.auth
+    )
+
+    return {"message": f"Invitation for {target.user.email} has been canceled."}
+
+
 # ── Reactivate member ───────────────────────────────────────────────────
 
 
@@ -466,7 +581,10 @@ def update_member(
     if update_user:
         user.save(update_fields=["full_name", "phone", "functions", "updated_at"])
 
-    if payload.has_audit_access is not None and target_membership.has_audit_access != payload.has_audit_access:
+    if (
+        payload.has_audit_access is not None
+        and target_membership.has_audit_access != payload.has_audit_access
+    ):
         target_membership.has_audit_access = payload.has_audit_access
         target_membership.save(update_fields=["has_audit_access", "updated_at"])
 

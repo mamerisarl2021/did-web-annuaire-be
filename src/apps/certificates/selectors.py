@@ -99,3 +99,38 @@ def certificate_label_exists(
     if exclude_id:
         qs = qs.exclude(id=exclude_id)
     return qs.exists()
+
+
+def count_linked_documents_for_cert(*, cert_id: UUID) -> int:
+    """
+    Count the number of distinct DID documents that reference a given certificate
+    via at least one DocumentVerificationMethod.
+
+    Moved here from apis.py to keep raw ORM out of the API layer.
+    """
+    from src.apps.documents.models import DocumentVerificationMethod
+
+    return (
+        DocumentVerificationMethod.objects.filter(certificate_id=cert_id)
+        .values("document_id")
+        .distinct()
+        .count()
+    )
+
+
+def get_verification_method_with_cert(*, vm_id: UUID):
+    """
+    Fetch a DocumentVerificationMethod with its certificate and current version
+    pre-loaded via select_related.
+
+    Returns None if not found.
+    """
+    from src.apps.documents.models import DocumentVerificationMethod
+
+    try:
+        return DocumentVerificationMethod.objects.select_related(
+            "certificate",
+            "certificate__current_version",
+        ).get(id=vm_id)
+    except DocumentVerificationMethod.DoesNotExist:
+        return None

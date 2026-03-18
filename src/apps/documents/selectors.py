@@ -39,10 +39,15 @@ def get_document_by_id(*, doc_id: UUID) -> DIDDocument | None:
 # ── List queries ─────────────────────────────────────────────────────────
 
 
-def get_org_documents(*, organization_id: UUID) -> QuerySet[DIDDocument]:
+def get_org_documents(*, organization_id: UUID, user_id: UUID) -> QuerySet[DIDDocument]:
     """All documents for an organization (for ORG_ADMIN / AUDITOR)."""
+    from django.db.models import Q
+
     return (
-        DIDDocument.objects.filter(organization_id=organization_id)
+        DIDDocument.objects.filter(
+            Q(organization_id=organization_id)
+            & (Q(submitted_at__isnull=False) | Q(owner_id=user_id))
+        )
         .select_related("owner", "created_by", "current_version")
         .order_by("-updated_at")
     )
@@ -137,4 +142,50 @@ def get_org_document_counts(*, organization_id: UUID) -> dict:
         pending=Count("id", filter=Q(status=DocumentStatus.PENDING_REVIEW)),
         published=Count("id", filter=Q(status=DocumentStatus.PUBLISHED)),
         deactivated=Count("id", filter=Q(status=DocumentStatus.DEACTIVATED)),
+    )
+
+
+def get_verifiable_credential(document: DIDDocument) -> dict | None:
+    """
+    Build a Verifiable Credential for a published DID document.
+
+    Pure read operation — no side effects, no DB writes.
+    Moved here from services.py to respect the read/write split.
+    Returns None if the document is not yet published.
+    """
+    from django.utils import timezone
+
+    from src.common.did.assembler import build_did_uri, build_verifiable_credential
+
+    if not document.content or document.status == DocumentStatus.DEACTIVATED:
+        return None
+
+    did_uri = build_did_uri(
+        org_slug=document.organization.slug,
+        owner_identifier=document.owner_identifier,
+        label=document.label,
+    )
+
+    published_at = ""
+    version = 0
+    if document.current_version:
+        published_at = (
+            document.current_version.published_at.isoformat()
+            if document.current_version.published_at
+            else timezone.now().isoformat()
+        )
+        version = document.current_version.version_number
+
+    owner_name = ""
+    if document.owner:
+        owner_name = getattr(document.owner, "full_name", "") or document.owner.email
+
+    return build_verifiable_credential(
+        did_uri=did_uri,
+        did_document=document.content,
+        org_name=document.organization.name,
+        owner_name=owner_name,
+        label=document.label,
+        version=version,
+        published_at=published_at,
     )

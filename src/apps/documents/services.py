@@ -13,19 +13,25 @@ Updates to PUBLISHED documents:
     - ORG_ADMIN: edit → re-publish directly (new version)
     - ORG_MEMBER owner: edit → re-publish (new version)
   If stricter review is needed, the admin can deactivate the document.
+
+sign_and_publish uses a SAGA pattern for all-or-none semantics with external services:
+  1. Validate state (pure)
+  2. Sign via SignServer (pure cryptographic computation — no external state change)
+  3. Register via Universal Registrar (external state change)
+  4. Persist to DB atomically
+  5. On DB failure → compensating call: deactivate the DID from the registrar
 """
 
-import json
 import re
 
 import structlog
 from django.db import transaction
 from django.utils import timezone
 
-from src.apps.documents.assembler import (
+from src.apps.certificates.models import CertificateStatus
+from src.common.did.assembler import (
     assemble_did_document,
     build_did_uri,
-    build_verifiable_credential,
     sign_and_attach_proof,
 )
 from src.apps.documents.models import (
@@ -138,12 +144,16 @@ def update_draft(
     if document.status not in editable:
         raise ValidationError(f"Cannot edit a {document.status} document.")
 
-    if document.status == DocumentStatus.REJECTED:
+    update_fields = ["draft_content", "updated_at"]
+    was_rejected = document.status == DocumentStatus.REJECTED
+
+    if was_rejected:
         # Reset review state so the owner can re-submit
         document.status = DocumentStatus.DRAFT
         document.reviewed_by = None
         document.reviewed_at = None
         document.review_comment = ""
+        update_fields += ["status", "reviewed_by", "reviewed_at", "review_comment"]
 
     if verification_methods is not None:
         DocumentVerificationMethod.objects.filter(document=document).delete()
@@ -158,16 +168,7 @@ def update_draft(
     did_json = _assemble_from_db(document, did_uri, service_endpoints)
     document.draft_content = did_json
 
-    document.save(
-        update_fields=[
-            "draft_content",
-            "status",
-            "reviewed_by",
-            "reviewed_at",
-            "review_comment",
-            "updated_at",
-        ]
-    )
+    document.save(update_fields=update_fields)
 
     is_update = document.content is not None
     _log(
@@ -178,6 +179,7 @@ def update_draft(
         {"is_version_update": is_update},
     )
 
+    logger.info("document_draft_updated", doc_id=str(document.id))
     return document
 
 
@@ -201,7 +203,7 @@ def add_verification_method(
     cert = get_certificate_by_id(cert_id=certificate_id)
     if cert is None or str(cert.organization_id) != str(document.organization_id):
         raise NotFoundError("Certificate not found in this organization.")
-    if cert.status != "ACTIVE":
+    if cert.status != CertificateStatus.ACTIVE:
         raise ValidationError("Cannot use a revoked or expired certificate.")
 
     if DocumentVerificationMethod.objects.filter(
@@ -229,6 +231,11 @@ def add_verification_method(
         {"fragment": method_id_fragment, "certificate_id": str(certificate_id)},
     )
 
+    logger.info(
+        "verification_method_added",
+        doc_id=str(document.id),
+        fragment=method_id_fragment,
+    )
     return vm
 
 
@@ -252,16 +259,26 @@ def remove_verification_method(*, document: DIDDocument, vm_id, removed_by: User
         {"fragment": fragment},
     )
 
+    logger.info(
+        "verification_method_removed",
+        doc_id=str(document.id),
+        fragment=fragment,
+    )
+
 
 # ── Submit for review ────────────────────────────────────────────────────
 
 
 @transaction.atomic
 def submit_for_review(*, document: DIDDocument, submitted_by: User) -> DIDDocument:
-    if document.status != DocumentStatus.DRAFT:
+    allowed = {DocumentStatus.DRAFT, DocumentStatus.REJECTED, DocumentStatus.PUBLISHED}
+    if document.status not in allowed:
         raise ValidationError(
-            f"Only DRAFT documents can be submitted. Status: {document.status}."
+            f"Only editable documents can be submitted. Status: {document.status}."
         )
+
+    if document.status == DocumentStatus.PUBLISHED and not document.has_pending_draft:
+        raise ValidationError("No pending changes to submit.")
 
     active_vms = DocumentVerificationMethod.objects.filter(
         document=document, is_active=True
@@ -276,12 +293,22 @@ def submit_for_review(*, document: DIDDocument, submitted_by: User) -> DIDDocume
         update_fields=["status", "submitted_by", "submitted_at", "updated_at"]
     )
 
+    from src.apps.emails.tasks import send_document_submitted_email
+
+    send_document_submitted_email.delay(
+        doc_id=str(document.id),
+        org_id=str(document.organization_id),
+        submitter_id=str(submitted_by.id),
+    )
+
     _log(
         "DOC_SUBMITTED",
         submitted_by,
         document,
         f"Document '{document.label}' submitted for review.",
     )
+
+    logger.info("document_submitted", doc_id=str(document.id))
     return document
 
 
@@ -296,9 +323,7 @@ def approve_document(
     comment: str = "",
 ) -> DIDDocument:
     if document.status != DocumentStatus.PENDING_REVIEW:
-        raise ValidationError(f"Only PENDING_REVIEW documents can be approved.")
-    if document.owner_id == approved_by.id:
-        raise ValidationError("You cannot approve your own document.")
+        raise ValidationError("Only PENDING_REVIEW documents can be approved.")
 
     document.status = DocumentStatus.APPROVED
     document.reviewed_by = approved_by
@@ -314,12 +339,24 @@ def approve_document(
         ]
     )
 
+    from src.apps.emails.tasks import send_document_reviewed_email
+
+    send_document_reviewed_email.delay(
+        doc_id=str(document.id),
+        org_id=str(document.organization_id),
+        reviewer_id=str(approved_by.id),
+        action="approved",
+        reason=comment,
+    )
+
     _log(
         "DOC_APPROVED",
         approved_by,
         document,
         f"Document '{document.label}' approved.{f' Comment: {comment}' if comment else ''}",
     )
+
+    logger.info("document_approved", doc_id=str(document.id))
     return document
 
 
@@ -331,9 +368,7 @@ def reject_document(
     reason: str = "",
 ) -> DIDDocument:
     if document.status != DocumentStatus.PENDING_REVIEW:
-        raise ValidationError(f"Only PENDING_REVIEW documents can be rejected.")
-    if document.owner_id == rejected_by.id:
-        raise ValidationError("You cannot reject your own document.")
+        raise ValidationError("Only PENDING_REVIEW documents can be rejected.")
 
     document.status = DocumentStatus.REJECTED
     document.reviewed_by = rejected_by
@@ -349,19 +384,41 @@ def reject_document(
         ]
     )
 
+    from src.apps.emails.tasks import send_document_reviewed_email
+
+    send_document_reviewed_email.delay(
+        doc_id=str(document.id),
+        org_id=str(document.organization_id),
+        reviewer_id=str(rejected_by.id),
+        action="rejected",
+        reason=reason,
+    )
+
     _log(
         "DOC_REJECTED",
         rejected_by,
         document,
         f"Document '{document.label}' rejected.{f' Reason: {reason}' if reason else ''}",
     )
+
+    logger.info("document_rejected", doc_id=str(document.id))
     return document
 
 
-# ── Sign + Publish ───────────────────────────────────────────────────────
+# ── Sign + Publish (SAGA pattern) ───────────────────────────────────────
+#
+# Steps:
+#   1. _validate_for_publish() — read-only checks, no writes
+#   2. sign_and_attach_proof()  — pure crypto, no external state
+#   3. _call_registrar()        — external state change (outside atomic)
+#   4. _persist_publish()       — DB write inside atomic()
+#   5. On step 4 failure        — _call_registrar_deactivate() to undo step 3
+#
+# The SIGNED intermediate status is removed. We go directly from the
+# source status to PUBLISHED in a single atomic DB write.
+# DOC_SIGNED audit entry is kept to record the signing event.
 
 
-@transaction.atomic
 def sign_and_publish(
     *,
     document: DIDDocument,
@@ -378,6 +435,74 @@ def sign_and_publish(
 
     For PUBLISHED re-publish, draft_content must differ from content.
     """
+    # ── Step 1: Validate (pure — no writes) ─────────────────────────
+    _validate_for_publish(document, skip_review)
+
+    content = document.draft_content
+    if not content:
+        raise ValidationError("No draft content to publish.")
+
+    # ── Step 2: Sign (pure crypto — no external state change) ────────
+    signed_doc, proof_value = sign_and_attach_proof(content)
+
+    _log(
+        "DOC_SIGNED",
+        published_by,
+        document,
+        f"Document '{document.label}' signed (ecdsa-jcs-2019).",
+        {"cryptosuite": "ecdsa-jcs-2019"},
+    )
+
+    logger.info(
+        "document_signed",
+        doc_id=str(document.id),
+        cryptosuite="ecdsa-jcs-2019",
+    )
+
+    # ── Step 3: Register externally (outside transaction) ────────────
+    is_first = document.current_version is None
+    registrar_resp = _call_registrar(signed_doc, is_create=is_first)
+
+    # ── Step 4: Persist to DB atomically ─────────────────────────────
+    # On failure → Step 5: compensating deactivate to undo step 3.
+    did_uri = _did_uri_for(document)
+    try:
+        document = _persist_publish(
+            document=document,
+            published_by=published_by,
+            signed_doc=signed_doc,
+            proof_value=proof_value,
+            registrar_resp=registrar_resp,
+        )
+    except Exception as db_error:
+        logger.error(
+            "publish_db_failed_compensating",
+            doc_id=str(document.id),
+            error=str(db_error),
+        )
+        try:
+            _call_registrar_deactivate(did_uri)
+            logger.warning(
+                "registrar_compensated",
+                doc_id=str(document.id),
+                did_uri=did_uri,
+            )
+        except Exception as comp_error:
+            # Compensation also failed — log prominently, requires manual intervention
+            logger.critical(
+                "registrar_compensation_failed",
+                doc_id=str(document.id),
+                did_uri=did_uri,
+                db_error=str(db_error),
+                comp_error=str(comp_error),
+            )
+        raise
+
+    return document
+
+
+def _validate_for_publish(document: DIDDocument, skip_review: bool) -> None:
+    """Pure read-only validation before signing/publishing. Raises ValidationError."""
     allowed = {DocumentStatus.APPROVED, DocumentStatus.PUBLISHED}
     if skip_review:
         allowed.add(DocumentStatus.DRAFT)
@@ -393,7 +518,7 @@ def sign_and_publish(
             f"Status: {document.status}."
         )
 
-    # For PUBLISHED re-publish, require that draft_content exists and differs
+    # For re-publish, require draft_content exists and differs from live content
     if document.status == DocumentStatus.PUBLISHED:
         if not document.draft_content:
             raise ValidationError(
@@ -407,7 +532,7 @@ def sign_and_publish(
 
     # Validate VMs — no revoked certificates
     revoked = DocumentVerificationMethod.objects.filter(
-        document=document, is_active=True, certificate__status="REVOKED"
+        document=document, is_active=True, certificate__status=CertificateStatus.REVOKED
     ).count()
     if revoked > 0:
         raise ValidationError(
@@ -420,29 +545,20 @@ def sign_and_publish(
     if active_vms == 0:
         raise ValidationError("Add at least one verification method before publishing.")
 
-    content = document.draft_content
-    if not content:
-        raise ValidationError("No draft content to publish.")
 
-    # ── Step 1: Sign with ecdsa-jcs-2019 ────────────────────────────
-    document.status = DocumentStatus.SIGNED
-    document.save(update_fields=["status", "updated_at"])
-
-    signed_doc, proof_value = sign_and_attach_proof(content)
-
-    _log(
-        "DOC_SIGNED",
-        published_by,
-        document,
-        f"Document '{document.label}' signed (ecdsa-jcs-2019).",
-        {"cryptosuite": "ecdsa-jcs-2019"},
-    )
-
-    # ── Step 2: Register via Universal Registrar ────────────────────
-    is_first = document.current_version is None
-    registrar_resp = _call_registrar(signed_doc, is_create=is_first)
-
-    # ── Step 3: Create version record ───────────────────────────────
+@transaction.atomic
+def _persist_publish(
+    *,
+    document: DIDDocument,
+    published_by: User,
+    signed_doc: dict,
+    proof_value: str,
+    registrar_resp: dict,
+) -> DIDDocument:
+    """
+    Atomic DB write: create version record and promote draft → live.
+    Called after external signing + registration succeed.
+    """
     next_ver = 1
     if document.current_version:
         next_ver = document.current_version.version_number + 1
@@ -457,7 +573,6 @@ def sign_and_publish(
         registrar_response=registrar_resp,
     )
 
-    # ── Step 4: Promote draft to live content ───────────────────────
     document.content = signed_doc
     document.draft_content = None
     document.status = DocumentStatus.PUBLISHED
@@ -484,7 +599,12 @@ def sign_and_publish(
         },
     )
 
-    logger.info("document_published", doc_id=str(document.id), version=next_ver)
+    logger.info(
+        "document_published",
+        doc_id=str(document.id),
+        version=next_ver,
+        is_update=next_ver > 1,
+    )
     return document
 
 
@@ -498,8 +618,8 @@ def deactivate_document(
     deactivated_by: User,
     reason: str = "",
 ) -> DIDDocument:
-    if document.status != DocumentStatus.PUBLISHED:
-        raise ValidationError(f"Only PUBLISHED documents can be deactivated.")
+    if not document.content or document.status == DocumentStatus.DEACTIVATED:
+        raise ValidationError("Only active published documents can be deactivated.")
 
     did_uri = _did_uri_for(document)
     _call_registrar_deactivate(did_uri)
@@ -514,41 +634,9 @@ def deactivate_document(
         f"Document '{document.label}' deactivated.{f' Reason: {reason}' if reason else ''}",
         {"reason": reason},
     )
+
+    logger.info("document_deactivated", doc_id=str(document.id))
     return document
-
-
-# ── VC builder ───────────────────────────────────────────────────────────
-
-
-def get_verifiable_credential(document: DIDDocument) -> dict | None:
-    """Build a VC for a published document. Returns None if not published."""
-    if document.status != DocumentStatus.PUBLISHED or not document.content:
-        return None
-
-    did_uri = _did_uri_for(document)
-    published_at = ""
-    version = 0
-    if document.current_version:
-        published_at = (
-            document.current_version.published_at.isoformat()
-            if document.current_version.published_at
-            else timezone.now().isoformat()
-        )
-        version = document.current_version.version_number
-
-    owner_name = ""
-    if document.owner:
-        owner_name = getattr(document.owner, "full_name", "") or document.owner.email
-
-    return build_verifiable_credential(
-        did_uri=did_uri,
-        did_document=document.content,
-        org_name=document.organization.name,
-        owner_name=owner_name,
-        label=document.label,
-        version=version,
-        published_at=published_at,
-    )
 
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -594,7 +682,7 @@ def _create_verification_methods(*, document, organization, vm_specs, user):
             raise NotFoundError(
                 f"Certificate '{cert_id}' not found in this organization."
             )
-        if cert.status != "ACTIVE":
+        if cert.status != CertificateStatus.ACTIVE:
             raise ValidationError(
                 f"Certificate '{cert.label}' is {cert.status}. Must be ACTIVE."
             )
@@ -634,6 +722,7 @@ def _reassemble_draft(document):
 def _call_registrar(did_document: dict, is_create: bool) -> dict:
     """
     Register or update a DID document via the Universal Registrar.
+    Called OUTSIDE @transaction.atomic — result feeds into _persist_publish.
     """
     from src.integrations.registrar import create_did, update_did
 
@@ -644,7 +733,10 @@ def _call_registrar(did_document: dict, is_create: bool) -> dict:
 
 
 def _call_registrar_deactivate(did_uri: str) -> dict:
-    """Deactivate a DID via the Universal Registrar."""
+    """
+    Deactivate a DID via the Universal Registrar.
+    Used both by deactivate_document() and as compensation in sign_and_publish saga.
+    """
     from src.integrations.registrar import deactivate_did
 
     return deactivate_did(did_uri)

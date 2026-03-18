@@ -43,7 +43,7 @@ def send_activation_email(self, user_id: str, invitation_token: str, org_name: s
 
         email_send(
             to=[user.email],
-            subject=f"Welcome to AnnuaireDID — Activate your account",
+            subject="Welcome to AnnuaireDID — Activate your account",
             html=html,
         )
 
@@ -75,7 +75,7 @@ def send_rejection_email(self, user_id: str, org_name: str, reason: str = ""):
 
         email_send(
             to=[user.email],
-            subject=f"AnnuaireDID — Organization registration update",
+            subject="AnnuaireDID — Organization registration update",
             html=html,
         )
 
@@ -220,4 +220,100 @@ def send_member_invitation_email(
 
     except Exception as exc:
         logger.error("invitation_email_failed", user_id=user_id, error=str(exc))
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_document_submitted_email(self, doc_id: str, org_id: str, submitter_id: str):
+    from src.apps.documents.selectors import get_document_by_id
+    from src.apps.organizations.selectors import (
+        get_organization_by_id,
+        get_organization_members,
+    )
+    from src.apps.users.selectors import get_user_by_id
+
+    try:
+        doc = get_document_by_id(doc_id=doc_id)
+        org = get_organization_by_id(org_id=org_id)
+        submitter = get_user_by_id(user_id=submitter_id)
+
+        if not doc or not org or not submitter:
+            return
+
+        members = get_organization_members(organization_id=org_id)
+        admin_emails = [
+            m.user.email for m in members if m.role == "ORG_ADMIN" and m.user.is_active
+        ]
+
+        if not admin_emails:
+            return
+
+        platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
+        scheme = "https" if "localhost" not in platform_domain else "http"
+        review_url = f"{scheme}://{platform_domain}/workspace/documents/"
+
+        html = render_to_string(
+            "emails/document_submitted.html",
+            {
+                "submitter_name": submitter.full_name or submitter.email,
+                "doc_label": doc.label,
+                "org_name": org.name,
+                "review_url": review_url,
+            },
+        )
+
+        email_send(
+            to=admin_emails,
+            subject=f"AnnuaireDID — Document submitted for review: {doc.label}",
+            html=html,
+        )
+
+    except Exception as exc:
+        logger.error("send_document_submitted_email_failed", error=str(exc))
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_document_reviewed_email(
+    self, doc_id: str, org_id: str, reviewer_id: str, action: str, reason: str = ""
+):
+    from src.apps.documents.selectors import get_document_by_id
+    from src.apps.organizations.selectors import get_organization_by_id
+    from src.apps.users.selectors import get_user_by_id
+
+    try:
+        doc = get_document_by_id(doc_id=doc_id)
+        org = get_organization_by_id(org_id=org_id)
+        reviewer = get_user_by_id(user_id=reviewer_id)
+
+        if not doc or not org or not reviewer or not doc.submitted_by:
+            return
+
+        platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
+        scheme = "https" if "localhost" not in platform_domain else "http"
+        doc_url = f"{scheme}://{platform_domain}/workspace/documents/{doc.id}"
+
+        submitter = doc.submitted_by
+
+        html = render_to_string(
+            "emails/document_reviewed.html",
+            {
+                "submitter_name": submitter.full_name or submitter.email,
+                "doc_label": doc.label,
+                "org_name": org.name,
+                "action": action,
+                "reviewer_name": reviewer.full_name or reviewer.email,
+                "reason": reason,
+                "doc_url": doc_url,
+            },
+        )
+
+        email_send(
+            to=[submitter.email],
+            subject=f"AnnuaireDID — Document {action}: {doc.label}",
+            html=html,
+        )
+
+    except Exception as exc:
+        logger.error("send_document_reviewed_email_failed", error=str(exc))
         raise self.retry(exc=exc)

@@ -14,8 +14,10 @@ from ninja import Schema
 
 class InviteMemberSchema(Schema):
     email: str
-    role: str  # ORG_MEMBER or AUDITOR
     full_name: str = ""
+    phone: str = ""
+    functions: str = ""
+    has_audit_access: bool = False
 
 
 class ChangeMemberRoleSchema(Schema):
@@ -41,6 +43,15 @@ class OrgSummarySchema(Schema):
     member_count: int = 0
     document_count: int = 0
     certificate_count: int = 0
+
+
+class UpdateOrgSchema(Schema):
+    name: str | None = None
+    type: str | None = None
+    email: str | None = None
+    country: str | None = None
+    address: str | None = None
+    description: str | None = None
 
 
 class OrgDetailSchema(Schema):
@@ -79,6 +90,9 @@ class OrgStatsSchema(Schema):
     active_members: int
     invited_members: int
     total_documents: int
+    draft_documents: int
+    signed_documents: int
+    published_documents: int
     total_certificates: int
     my_role: str = ""
     can_view_audits: bool = False
@@ -93,6 +107,7 @@ class AuditLogSchema(Schema):
     metadata: dict
     actor_email: str
     created_at: str
+    ip_address: str | None = None
 
 
 class MessageSchema(Schema):

@@ -2,13 +2,11 @@
 Organization selectors (read operations).
 """
 
-from uuid import UUID
-
 from django.db.models import QuerySet
 
 from src.apps.organizations.models import Membership, Organization
 from src.apps.users.models import User
-from src.common.types import MembershipStatus, Role
+from src.common.types import MembershipStatus
 
 
 def get_organization_by_id(*, org_id) -> Organization | None:

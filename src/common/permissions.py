@@ -183,6 +183,36 @@ def require_document_owner(user, document) -> None:
         raise PermissionDeniedError("Only the document owner can modify this document.")
 
 
+def require_document_owner_or_admin(
+    user, org_id, document, action: str = "access"
+) -> None:
+    """
+    Verify the user is the document owner OR an ORG_ADMIN in the organization.
+    Used for actions like publish and deactivate where admins have broader rights.
+    """
+    from src.apps.organizations.models import Membership
+    from src.common.types import MembershipStatus
+
+    if document.owner_id == user.id:
+        return
+
+    if getattr(user, "is_superadmin", False):
+        return
+
+    membership = Membership.objects.filter(
+        user=user,
+        organization_id=org_id,
+        status=MembershipStatus.ACTIVE,
+        role=Role.ORG_ADMIN,
+    ).first()
+    if membership:
+        return
+
+    raise PermissionDeniedError(
+        f"Only the document owner or an org admin can {action} this document."
+    )
+
+
 def require_document_reviewer(user, org_id, document) -> None:
     """
     Verify the user can review (approve/reject) the DID document.

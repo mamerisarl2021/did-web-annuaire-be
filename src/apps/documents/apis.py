@@ -26,8 +26,8 @@ from ninja_jwt.authentication import JWTAuth
 
 from src.apps.documents import selectors as doc_selectors
 from src.apps.documents import services as doc_services
-from src.apps.documents.assembler import build_did_uri
-from src.apps.documents.models import DocumentVerificationMethod
+from src.common.did.assembler import build_did_uri
+from src.apps.documents.models import DocumentStatus, DocumentVerificationMethod
 from src.apps.documents.schemas import (
     AddVerificationMethodSchema,
     CreateDocumentSchema,
@@ -41,8 +41,15 @@ from src.apps.documents.schemas import (
     UpdateDraftSchema,
     VerificationMethodResponse,
 )
-from src.common.exceptions import NotFoundError, PermissionDeniedError
-from src.common.permissions import Permission, require_permission
+from src.apps.certificates import selectors as cert_selectors
+from src.common.exceptions import NotFoundError
+from src.common.permissions import (
+    Permission,
+    require_document_owner,
+    require_document_owner_or_admin,
+    require_document_reviewer,
+    require_permission,
+)
 from src.common.types import Role
 
 router = Router(tags=["DID Documents"])
@@ -59,29 +66,6 @@ def _can_view_all(membership) -> bool:
 
 def _is_admin(membership) -> bool:
     return membership.role == Role.ORG_ADMIN
-
-
-def _require_doc_owner(doc, user, membership, action="access"):
-    if doc.owner_id == user.id:
-        return
-    raise PermissionDeniedError(f"Only the document owner can {action} this document.")
-
-
-def _require_owner_or_admin(doc, user, membership, action="access"):
-    if doc.owner_id == user.id:
-        return
-    if membership.role == Role.ORG_ADMIN:
-        return
-    raise PermissionDeniedError(
-        f"Only the document owner or an admin can {action} this document."
-    )
-
-
-def _require_reviewer(doc, user, membership):
-    if membership.role != Role.ORG_ADMIN:
-        raise PermissionDeniedError("Only organization admins can review documents.")
-    if doc.owner_id == user.id:
-        raise PermissionDeniedError("You cannot review your own document.")
 
 
 # ── Serialization helpers ────────────────────────────────────────────────
@@ -123,11 +107,7 @@ def _doc_list_item(doc) -> dict:
         "current_version_number": (
             doc.current_version.version_number if doc.current_version else None
         ),
-        "has_pending_draft": (
-            doc.status == "PUBLISHED"
-            and doc.draft_content is not None
-            and doc.draft_content != doc.content
-        ),
+        "has_pending_draft": doc.has_pending_draft,
         "created_at": doc.created_at.isoformat(),
         "updated_at": doc.updated_at.isoformat(),
     }
@@ -135,7 +115,7 @@ def _doc_list_item(doc) -> dict:
 
 def _doc_detail(doc) -> dict:
     vms = doc_selectors.get_document_verification_methods(document_id=doc.id)
-    vc = doc_services.get_verifiable_credential(doc)
+    vc = doc_selectors.get_verifiable_credential(doc)
 
     return {
         "id": doc.id,
@@ -157,11 +137,7 @@ def _doc_detail(doc) -> dict:
         "current_version_number": (
             doc.current_version.version_number if doc.current_version else None
         ),
-        "has_pending_draft": (
-            doc.status == "PUBLISHED"
-            and doc.draft_content is not None
-            and doc.draft_content != doc.content
-        ),
+        "has_pending_draft": doc.has_pending_draft,
         "verification_methods": [_vm_response(vm) for vm in vms],
         "verifiable_credential": vc,
         "created_at": doc.created_at.isoformat(),
@@ -205,7 +181,10 @@ def list_documents(request: HttpRequest, org_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
 
     if _can_view_all(membership):
-        docs = doc_selectors.get_org_documents(organization_id=org_id)
+        docs = doc_selectors.get_org_documents(
+            organization_id=org_id,
+            user_id=request.auth.id,
+        )
     else:
         docs = doc_selectors.get_user_documents(
             organization_id=org_id,
@@ -304,9 +283,9 @@ def update_draft(
 
     Only the document owner can edit.
     """
-    membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
+    require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
-    _require_doc_owner(doc, request.auth, membership, action="edit")
+    require_document_owner(request.auth, doc)
 
     vm_specs = (
         [vm.dict() for vm in payload.verification_methods]
@@ -350,9 +329,9 @@ def add_verification_method(
     doc_id: UUID,
     payload: AddVerificationMethodSchema,
 ):
-    membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
+    require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
-    _require_doc_owner(doc, request.auth, membership, action="edit")
+    require_document_owner(request.auth, doc)
 
     vm = doc_services.add_verification_method(
         document=doc,
@@ -363,10 +342,7 @@ def add_verification_method(
         added_by=request.auth,
     )
 
-    vm = DocumentVerificationMethod.objects.select_related(
-        "certificate", "certificate__current_version"
-    ).get(id=vm.id)
-
+    vm = cert_selectors.get_verification_method_with_cert(vm_id=vm.id)
     return 201, _vm_response(vm)
 
 
@@ -385,9 +361,9 @@ def remove_verification_method(
     doc_id: UUID,
     vm_id: UUID,
 ):
-    membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
+    require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
-    _require_doc_owner(doc, request.auth, membership, action="edit")
+    require_document_owner(request.auth, doc)
 
     doc_services.remove_verification_method(
         document=doc,
@@ -407,9 +383,9 @@ def remove_verification_method(
     summary="Submit document for review (DRAFT → PENDING_REVIEW)",
 )
 def submit_for_review(request: HttpRequest, org_id: UUID, doc_id: UUID):
-    membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
+    require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
-    _require_doc_owner(doc, request.auth, membership, action="submit")
+    require_document_owner(request.auth, doc)
 
     doc = doc_services.submit_for_review(document=doc, submitted_by=request.auth)
 
@@ -432,9 +408,9 @@ def approve_document(
     doc_id: UUID,
     payload: ReviewSchema,
 ):
-    membership = require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
+    require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
     doc = _get_doc_or_404(doc_id, org_id)
-    _require_reviewer(doc, request.auth, membership)
+    require_document_reviewer(request.auth, org_id, doc)
 
     doc = doc_services.approve_document(
         document=doc,
@@ -461,9 +437,9 @@ def reject_document(
     doc_id: UUID,
     payload: ReviewSchema,
 ):
-    membership = require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
+    require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
     doc = _get_doc_or_404(doc_id, org_id)
-    _require_reviewer(doc, request.auth, membership)
+    require_document_reviewer(request.auth, org_id, doc)
 
     doc = doc_services.reject_document(
         document=doc,
@@ -495,10 +471,9 @@ def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     """
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
-    _require_owner_or_admin(doc, request.auth, membership, action="publish")
+    require_document_owner_or_admin(request.auth, org_id, doc, action="publish")
 
-    # ORG_ADMIN can skip review and publish directly from DRAFT
-    skip_review = _is_admin(membership) and doc.status == "DRAFT"
+    skip_review = _is_admin(membership)
 
     doc = doc_services.sign_and_publish(
         document=doc,
@@ -525,9 +500,9 @@ def deactivate_document(
     doc_id: UUID,
     payload: DeactivateSchema,
 ):
-    membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
+    require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
-    _require_owner_or_admin(doc, request.auth, membership, action="deactivate")
+    require_document_owner_or_admin(request.auth, org_id, doc, action="deactivate")
 
     doc_services.deactivate_document(
         document=doc,
@@ -569,8 +544,8 @@ def resolve_did_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     doc = doc_selectors.get_document_by_id(doc_id=doc_id)
     if doc is None or str(doc.organization_id) != str(org_id):
         raise NotFoundError("DID document not found.")
-    if doc.status != "PUBLISHED" or not doc.content:
-        raise NotFoundError("DID document not published.")
+    if not doc.content or doc.status == DocumentStatus.DEACTIVATED:
+        raise NotFoundError("DID document not published or has been deactivated.")
     return doc.content
 
 
@@ -587,7 +562,7 @@ def get_verifiable_credential(request: HttpRequest, org_id: UUID, doc_id: UUID):
     if doc is None or str(doc.organization_id) != str(org_id):
         raise NotFoundError("Document not found.")
 
-    vc = doc_services.get_verifiable_credential(doc)
+    vc = doc_selectors.get_verifiable_credential(doc)
     if vc is None:
         raise NotFoundError(
             "Verifiable Credential not available. Document must be published."

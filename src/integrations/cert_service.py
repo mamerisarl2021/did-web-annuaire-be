@@ -21,16 +21,13 @@ from src.common.exceptions import ValidationError
 
 logger = structlog.get_logger(__name__)
 
-DEFAULT_JAVA_BIN = "java"
-DEFAULT_JAR_PATH = "/opt/ecdsa-extractor.jar"
-
 
 def _get_java_bin() -> str:
-    return getattr(settings, "JWK_EXTRACTOR_JAVA", DEFAULT_JAVA_BIN)
+    return "java"
 
 
 def _get_jar_path() -> str:
-    return getattr(settings, "JWK_EXTRACTOR_JAR", DEFAULT_JAR_PATH)
+    return settings.JWK_EXTRACTOR_JAR
 
 
 def extract_jwk(*, cert_pem_bytes: bytes, p12_password: str | None = None) -> dict:
