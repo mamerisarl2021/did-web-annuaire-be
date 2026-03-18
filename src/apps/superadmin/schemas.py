@@ -22,6 +22,11 @@ class OrgSuspendSchema(Schema):
     reason: str = ""
 
 
+class AddUserToOrgSchema(Schema):
+    org_id: UUID
+    role: str
+
+
 # ── Response ────────────────────────────────────────────────────────────
 
 
@@ -52,6 +57,61 @@ class OrgListItemSchema(Schema):
     status: str
     created_at: str
     admin_email: str | None = None
+
+
+class UserMembershipSchema(Schema):
+    id: UUID
+    org_id: UUID
+    org_name: str
+    role: str
+    status: str
+
+
+class SAUserSchema(Schema):
+    id: UUID
+    email: str
+    full_name: str
+    phone: str
+    is_active: bool
+    created_at: str
+    memberships: list[UserMembershipSchema] = []
+
+
+class SAAuditLogSchema(Schema):
+    id: UUID
+    actor_email: str
+    action: str
+    resource_type: str
+    resource_id: UUID | None = None
+    description: str
+    created_at: str
+    organization_name: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    metadata: dict | None = None
+
+
+class SADIDDocumentSchema(Schema):
+    id: UUID
+    label: str
+    organization_name: str
+    org_slug: str
+    owner_email: str
+    owner_identifier: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+class SACertificateSchema(Schema):
+    id: UUID
+    label: str
+    organization_name: str
+    org_slug: str
+    status: str
+    created_at: str
+    key_type: str | None = None
+    not_valid_after: str | None = None
 
 
 class OrgDetailSchema(Schema):
@@ -92,3 +152,5 @@ class DashboardStatsSchema(Schema):
     suspended_count: int
     total_users: int
     active_users: int
+    total_did_documents: int
+    total_certificates: int

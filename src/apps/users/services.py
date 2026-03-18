@@ -119,3 +119,16 @@ def set_otp_secret(*, user: User, otp_secret: str) -> User:
 
     logger.debug("otp_secret_set", user_id=str(user.id))
     return user
+
+
+@transaction.atomic
+def delete_user(*, user: User, deleted_by: User) -> None:
+    log_action(
+        actor=deleted_by,
+        action=AuditAction.USER_UPDATED, # or add USER_DELETED
+        resource_type=ResourceType.USER,
+        resource_id=user.id,
+        description=f"User '{user.email}' deleted.",
+    )
+    logger.info("user_deleted", user_id=str(user.id))
+    user.delete()

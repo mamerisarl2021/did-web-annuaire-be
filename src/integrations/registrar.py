@@ -3,6 +3,9 @@ Universal Registrar integration.
 
 Manages DID documents via the DIF Universal Registrar REST API.
 
+Configuration (Django settings):
+  UNIVERSAL_REGISTRAR_URL = "http://uni-registrar-web:9080"
+
 API endpoints used:
   POST /1.0/create      — Register a new DID
   POST /1.0/update      — Update an existing DID document
