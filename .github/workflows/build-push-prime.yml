@@ -45,3 +45,4 @@ jobs:
           format: table
           exit-code: "0"
           ignore-unfixed: true
+          version: v0.69.3
