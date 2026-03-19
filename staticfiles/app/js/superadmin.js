@@ -4,95 +4,98 @@
  */
 
 const SA = (() => {
-  const API = "/superadmin/api/v2";
+    const API = "/superadmin/api/v2";
 
-  async function apiCall(path, { method = "GET", body } = {}) {
-    const headers = { "Content-Type": "application/json" };
-    const { access } = Auth.getTokens();
-    if (access) headers["Authorization"] = `Bearer ${access}`;
+    async function apiCall(path, {method = "GET", body} = {}) {
+        const headers = {"Content-Type": "application/json"};
+        const {access} = Auth.getTokens();
+        if (access) headers["Authorization"] = `Bearer ${access}`;
 
-    const res = await fetch(`${API}${path}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+        const res = await fetch(`${API}${path}`, {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : undefined,
+        });
 
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      if (res.status === 401) {
-        Auth.clearTokens();
-        window.location.href = "/login/";
-        return;
-      }
-      if (res.status === 403) {
-        window.location.href = "/dashboard/";
-        return;
-      }
-      throw { status: res.status, detail: data.detail || "Something went wrong." };
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            if (res.status === 401) {
+                Auth.clearTokens();
+                window.location.href = "/login/";
+                return;
+            }
+            if (res.status === 403) {
+                window.location.href = "/dashboard/";
+                return;
+            }
+            throw {status: res.status, detail: data.detail || "Something went wrong."};
+        }
+        return data;
     }
-    return data;
-  }
 
-  return {
-    dashboard: () => apiCall("/dashboard"),
-    listOrgs: (status) => apiCall(`/organizations${status ? `?status=${status}` : ""}`),
-    getOrg: (id) => apiCall(`/organizations/${id}`),
-    approveOrg: (id) => apiCall(`/organizations/${id}/approve`, { method: "POST" }),
-    rejectOrg: (id, reason) => apiCall(`/organizations/${id}/reject`, { method: "POST", body: { reason } }),
-    suspendOrg: (id, reason) => apiCall(`/organizations/${id}/suspend`, { method: "POST", body: { reason } }),
-    reactivateOrg: (id) => apiCall(`/organizations/${id}/reactivate`, { method: "POST" }),
-    deleteOrg: (id) => apiCall(`/organizations/${id}`, { method: "DELETE" }),
-    listUsers: () => apiCall(`/users`),
-    deleteUser: (id) => apiCall(`/users/${id}`, { method: "DELETE" }),
-    cancelInvite: (userId, orgId) => apiCall(`/users/${userId}/cancel-invite/${orgId}`, { method: "POST" }),
-    addUserToOrg: (userId, orgId, role) => apiCall(`/users/${userId}/add-to-org`, { method: "POST", body: { org_id: orgId, role } }),
-    listAudits: () => apiCall(`/audits`),
-    listDocuments: () => apiCall(`/documents`),
-    deleteDocument: (id) => apiCall(`/documents/${id}`, { method: "DELETE" }),
-    listCertificates: () => apiCall(`/certificates`),
-    deleteCertificate: (id) => apiCall(`/certificates/${id}`, { method: "DELETE" }),
-  };
+    return {
+        dashboard: () => apiCall("/dashboard"),
+        listOrgs: (status) => apiCall(`/organizations${status ? `?status=${status}` : ""}`),
+        getOrg: (id) => apiCall(`/organizations/${id}`),
+        approveOrg: (id) => apiCall(`/organizations/${id}/approve`, {method: "POST"}),
+        rejectOrg: (id, reason) => apiCall(`/organizations/${id}/reject`, {method: "POST", body: {reason}}),
+        suspendOrg: (id, reason) => apiCall(`/organizations/${id}/suspend`, {method: "POST", body: {reason}}),
+        reactivateOrg: (id) => apiCall(`/organizations/${id}/reactivate`, {method: "POST"}),
+        deleteOrg: (id) => apiCall(`/organizations/${id}`, {method: "DELETE"}),
+        listUsers: () => apiCall(`/users`),
+        deleteUser: (id) => apiCall(`/users/${id}`, {method: "DELETE"}),
+        cancelInvite: (userId, orgId) => apiCall(`/users/${userId}/cancel-invite/${orgId}`, {method: "POST"}),
+        addUserToOrg: (userId, orgId, role) => apiCall(`/users/${userId}/add-to-org`, {
+            method: "POST",
+            body: {org_id: orgId, role}
+        }),
+        listAudits: () => apiCall(`/audits`),
+        listDocuments: () => apiCall(`/documents`),
+        deleteDocument: (id) => apiCall(`/documents/${id}`, {method: "DELETE"}),
+        listCertificates: () => apiCall(`/certificates`),
+        deleteCertificate: (id) => apiCall(`/certificates/${id}`, {method: "DELETE"}),
+    };
 })();
 
 // ── UI helpers ──────────────────────────────────────────────────────────
 
 function saShowAlert(containerId, message, type = "error") {
-  const el = document.getElementById(containerId);
-  if (el) el.innerHTML = `<div class="sa-alert sa-alert-${type}">${message}</div>`;
+    const el = document.getElementById(containerId);
+    if (el) el.innerHTML = `<div class="sa-alert sa-alert-${type}">${message}</div>`;
 }
 
 function saClearAlert(containerId) {
-  const el = document.getElementById(containerId);
-  if (el) el.innerHTML = "";
+    const el = document.getElementById(containerId);
+    if (el) el.innerHTML = "";
 }
 
 function formatDate(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric"});
 }
 
 function formatFileSize(bytes) {
-  if (!bytes) return "0 B";
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
-  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    if (!bytes) return "0 B";
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 function badgeClass(status) {
-  return {
-    PENDING_REVIEW: "pending",
-    APPROVED: "approved",
-    REJECTED: "rejected",
-    SUSPENDED: "suspended",
-  }[status] || "";
+    return {
+        PENDING_REVIEW: "pending",
+        APPROVED: "approved",
+        REJECTED: "rejected",
+        SUSPENDED: "suspended",
+    }[status] || "";
 }
 
 function badgeLabel(status) {
-  return {
-    PENDING_REVIEW: "Pending",
-    APPROVED: "Approved",
-    REJECTED: "Rejected",
-    SUSPENDED: "Suspended",
-  }[status] || status;
+    return {
+        PENDING_REVIEW: "Pending",
+        APPROVED: "Approved",
+        REJECTED: "Rejected",
+        SUSPENDED: "Suspended",
+    }[status] || status;
 }
