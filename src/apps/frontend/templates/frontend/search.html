@@ -2,153 +2,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Search DIDs — AnnuaireDID</title>
-  <link rel="stylesheet" href="{% static 'app/css/public.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search DIDs — AnnuaireDID</title>
+    <meta name="description"
+          content="Search published DID documents across all organizations on the AnnuaireDID decentralized identity directory.">
+    <link rel="stylesheet" href="{% static 'app/css/public.css' %}?v=3">
 </head>
 <body class="search-body">
 
-  <nav class="pub-nav">
+<nav class="pub-nav">
     <a href="/" class="pub-nav-brand"><span>Annuaire</span>DID</a>
     <div class="pub-nav-links">
-      <a href="/resolve/" class="pub-nav-link">Resolve</a>
-      <a href="/search/" class="pub-nav-link active">Search</a>
-      <a href="/login/" class="pub-nav-link pub-nav-link--cta">Sign In</a>
+        <a href="/resolve/" class="pub-nav-link">Resolve</a>
+        <a href="/search/" class="pub-nav-link active">Search</a>
+        <a href="/login/" class="pub-nav-link pub-nav-link--cta">Sign In</a>
     </div>
-  </nav>
+</nav>
 
-  <div class="pub-container">
-    <div class="pub-page-header">
-      <h1>DID Directory</h1>
-      <p>Search published DID documents across all organizations</p>
+<!-- ── Hero Banner ──────────────────────────────────────────────── -->
+<div class="resolve-hero">
+    <div class="resolve-hero-inner">
+        <div class="resolve-hero-badge">
+            <span class="resolve-hero-dot"></span>
+            DID Directory
+        </div>
+        <h1>Discover <span class="resolve-hero-accent">published</span> DID documents</h1>
+        <p>Browse and search verified decentralized identities published by organizations on AnnuaireDID.</p>
     </div>
+</div>
 
+<div class="pub-container" style="max-width: 60rem;">
+
+    <!-- ── Search bar ──────────────────────────────────────────────── -->
     <div class="input-wrap">
-      <form id="search-form" onsubmit="handleSearch(event)">
-        <div class="input-row">
-          <input
-            id="search-input"
-            type="text"
-            class="pub-input"
-            placeholder="Search by organization, label, owner, or keyword..."
-            autocomplete="off"
-          >
-          <button type="submit" id="search-btn" class="pub-btn pub-btn-primary">
-            <span class="btn-label">Search</span>
-            <span class="pub-spinner" id="search-spinner"></span>
-          </button>
-        </div>
+        <form id="search-form" onsubmit="handleSearch(event)">
+            <div class="input-row">
+                <input
+                        id="search-input"
+                        type="text"
+                        class="pub-input"
+                        placeholder="Search by organization, label, owner, or keyword..."
+                        autocomplete="off"
+                >
+                <button type="submit" id="search-btn" class="pub-btn pub-btn-primary">
+                    <span class="btn-label">Search</span>
+                    <span class="pub-spinner" id="search-spinner"></span>
+                </button>
+            </div>
 
-        <div class="search-filters">
-          <select id="filter-org" class="search-filter-select">
-            <option value="">All organizations</option>
-          </select>
-          <select id="filter-sort" class="search-filter-select">
-            <option value="-updated_at">Recently updated</option>
-            <option value="-created_at">Recently created</option>
-            <option value="label">Label A–Z</option>
-            <option value="-label">Label Z–A</option>
-          </select>
-        </div>
-      </form>
+            <div class="search-filters">
+                <select id="filter-org" class="search-filter-select" onchange="handleSearch()">
+                    <option value="">All organizations</option>
+                </select>
+                <select id="filter-sort" class="search-filter-select" onchange="handleSearch()">
+                    <option value="-updated_at">Recently updated</option>
+                    <option value="-created_at">Recently created</option>
+                    <option value="label">Label A–Z</option>
+                    <option value="-label">Label Z–A</option>
+                </select>
+            </div>
+        </form>
     </div>
 
     <div id="alert-box"></div>
 
+    <!-- ── Stats bar (shown on load) ──────────────────────────────── -->
+    <div id="stats-bar" class="search-stats-bar hidden">
+        <div class="search-stat">
+            <span class="search-stat-value" id="stat-docs">—</span>
+            <span class="search-stat-label">Published documents</span>
+        </div>
+        <div class="search-stat-divider"></div>
+        <div class="search-stat">
+            <span class="search-stat-value" id="stat-orgs">—</span>
+            <span class="search-stat-label">Organizations</span>
+        </div>
+    </div>
+
+    <!-- ── Results panel ───────────────────────────────────────────── -->
     <div id="results-panel" class="hidden">
-      <div class="search-results-header">
-        <span id="results-count" class="search-results-count"></span>
-      </div>
-      <div id="results-list" class="search-results-list"></div>
-      <div id="pagination" class="search-pagination hidden">
-        <button id="prev-btn" class="pub-btn pub-btn-ghost pub-btn-sm" onclick="prevPage()" disabled>← Previous</button>
-        <span id="page-info" class="search-page-info"></span>
-        <button id="next-btn" class="pub-btn pub-btn-ghost pub-btn-sm" onclick="nextPage()">Next →</button>
-      </div>
+        <div class="search-results-header">
+            <span id="results-count" class="search-results-count"></span>
+        </div>
+        <div id="results-list" class="search-results-list"></div>
+        <div id="pagination" class="search-pagination hidden">
+            <button id="prev-btn" class="pub-btn pub-btn-ghost pub-btn-sm" onclick="prevPage()" disabled>← Previous
+            </button>
+            <span id="page-info" class="search-page-info"></span>
+            <button id="next-btn" class="pub-btn pub-btn-ghost pub-btn-sm" onclick="nextPage()">Next →</button>
+        </div>
     </div>
 
+    <!-- ── Empty/loading state ─────────────────────────────────────── -->
     <div id="empty-panel" class="pub-empty-panel hidden">
-      <div class="pub-empty-icon">?</div>
-      <h3>No results found</h3>
-      <p>Try a different search term or filter.</p>
+        <div class="pub-empty-icon">🔍</div>
+        <h3>No results found</h3>
+        <p>Try a different search term or filter.</p>
     </div>
-  </div>
 
-  <footer class="pub-footer">
+    <div id="loading-panel" class="pub-empty-panel hidden">
+        <div class="pub-empty-icon" style="font-size: 1.5rem;">⏳</div>
+        <h3>Loading directory…</h3>
+        <p>Fetching published DID documents.</p>
+    </div>
+
+</div>
+
+<footer class="pub-footer">
     <p>AnnuaireDID — Decentralized Identity Directory</p>
-  </footer>
+</footer>
 
-  <script>
+<script>
     let currentPage = 1;
     const PAGE_SIZE = 20;
 
-    (async function loadOrgs() {
-      try {
-        const res = await fetch("/api/v2/public/search/organizations");
-        if (res.ok) {
-          const orgs = await res.json();
-          const sel = document.getElementById("filter-org");
-          orgs.forEach(o => {
-            const opt = document.createElement("option");
-            opt.value = o.id;
-            opt.textContent = o.name;
-            sel.appendChild(opt);
-          });
+    (async function init() {
+        show("loading-panel");
+
+        // Load orgs for filter dropdown
+        try {
+            const res = await fetch("/api/v2/public/search/organizations");
+            if (res.ok) {
+                const orgs = await res.json();
+                const sel = document.getElementById("filter-org");
+                orgs.forEach(o => {
+                    const opt = document.createElement("option");
+                    opt.value = o.id;
+                    opt.textContent = o.name;
+                    sel.appendChild(opt);
+                });
+
+                // Update stat
+                document.getElementById("stat-orgs").textContent = orgs.length;
+            }
+        } catch {
         }
-      } catch {}
+
+        // Trigger initial search (show all by default)
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("q")) document.getElementById("search-input").value = params.get("q");
+        if (params.get("org_id")) document.getElementById("filter-org").value = params.get("org_id");
+
+        await doSearch();
     })();
 
     async function handleSearch(e) {
-      if (e) e.preventDefault();
-      currentPage = 1;
-      await doSearch();
+        if (e && e.preventDefault) e.preventDefault();
+        currentPage = 1;
+        await doSearch();
     }
 
     async function doSearch() {
-      const q = document.getElementById("search-input").value.trim();
-      const orgId = document.getElementById("filter-org").value;
-      const sort = document.getElementById("filter-sort").value;
+        const q = document.getElementById("search-input").value.trim();
+        const orgId = document.getElementById("filter-org").value;
+        const sort = document.getElementById("filter-sort").value;
 
-      clearAlert();
-      hide("results-panel");
-      hide("empty-panel");
-      setLoading(true);
+        clearAlert();
+        hide("results-panel");
+        hide("empty-panel");
+        hide("stats-bar");
+        hide("loading-panel");
+        setLoading(true);
 
-      try {
-        const params = new URLSearchParams();
-        if (q) params.set("q", q);
-        if (orgId) params.set("org_id", orgId);
-        params.set("sort", sort);
-        params.set("page", currentPage);
-        params.set("page_size", PAGE_SIZE);
+        try {
+            const params = new URLSearchParams();
+            if (q) params.set("q", q);
+            if (orgId) params.set("org_id", orgId);
+            params.set("sort", sort);
+            params.set("page", currentPage);
+            params.set("page_size", PAGE_SIZE);
 
-        const res = await fetch(`/api/v2/public/search/documents?${params}`);
-        if (!res.ok) throw { detail: `HTTP ${res.status}` };
+            const res = await fetch(`/api/v2/public/search/documents?${params}`);
+            if (!res.ok) throw {detail: `HTTP ${res.status}`};
 
-        const data = await res.json();
+            const data = await res.json();
 
-        if (!data.results || data.results.length === 0) {
-          show("empty-panel");
-          return;
+            if (!data.results || data.results.length === 0) {
+                show("empty-panel");
+                return;
+            }
+
+            // Update stats
+            document.getElementById("stat-docs").textContent = data.total || data.results.length;
+            show("stats-bar");
+
+            renderResults(data);
+            show("results-panel");
+        } catch (err) {
+            showAlert(err.detail || "Search failed.");
+        } finally {
+            setLoading(false);
         }
-
-        renderResults(data);
-        show("results-panel");
-      } catch (err) {
-        showAlert(err.detail || "Search failed.");
-      } finally {
-        setLoading(false);
-      }
     }
 
     function renderResults(data) {
-      const { results, total, page, total_pages } = data;
+        const {results, total, page, total_pages} = data;
 
-      document.getElementById("results-count").textContent =
-        `${total} document${total !== 1 ? "s" : ""} found`;
+        document.getElementById("results-count").textContent =
+            `${total} document${total !== 1 ? "s" : ""} found`;
 
-      document.getElementById("results-list").innerHTML = results.map(doc => `
+        document.getElementById("results-list").innerHTML = results.map(doc => `
         <div class="search-result-card" onclick="window.location.href='/resolve/?did=${encodeURIComponent(doc.did_uri)}'">
           <div class="src-top">
             <span class="src-label">${esc(doc.label)}</span>
@@ -156,65 +210,74 @@
           </div>
           <div class="src-did mono">${esc(doc.did_uri)}</div>
           <div class="src-meta">
-            <span>${esc(doc.organization_name)}</span>
-            <span>Owner: ${esc(doc.owner_name)}</span>
+            <span>🏢 ${esc(doc.organization_name)}</span>
+            <span>👤 ${esc(doc.owner_name)}</span>
             <span>v${doc.version_count}</span>
             <span>${timeAgo(doc.updated_at)}</span>
           </div>
         </div>
       `).join("");
 
-      if (total_pages > 1) {
-        show("pagination");
-        document.getElementById("page-info").textContent = `Page ${page} of ${total_pages}`;
-        document.getElementById("prev-btn").disabled = page <= 1;
-        document.getElementById("next-btn").disabled = page >= total_pages;
-      } else {
-        hide("pagination");
-      }
+        if (total_pages > 1) {
+            show("pagination");
+            document.getElementById("page-info").textContent = `Page ${page} of ${total_pages}`;
+            document.getElementById("prev-btn").disabled = page <= 1;
+            document.getElementById("next-btn").disabled = page >= total_pages;
+        } else {
+            hide("pagination");
+        }
     }
 
-    function prevPage() { if (currentPage > 1) { currentPage--; doSearch(); } }
-    function nextPage() { currentPage++; doSearch(); }
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            doSearch();
+        }
+    }
 
-    function show(id) { document.getElementById(id).classList.remove("hidden"); }
-    function hide(id) { document.getElementById(id).classList.add("hidden"); }
+    function nextPage() {
+        currentPage++;
+        doSearch();
+    }
+
+    function show(id) {
+        document.getElementById(id).classList.remove("hidden");
+    }
+
+    function hide(id) {
+        document.getElementById(id).classList.add("hidden");
+    }
 
     function setLoading(on) {
-      const btn = document.getElementById("search-btn");
-      btn.querySelector(".btn-label").style.display = on ? "none" : "inline";
-      document.getElementById("search-spinner").style.display = on ? "inline-block" : "none";
-      btn.disabled = on;
+        const btn = document.getElementById("search-btn");
+        btn.querySelector(".btn-label").style.display = on ? "none" : "inline";
+        document.getElementById("search-spinner").style.display = on ? "inline-block" : "none";
+        btn.disabled = on;
     }
 
     function showAlert(msg, type = "error") {
-      document.getElementById("alert-box").innerHTML = `<div class="pub-alert pub-alert-${type}">${msg}</div>`;
+        document.getElementById("alert-box").innerHTML = `<div class="pub-alert pub-alert-${type}">${msg}</div>`;
     }
 
-    function clearAlert() { document.getElementById("alert-box").innerHTML = ""; }
+    function clearAlert() {
+        document.getElementById("alert-box").innerHTML = "";
+    }
 
     function esc(s) {
-      const d = document.createElement("div");
-      d.textContent = s || "";
-      return d.innerHTML;
+        const d = document.createElement("div");
+        d.textContent = s || "";
+        return d.innerHTML;
     }
 
     function timeAgo(iso) {
-      if (!iso) return "";
-      const s = Math.floor((Date.now() - new Date(iso)) / 1000);
-      if (s < 60) return "just now";
-      if (s < 3600) return Math.floor(s / 60) + "m ago";
-      if (s < 86400) return Math.floor(s / 3600) + "h ago";
-      if (s < 604800) return Math.floor(s / 86400) + "d ago";
-      return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        if (!iso) return "";
+        const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+        if (s < 60) return "just now";
+        if (s < 3600) return Math.floor(s / 60) + "m ago";
+        if (s < 86400) return Math.floor(s / 3600) + "h ago";
+        if (s < 604800) return Math.floor(s / 86400) + "d ago";
+        return new Date(iso).toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric"});
     }
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("q") || params.get("org_id")) {
-      if (params.get("q")) document.getElementById("search-input").value = params.get("q");
-      if (params.get("org_id")) document.getElementById("filter-org").value = params.get("org_id");
-      handleSearch();
-    }
-  </script>
+</script>
 </body>
 </html>

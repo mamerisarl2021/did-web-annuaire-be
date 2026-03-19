@@ -252,8 +252,10 @@ def send_document_submitted_email(self, doc_id: str, org_id: str, submitter_id: 
             return
 
         platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
-        scheme = "https" if "localhost" not in platform_domain else "http"
-        review_url = f"{scheme}://{platform_domain}/workspace/documents/"
+        parsed = urlparse(platform_domain)
+        host = parsed.netloc or parsed.path  # handles cases without scheme
+        scheme = "https" if "localhost" not in host else "http"
+        review_url = f"{scheme}://{host}/workspace/documents/"
 
         html = render_to_string(
             "emails/document_submitted.html",
@@ -293,8 +295,10 @@ def send_document_reviewed_email(
             return
 
         platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
-        scheme = "https" if "localhost" not in platform_domain else "http"
-        doc_url = f"{scheme}://{platform_domain}/workspace/documents/{doc.id}"
+        parsed = urlparse(platform_domain)
+        host = parsed.netloc or parsed.path  # handles cases without scheme
+        scheme = "https" if "localhost" not in host else "http"
+        doc_url = f"{scheme}://{host}/workspace/documents/{doc.id}"
 
         submitter = doc.submitted_by
 
