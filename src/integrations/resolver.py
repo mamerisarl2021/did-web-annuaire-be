@@ -99,7 +99,7 @@ def _get(endpoint: str, did_uri: str) -> dict:
 
         response = http_client.get(
             endpoint,
-            headers={"Accept": "application/did+json, application/json"},
+            headers={"Accept": "application/did-resolution"},
             timeout=15,
         )
 
@@ -120,22 +120,6 @@ def _get(endpoint: str, did_uri: str) -> dict:
             )
 
         result = response.json()
-
-        # The resolver may return either:
-        #   (a) W3C DID Resolution Result: { "didDocument": {...}, "didResolutionMetadata": {...}, ... }
-        #   (b) Raw DID document directly: { "id": "did:web:...", "verificationMethod": [...], ... }
-        # Normalize (b) into the W3C wrapper format.
-        if "didDocument" not in result and result.get("id", "").startswith("did:"):
-            logger.info(
-                "resolver_normalizing_flat_response",
-                did=did_uri,
-                hint="Resolver returned raw DID document; wrapping in W3C format.",
-            )
-            result = {
-                "didDocument": result,
-                "didResolutionMetadata": {"contentType": "application/did+json"},
-                "didDocumentMetadata": {},
-            }
 
         # Check didResolutionMetadata for error field (per W3C spec)
         meta = result.get("didResolutionMetadata", {})
