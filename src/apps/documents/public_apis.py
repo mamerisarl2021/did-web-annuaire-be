@@ -163,15 +163,17 @@ def list_organizations(request: HttpRequest):
 
 
 @router.get(
-    "/resolve/{did_uri:path}",
+    "/resolve",
     response=dict,
     summary="Resolve a DID via the Universal Resolver (public, no auth)",
 )
-def resolve_did_proxy(request: HttpRequest, did_uri: str):
+def resolve_did_proxy(
+        request: HttpRequest,
+        did: str = Query(..., description="The fully-qualified DID URI to resolve"),
+):
     """
     Proxy DID resolution through the backend to the configured Universal Resolver.
 
-    The DID URI is URL-encoded so path separators are preserved.
     Returns the full W3C DID Resolution Result:
       {
         "didDocument": { ... },
@@ -181,4 +183,4 @@ def resolve_did_proxy(request: HttpRequest, did_uri: str):
     """
     from src.integrations.resolver import resolve_did
 
-    return resolve_did(did_uri)
+    return resolve_did(did)

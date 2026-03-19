@@ -135,7 +135,7 @@
 
         try {
             const encoded = encodeURIComponent(did);
-            const res = await fetch(`/api/v2/public/resolve/${encoded}`, {
+            const res = await fetch(`/api/v2/public/resolve?did=${encodeURIComponent(did)}`, {
                 headers: {"Accept": "application/json"},
             });
 
