@@ -453,7 +453,7 @@ def list_audits(request: HttpRequest):
             "created_at": log.created_at.isoformat(),
             "organization_name": log.organization.name if log.organization else None,
             "ip_address": log.ip_address,
-            "user_agent": log.user_agent,
+            "user_agent": log.metadata.get("user_agent") if isinstance(log.metadata, dict) else None,
             "metadata": log.metadata,
         }
         for log in logs
