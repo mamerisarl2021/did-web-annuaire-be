@@ -21,6 +21,24 @@ from src.apps.users.models import User
 class CustomTokenObtainPairInput(TokenObtainPairInputSchema):
     @classmethod
     def get_token(cls, user: User) -> RefreshToken:
+        if not user.is_superadmin:
+            from src.apps.organizations.models import Membership
+            from src.common.types import OrgStatus, MembershipStatus
+            from ninja_jwt.exceptions import AuthenticationFailed
+
+            active_memberships = Membership.objects.filter(
+                user=user,
+                status=MembershipStatus.ACTIVE
+            ).select_related("organization")
+
+            if active_memberships.exists():
+                all_suspended = all(
+                    m.organization.status == OrgStatus.SUSPENDED
+                    for m in active_memberships
+                )
+                if all_suspended:
+                    raise AuthenticationFailed("Your organization's account is suspended. Please contact support.")
+
         token = super().get_token(user)
         token["email"] = user.email
         token["full_name"] = user.full_name

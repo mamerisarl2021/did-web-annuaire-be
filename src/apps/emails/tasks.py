@@ -317,3 +317,57 @@ def send_document_reviewed_email(
     except Exception as exc:
         logger.error("send_document_reviewed_email_failed", error=str(exc))
         raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_organization_suspended_email(self, user_id: str, org_name: str, reason: str = ""):
+    from src.apps.users.selectors import get_user_by_id
+
+    try:
+        user = get_user_by_id(user_id=user_id)
+        if user is None:
+            return
+
+        html = f"""
+        <p>Dear {user.full_name or user.email},</p>
+        <p>Your organization <strong>{org_name}</strong> has been suspended.</p>
+        """
+        if reason:
+            html += f"<p>Reason: {reason}</p>"
+
+        email_send(
+            to=[user.email],
+            subject=f"AnnuaireDID — Organization Suspended: {org_name}",
+            html=html,
+        )
+        logger.info("suspension_email_sent", user_id=user_id)
+
+    except Exception as exc:
+        logger.error("suspension_email_failed", user_id=user_id, error=str(exc))
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_organization_reactivated_email(self, user_id: str, org_name: str):
+    from src.apps.users.selectors import get_user_by_id
+
+    try:
+        user = get_user_by_id(user_id=user_id)
+        if user is None:
+            return
+
+        html = f"""
+        <p>Dear {user.full_name or user.email},</p>
+        <p>Your organization <strong>{org_name}</strong> has been successfully reactivated. Your access to the platform has been restored.</p>
+        """
+
+        email_send(
+            to=[user.email],
+            subject=f"AnnuaireDID — Organization Reactivated: {org_name}",
+            html=html,
+        )
+        logger.info("reactivation_email_sent", user_id=user_id)
+
+    except Exception as exc:
+        logger.error("reactivation_email_failed", user_id=user_id, error=str(exc))
+        raise self.retry(exc=exc)

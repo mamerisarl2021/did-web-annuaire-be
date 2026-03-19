@@ -137,6 +137,12 @@ function renderTable() {
       actions += `<button class="sa-btn sa-btn-sm" style="background-color: var(--sa-green); color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="handleAccept(event, '${org.id}')">Accept</button> \n`;
       actions += `<button class="sa-btn sa-btn-sm" style="background-color: #fca5a5; color: #7f1d1d; padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="handleReject(event, '${org.id}')">Reject</button> \n`;
     }
+    if (org.status === "APPROVED") {
+      actions += `<button class="sa-btn sa-btn-sm sa-btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 4px;" onclick="handleSuspend(event, '${org.id}')">Suspend</button> \n`;
+    }
+    if (org.status === "SUSPENDED") {
+      actions += `<button class="sa-btn sa-btn-sm" style="background-color: var(--sa-primary); color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 4px;" onclick="handleReactivate(event, '${org.id}')">Reactivate</button> \n`;
+    }
     actions += `<button class="sa-btn sa-btn-sm sa-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="handleDelete(event, '${org.id}')">Delete</button>`;
 
     return `
@@ -193,6 +199,31 @@ async function handleReject(e, orgId) {
     loadOrgs();
   } catch(err) {
     saShowAlert("alert-box", err.detail || "Error rejecting organization", "error");
+  }
+}
+
+async function handleSuspend(e, orgId) {
+  e.stopPropagation();
+  const reason = prompt("Enter suspension reason (optional):");
+  if (reason === null) return;
+  try {
+    await SA.suspendOrg(orgId, reason);
+    saShowAlert("alert-box", "Organization suspended.", "success");
+    loadOrgs();
+  } catch(err) {
+    saShowAlert("alert-box", err.detail || "Error suspending organization", "error");
+  }
+}
+
+async function handleReactivate(e, orgId) {
+  e.stopPropagation();
+  if (!confirm("Are you sure you want to reactivate this organization?")) return;
+  try {
+    await SA.reactivateOrg(orgId);
+    saShowAlert("alert-box", "Organization reactivated.", "success");
+    loadOrgs();
+  } catch(err) {
+    saShowAlert("alert-box", err.detail || "Error reactivating organization", "error");
   }
 }
 
