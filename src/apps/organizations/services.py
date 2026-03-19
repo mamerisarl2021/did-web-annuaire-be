@@ -157,7 +157,7 @@ def approve_organization(
 
         _log_membership_audit(
             actor=reviewed_by,
-            action="MEMBER_INVITED", # Not fully activated, but state changed
+            action="MEMBER_ACTIVATED", # Not fully activated, but state changed
             membership=membership,
             organization=organization,
             description=f"Membership status for '{membership.user.email}' changed to PENDING_ACTIVATION.",
@@ -209,7 +209,7 @@ def reject_organization(
 
 @transaction.atomic
 def suspend_organization(
-    *, organization: Organization, reviewed_by: User
+    *, organization: Organization, reviewed_by: User, reason: str = ""
 ) -> Organization:
     if organization.status != OrgStatus.APPROVED:
         raise ValidationError(
@@ -219,17 +219,67 @@ def suspend_organization(
     organization.status = OrgStatus.SUSPENDED
     organization.reviewed_by = reviewed_by
     organization.reviewed_at = timezone.now()
+    if hasattr(organization, "suspension_reason"):
+        organization.suspension_reason = reason
+        organization.save(
+            update_fields=["status", "reviewed_by", "reviewed_at", "suspension_reason", "updated_at"]
+        )
+    else:
+        # Fallback if no such column exists
+        organization.save(
+            update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"]
+        )
+
+    _log_org_audit(
+        actor=reviewed_by,
+        action="ORG_SUSPENDED",
+        organization=organization,
+        description=f"Organization '{organization.name}' suspended. Reason: {reason}" if reason else f"Organization '{organization.name}' suspended.",
+        metadata={"reason": reason} if reason else None
+    )
+
+    # Send email to the ORG_ADMIN
+    from src.apps.emails.tasks import send_organization_suspended_email
+    from .models import Membership
+    admin_memberships = Membership.objects.filter(organization=organization, role=Role.ORG_ADMIN)
+    for admin_membership in admin_memberships:
+        send_organization_suspended_email.delay(user_id=str(admin_membership.user.id), org_name=organization.name, reason=reason)
+
+    logger.info("org_suspended", org_id=str(organization.id))
+    return organization
+
+
+@transaction.atomic
+def reactivate_organization(
+    *, organization: Organization, reviewed_by: User
+) -> Organization:
+    if organization.status != OrgStatus.SUSPENDED:
+        raise ValidationError(
+            f"Can only reactivate SUSPENDED orgs, got '{organization.status}'."
+        )
+
+    organization.status = OrgStatus.APPROVED
+    organization.reviewed_by = reviewed_by
+    organization.reviewed_at = timezone.now()
     organization.save(
         update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"]
     )
 
     _log_org_audit(
         actor=reviewed_by,
-        action="ORG_SUSPENDED",
+        action="ORG_APPROVED", # or we could add ORG_REACTIVATED if we had it
         organization=organization,
-        description=f"Organization '{organization.name}' suspended.",
+        description=f"Organization '{organization.name}' reactivated.",
     )
-    logger.info("org_suspended", org_id=str(organization.id))
+
+    # Send email to the ORG_ADMIN
+    from src.apps.emails.tasks import send_organization_reactivated_email
+    from .models import Membership
+    admin_memberships = Membership.objects.filter(organization=organization, role=Role.ORG_ADMIN)
+    for admin_membership in admin_memberships:
+        send_organization_reactivated_email.delay(user_id=str(admin_membership.user.id), org_name=organization.name)
+
+    logger.info("org_reactivated", org_id=str(organization.id))
     return organization
 
 

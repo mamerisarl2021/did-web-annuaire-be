@@ -300,9 +300,34 @@ def suspend_organization(request: HttpRequest, org_id: UUID, payload: OrgSuspend
     if org is None:
         raise NotFoundError("Organization not found.")
 
-    org = org_services.suspend_organization(organization=org, reviewed_by=request.auth)
+    org = org_services.suspend_organization(
+        organization=org,
+        reviewed_by=request.auth,
+        reason=payload.reason
+    )
 
     return {"message": f"Organization '{org.name}' suspended."}
+
+
+# ── Reactivate ──────────────────────────────────────────────────────────
+
+
+@router.post(
+    "/organizations/{org_id}/reactivate",
+    response={200: MessageSchema, 400: ErrorSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Reactivate a suspended organization",
+)
+def reactivate_organization(request: HttpRequest, org_id: UUID):
+    _ensure_superadmin(request)
+
+    org = get_organization_by_id(org_id=org_id)
+    if org is None:
+        raise NotFoundError("Organization not found.")
+
+    org = org_services.reactivate_organization(organization=org, reviewed_by=request.auth)
+
+    return {"message": f"Organization '{org.name}' reactivated."}
 
 
 # ── Delete ──────────────────────────────────────────────────────────────
@@ -351,7 +376,7 @@ def list_users(request: HttpRequest):
                 "role": m.role,
                 "status": m.status,
             })
-        
+
         results.append({
             "id": u.id,
             "email": u.email,
@@ -373,12 +398,12 @@ def list_users(request: HttpRequest):
 )
 def delete_user(request: HttpRequest, user_id: UUID):
     _ensure_superadmin(request)
-    
+
     from src.apps.users.services import delete_user as svc_delete_user
     u = User.objects.filter(id=user_id).first()
     if not u:
         raise NotFoundError("User not found.")
-    
+
     email = u.email
     svc_delete_user(user=u, deleted_by=request.auth)
     return {"message": f"User '{email}' deleted."}
@@ -395,15 +420,15 @@ def add_user_to_org(request: HttpRequest, user_id: UUID, payload: AddUserToOrgSc
     u = User.objects.filter(id=user_id).first()
     if not u:
         raise NotFoundError("User not found.")
-        
+
     org = get_organization_by_id(org_id=payload.org_id)
     if not org:
         raise NotFoundError("Organization not found.")
-        
+
     # Check if membership already exists
     if Membership.objects.filter(user=u, organization=org).exists():
         return {"message": "User is already a member of this organization."}
-        
+
     org_services.create_membership(
         user=u,
         organization=org,
@@ -425,7 +450,7 @@ def cancel_invite(request: HttpRequest, user_id: UUID, org_id: UUID):
     m = Membership.objects.filter(user_id=user_id, organization_id=org_id, status="INVITED").first()
     if not m:
         raise NotFoundError("Invitation not found.")
-        
+
     org_services.cancel_membership_invitation(membership=m, canceled_by=request.auth)
     return {"message": "Invitation canceled."}
 
@@ -471,7 +496,7 @@ def list_audits(request: HttpRequest):
 def list_documents(request: HttpRequest):
     _ensure_superadmin(request)
     docs = DIDDocument.objects.select_related("organization", "owner").order_by("-created_at")
-    
+
     return [
         {
             "id": doc.id,
@@ -499,7 +524,7 @@ def delete_document(request: HttpRequest, doc_id: UUID):
     doc = DIDDocument.objects.filter(id=doc_id).first()
     if not doc:
         raise NotFoundError("DID Document not found.")
-        
+
     if doc.status == "PUBLISHED":
         from src.apps.documents.services import deactivate_document
         deactivate_document(document=doc, deactivated_by=request.auth, reason="Deactivated by Superadmin")
@@ -520,7 +545,7 @@ def delete_document(request: HttpRequest, doc_id: UUID):
 def list_certificates(request: HttpRequest):
     _ensure_superadmin(request)
     certs = Certificate.objects.select_related("organization", "current_version").order_by("-created_at")
-    
+
     return [
         {
             "id": c.id,
@@ -546,7 +571,7 @@ def delete_certificate(request: HttpRequest, cert_id: UUID):
     cert = Certificate.objects.filter(id=cert_id).first()
     if not cert:
         raise NotFoundError("Certificate not found.")
-        
+
     if cert.status == "ACTIVE":
         from src.apps.certificates.services import revoke_certificate
         revoke_certificate(certificate=cert, revoked_by=request.auth, reason="Revoked by Superadmin")

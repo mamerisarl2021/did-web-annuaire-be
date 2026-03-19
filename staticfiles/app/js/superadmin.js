@@ -40,6 +40,7 @@ const SA = (() => {
     approveOrg: (id) => apiCall(`/organizations/${id}/approve`, { method: "POST" }),
     rejectOrg: (id, reason) => apiCall(`/organizations/${id}/reject`, { method: "POST", body: { reason } }),
     suspendOrg: (id, reason) => apiCall(`/organizations/${id}/suspend`, { method: "POST", body: { reason } }),
+    reactivateOrg: (id) => apiCall(`/organizations/${id}/reactivate`, { method: "POST" }),
     deleteOrg: (id) => apiCall(`/organizations/${id}`, { method: "DELETE" }),
     listUsers: () => apiCall(`/users`),
     deleteUser: (id) => apiCall(`/users/${id}`, { method: "DELETE" }),
