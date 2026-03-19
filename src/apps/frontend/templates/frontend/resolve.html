@@ -2,184 +2,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resolve DID — AnnuaireDID</title>
-  <link rel="stylesheet" href="{% static 'app/css/public.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resolve DID — AnnuaireDID</title>
+    <meta name="description"
+          content="Resolve any DID identifier and view its corresponding DID document. Supports did:web, did:key, and more.">
+    <link rel="stylesheet" href="{% static 'app/css/public.css' %}?v=3">
 </head>
 <body class="resolve-body">
 
-  <nav class="pub-nav">
+<nav class="pub-nav">
     <a href="/" class="pub-nav-brand"><span>Annuaire</span>DID</a>
     <div class="pub-nav-links">
-      <a href="/resolve/" class="pub-nav-link active">Resolve</a>
-      <a href="/search/" class="pub-nav-link">Search</a>
-      <a href="/login/" class="pub-nav-link pub-nav-link--cta">Sign In</a>
+        <a href="/resolve/" class="pub-nav-link active">Resolve</a>
+        <a href="/search/" class="pub-nav-link">Search</a>
+        <a href="/login/" class="pub-nav-link pub-nav-link--cta">Sign In</a>
     </div>
-  </nav>
+</nav>
 
-  <div class="pub-container">
-    <div class="pub-page-header">
-      <h1>DID Resolver</h1>
-      <p>Resolve any <code>did:web</code> identifier to view its DID document</p>
-    </div>
-
-    <div class="input-wrap">
-      <form id="resolve-form" onsubmit="handleResolve(event)">
-        <div class="input-row">
-          <input
-            id="did-input"
-            type="text"
-            class="pub-input mono"
-            placeholder="did:web:annuairedid-be.qcdigitalhub.com:org:user:label"
-            required autocomplete="off" spellcheck="false"
-          >
-          <button type="submit" id="resolve-btn" class="pub-btn pub-btn-primary">
-            <span class="btn-label">Resolve</span>
-            <span class="pub-spinner" id="resolve-spinner"></span>
-          </button>
+<!-- ── Hero Banner ─────────────────────────────────────────────────── -->
+<div class="resolve-hero">
+    <div class="resolve-hero-inner">
+        <div class="resolve-hero-badge">
+            <span class="resolve-hero-dot"></span>
+            DID Universal Resolver
         </div>
-      </form>
+        <h1>Resolve any <span class="resolve-hero-accent">DID</span> identifier</h1>
+        <p>Fetch and inspect DID documents from any supported method — <code>did:web</code>, <code>did:key</code>, and
+            more.</p>
+    </div>
+</div>
 
-      <div class="pub-examples">
-        <span class="pub-examples-label">Try:</span>
-        <button class="pub-chip" onclick="fillAndResolve('did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK')">did:key</button>
-        <button class="pub-chip" onclick="fill('did:web:annuairedid-be.qcdigitalhub.com')">Platform DID</button>
-      </div>
+<div class="pub-container" style="max-width: 60rem;">
+
+    <!-- ── Search bar ──────────────────────────────────────────────── -->
+    <div class="input-wrap">
+        <form id="resolve-form" onsubmit="handleResolve(event)">
+            <div class="input-row">
+                <input
+                        id="did-input"
+                        type="text"
+                        class="pub-input mono"
+                        placeholder="did:web:annuairedid-be.qcdigitalhub.com:org:user:label"
+                        required autocomplete="off" spellcheck="false"
+                >
+                <button type="submit" id="resolve-btn" class="pub-btn pub-btn-primary">
+                    <span class="btn-label">Resolve</span>
+                    <span class="pub-spinner" id="resolve-spinner"></span>
+                </button>
+            </div>
+        </form>
+
+        <div class="pub-examples">
+            <span class="pub-examples-label">Try:</span>
+            <button class="pub-chip"
+                    onclick="fillAndResolve('did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK')">did:key example
+            </button>
+            <button class="pub-chip" onclick="fill('did:web:annuairedid-be.qcdigitalhub.com')">Platform DID</button>
+        </div>
     </div>
 
     <div id="alert-box"></div>
 
-    <div id="result-panel" class="resolve-result hidden">
-      <div class="resolve-result-header">
-        <div class="resolve-result-did" id="result-did"></div>
-        <div class="resolve-result-actions">
-          <button class="pub-btn pub-btn-ghost pub-btn-sm" onclick="copyResult()">Copy JSON</button>
-          <button class="pub-btn pub-btn-ghost pub-btn-sm" onclick="downloadResult()">Download</button>
+    <!-- ── Method info cards (hidden when result appears) ─────────────  -->
+    <div id="info-panel" class="resolve-info-grid">
+        <div class="resolve-info-card">
+            <div class="resolve-info-icon">🌐</div>
+            <h3>did:web</h3>
+            <p>Web-based DIDs tied to a domain. Documents are fetched from <code>/.well-known/did.json</code> or a
+                path-based URL.</p>
         </div>
-      </div>
-      <div class="resolve-meta" id="result-meta"></div>
-      <pre class="resolve-json" id="result-json"></pre>
+        <div class="resolve-info-card">
+            <div class="resolve-info-icon">🔑</div>
+            <h3>did:key</h3>
+            <p>Self-contained DIDs derived from a single cryptographic key. No external infrastructure required.</p>
+        </div>
+        <div class="resolve-info-card">
+            <div class="resolve-info-icon">🔗</div>
+            <h3>did:ethr</h3>
+            <p>Ethereum-based DIDs anchored on blockchain, enabling decentralized identity on public networks.</p>
+        </div>
     </div>
 
+    <!-- ── Result panel ───────────────────────────────────────────── -->
+    <div id="result-panel" class="resolve-result hidden">
+        <div class="resolve-result-header">
+            <div class="resolve-result-did" id="result-did"></div>
+            <div class="resolve-result-actions">
+                <button class="pub-btn pub-btn-ghost pub-btn-sm" onclick="copyResult()">Copy JSON</button>
+                <button class="pub-btn pub-btn-ghost pub-btn-sm" onclick="downloadResult()">Download</button>
+            </div>
+        </div>
+        <div class="resolve-meta" id="result-meta"></div>
+        <pre class="resolve-json" id="result-json"></pre>
+    </div>
+
+    <!-- ── Error panel ─────────────────────────────────────────────── -->
     <div id="error-panel" class="pub-error-panel hidden">
-      <div class="pub-error-icon">✗</div>
-      <h3 id="error-title">Resolution Failed</h3>
-      <p id="error-detail"></p>
+        <div class="pub-error-icon">✗</div>
+        <h3 id="error-title">Resolution Failed</h3>
+        <p id="error-detail"></p>
     </div>
-  </div>
+</div>
 
-  <footer class="pub-footer">
+<footer class="pub-footer">
     <p>AnnuaireDID — Decentralized Identity Directory</p>
-  </footer>
+</footer>
 
-  <script>
+<script>
     let lastResult = null;
 
     function fill(did) {
-      document.getElementById("did-input").value = did;
-      document.getElementById("did-input").focus();
+        document.getElementById("did-input").value = did;
+        document.getElementById("did-input").focus();
     }
 
     function fillAndResolve(did) {
-      document.getElementById("did-input").value = did;
-      document.getElementById("resolve-form").dispatchEvent(new Event("submit"));
+        document.getElementById("did-input").value = did;
+        document.getElementById("resolve-form").dispatchEvent(new Event("submit"));
     }
 
     async function handleResolve(e) {
-      e.preventDefault();
-      const did = document.getElementById("did-input").value.trim();
-      if (!did) return;
+        e.preventDefault();
+        const did = document.getElementById("did-input").value.trim();
+        if (!did) return;
 
-      clearAlert();
-      hide("result-panel");
-      hide("error-panel");
-      setLoading(true);
+        clearAlert();
+        hide("result-panel");
+        hide("error-panel");
+        hide("info-panel");
+        setLoading(true);
 
-      try {
-        const encoded = encodeURIComponent(did);
-        const res = await fetch(`/resolver/1.0/identifiers/${encoded}`, {
-          headers: { "Accept": "application/json" },
-        });
+        try {
+            const encoded = encodeURIComponent(did);
+            const res = await fetch(`/resolver/1.0/identifiers/${encoded}`, {
+                headers: {"Accept": "application/json"},
+            });
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw { detail: err.didResolutionMetadata?.error || `HTTP ${res.status}` };
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw {detail: err.didResolutionMetadata?.error || `HTTP ${res.status}`};
+            }
+
+            const data = await res.json();
+            const meta = data.didResolutionMetadata || {};
+            if (meta.error) throw {detail: meta.error};
+
+            const doc = data.didDocument;
+            if (!doc) throw {detail: "No DID document returned."};
+
+            lastResult = doc;
+
+            document.getElementById("result-did").textContent = doc.id || did;
+            document.getElementById("result-json").textContent = JSON.stringify(doc, null, 2);
+
+            const chips = [];
+            if (doc.verificationMethod?.length)
+                chips.push(`${doc.verificationMethod.length} verification method${doc.verificationMethod.length > 1 ? "s" : ""}`);
+            if (doc.service?.length)
+                chips.push(`${doc.service.length} service${doc.service.length > 1 ? "s" : ""}`);
+            if (doc.proof)
+                chips.push(doc.proof.cryptosuite || doc.proof.type || "Signed");
+            chips.push("DID Document");
+
+            document.getElementById("result-meta").innerHTML =
+                chips.map(c => `<span class="resolve-meta-chip">${c}</span>`).join("");
+
+            show("result-panel");
+        } catch (err) {
+            document.getElementById("error-title").textContent = "Resolution Failed";
+            document.getElementById("error-detail").textContent =
+                err.detail || err.message || "Could not resolve the DID.";
+            show("error-panel");
+            show("info-panel");
+        } finally {
+            setLoading(false);
         }
-
-        const data = await res.json();
-        const meta = data.didResolutionMetadata || {};
-        if (meta.error) throw { detail: meta.error };
-
-        const doc = data.didDocument;
-        if (!doc) throw { detail: "No DID document returned." };
-
-        lastResult = doc;
-
-        document.getElementById("result-did").textContent = doc.id || did;
-        document.getElementById("result-json").textContent = JSON.stringify(doc, null, 2);
-
-        const chips = [];
-        if (doc.verificationMethod?.length)
-          chips.push(`${doc.verificationMethod.length} verification method${doc.verificationMethod.length > 1 ? "s" : ""}`);
-        if (doc.service?.length)
-          chips.push(`${doc.service.length} service${doc.service.length > 1 ? "s" : ""}`);
-        if (doc.proof)
-          chips.push(doc.proof.cryptosuite || doc.proof.type || "Signed");
-        chips.push("DID Document");
-
-        document.getElementById("result-meta").innerHTML =
-          chips.map(c => `<span class="resolve-meta-chip">${c}</span>`).join("");
-
-        show("result-panel");
-      } catch (err) {
-        document.getElementById("error-title").textContent = "Resolution Failed";
-        document.getElementById("error-detail").textContent =
-          err.detail || err.message || "Could not resolve the DID.";
-        show("error-panel");
-      } finally {
-        setLoading(false);
-      }
     }
 
     function copyResult() {
-      if (!lastResult) return;
-      navigator.clipboard.writeText(JSON.stringify(lastResult, null, 2));
-      showAlert("Copied to clipboard.", "success");
-      setTimeout(clearAlert, 2000);
+        if (!lastResult) return;
+        navigator.clipboard.writeText(JSON.stringify(lastResult, null, 2));
+        showAlert("Copied to clipboard.", "success");
+        setTimeout(clearAlert, 2000);
     }
 
     function downloadResult() {
-      if (!lastResult) return;
-      const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/did+json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = (lastResult.id || "did") + ".json";
-      a.click();
-      URL.revokeObjectURL(a.href);
+        if (!lastResult) return;
+        const blob = new Blob([JSON.stringify(lastResult, null, 2)], {type: "application/did+json"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = (lastResult.id || "did") + ".json";
+        a.click();
+        URL.revokeObjectURL(a.href);
     }
 
-    function show(id) { document.getElementById(id).classList.remove("hidden"); }
-    function hide(id) { document.getElementById(id).classList.add("hidden"); }
+    function show(id) {
+        document.getElementById(id).classList.remove("hidden");
+    }
+
+    function hide(id) {
+        document.getElementById(id).classList.add("hidden");
+    }
 
     function setLoading(on) {
-      const btn = document.getElementById("resolve-btn");
-      btn.querySelector(".btn-label").style.display = on ? "none" : "inline";
-      document.getElementById("resolve-spinner").style.display = on ? "inline-block" : "none";
-      btn.disabled = on;
+        const btn = document.getElementById("resolve-btn");
+        btn.querySelector(".btn-label").style.display = on ? "none" : "inline";
+        document.getElementById("resolve-spinner").style.display = on ? "inline-block" : "none";
+        btn.disabled = on;
     }
 
     function showAlert(msg, type = "error") {
-      document.getElementById("alert-box").innerHTML = `<div class="pub-alert pub-alert-${type}">${msg}</div>`;
+        document.getElementById("alert-box").innerHTML = `<div class="pub-alert pub-alert-${type}">${msg}</div>`;
     }
 
-    function clearAlert() { document.getElementById("alert-box").innerHTML = ""; }
+    function clearAlert() {
+        document.getElementById("alert-box").innerHTML = "";
+    }
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("did")) {
-      document.getElementById("did-input").value = params.get("did");
-      document.getElementById("resolve-form").dispatchEvent(new Event("submit"));
+        document.getElementById("did-input").value = params.get("did");
+        document.getElementById("resolve-form").dispatchEvent(new Event("submit"));
     }
-  </script>
+</script>
 </body>
 </html>
