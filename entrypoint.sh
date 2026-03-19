@@ -10,7 +10,7 @@ if [ "$(id -u)" = "0" ]; then
     chown -R appuser:appuser /app/mediafiles /app/data/dids
 
     # Re‑execute this script as the appuser
-    exec su-exec appuser "$0" "$@"
+    exec gosu appuser "$0" "$@"
 fi
 
 # ─────────────────────────────────────────────────────────────────────
