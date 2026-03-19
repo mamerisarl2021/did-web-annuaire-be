@@ -32,14 +32,16 @@ const OA = (() => {
   return {
     listOrgs: () => apiCall("/organizations"),
     getOrg: (id) => apiCall(`/organizations/${id}`),
-    getStats: (id, scope) => apiCall(`/organizations/${id}/stats${scope ? `?scope=${scope}` : ""}`),
-    listMembers: (id) => apiCall(`/organizations/${id}/members`),
-    listAudits: (id, page = 1) => apiCall(`/organizations/${id}/audits?page=${page}`),
+    getStats: (orgOrId, scope) => apiCall(`/organizations/${orgOrId?.id || orgOrId}/stats${scope ? `?scope=${scope}` : ""}`),
+    listMembers: (orgOrId) => apiCall(`/organizations/${orgOrId?.id || orgOrId}/members`),
+    listAudits: (orgOrId, page = 1) => apiCall(`/organizations/${orgOrId?.id || orgOrId}/audits?page=${page}`),
     inviteMember: (orgId, data) => apiCall(`/organizations/${orgId}/members/invite`, { method: "POST", body: data }),
     changeRole: (orgId, memberId, role) => apiCall(`/organizations/${orgId}/members/${memberId}/role`, { method: "PUT", body: { role } }),
     updateMember: (orgId, memberId, data) => apiCall(`/organizations/${orgId}/members/${memberId}`, { method: "PATCH", body: data }),
     deactivateMember: (orgId, memberId) => apiCall(`/organizations/${orgId}/members/${memberId}/deactivate`, { method: "POST" }),
+    cancelInvitation: (orgId, memberId) => apiCall(`/organizations/${orgId}/members/${memberId}/cancel`, { method: "POST" }),
     reactivateMember: (orgId, memberId) => apiCall(`/organizations/${orgId}/members/${memberId}/reactivate`, { method: "POST" }),
+    updateOrg: (id, data) => apiCall(`/organizations/${id}`, { method: "PATCH", body: data }),
   };
 })();
 

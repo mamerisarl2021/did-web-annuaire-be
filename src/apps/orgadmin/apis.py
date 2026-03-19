@@ -219,7 +219,7 @@ def get_organization_stats(
             "invited_members": 0,
             "total_documents": my_docs.count(),
             "draft_documents": my_docs.filter(status=DocumentStatus.DRAFT).count(),
-            "signed_documents": my_docs.filter(status=DocumentStatus.SIGNED).count(),
+            "signed_documents": my_docs.filter(status__in=[DocumentStatus.SIGNED, DocumentStatus.PUBLISHED]).count(),
             "published_documents": my_docs.filter(
                 status=DocumentStatus.PUBLISHED
             ).count(),
@@ -239,7 +239,7 @@ def get_organization_stats(
         "invited_members": members.filter(status=MembershipStatus.INVITED).count(),
         "total_documents": org_docs.count(),
         "draft_documents": org_docs.filter(status=DocumentStatus.DRAFT).count(),
-        "signed_documents": org_docs.filter(status=DocumentStatus.SIGNED).count(),
+        "signed_documents": org_docs.filter(status__in=[DocumentStatus.SIGNED, DocumentStatus.PUBLISHED]).count(),
         "published_documents": org_docs.filter(status=DocumentStatus.PUBLISHED).count(),
         "total_certificates": Certificate.objects.filter(
             organization_id=org_id

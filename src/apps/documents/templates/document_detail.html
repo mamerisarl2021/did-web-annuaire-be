@@ -301,6 +301,7 @@
                 }
             }
 
+            /*
             // VC JSON (only for published documents)
             if (d.verifiable_credential) {
                 html += `
@@ -312,6 +313,7 @@
         <pre class="doc-json-viewer" id="vc-json-display">${escHTML(JSON.stringify(d.verifiable_credential, null, 2))}</pre>
       </div>`;
             }
+            */
 
             html += `</div>`; // end left column
 
@@ -331,6 +333,7 @@
       <div class="oa-field"><div class="label">Methods</div><div class="value">${d.verification_methods.length} total (${d.verification_methods.filter(v => v.is_active).length} active)</div></div>
     </div>`;
 
+            /*
             // QR code for published documents
             if (d.status === "PUBLISHED" && d.content) {
                 html += `
@@ -347,6 +350,7 @@
         </div>
       </div>`;
             }
+            */
 
             // Version history
             html += `
