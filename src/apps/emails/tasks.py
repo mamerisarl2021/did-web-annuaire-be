@@ -4,9 +4,9 @@ Email Celery tasks.
 These run asynchronously via Celery. Each task renders an HTML template
 and sends via the email service.
 """
-from urllib.parse import urlparse
 
 import structlog
+from urllib.parse import urlparse
 from celery import shared_task
 from django.conf import settings
 from django.template.loader import render_to_string
