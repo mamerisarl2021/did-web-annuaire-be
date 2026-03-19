@@ -64,6 +64,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "src.apps.organizations",
+    "src.apps.authentication",
     "src.apps.users",
     "src.apps.files",
     "src.apps.emails",
