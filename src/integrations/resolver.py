@@ -99,6 +99,7 @@ def _get(endpoint: str, did_uri: str) -> dict:
 
         response = http_client.get(
             endpoint,
+            # headers={"Accept": "application/did+json, application/json"},
             headers={"Accept": "application/did-resolution"},
             timeout=15,
         )
