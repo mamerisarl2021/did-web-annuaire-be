@@ -11,6 +11,7 @@ Mounted at: /api/v2/public/search/
 """
 
 import math
+from urllib.parse import urlparse
 from uuid import UUID
 
 from django.db.models import Q
@@ -98,6 +99,8 @@ def search_documents(
     docs = list(qs[offset : offset + page_size])
 
     domain = settings.PLATFORM_DOMAIN
+    domain = urlparse(domain)
+    domain = domain.netloc
 
     results = []
     for doc in docs:
