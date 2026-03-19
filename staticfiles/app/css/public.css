@@ -746,6 +746,40 @@ body {
     flex-wrap: wrap;
 }
 
+/* ── Result tabs ───────────────────────────────────────────────────── */
+
+.resolve-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--pub-border);
+    background: var(--pub-bg);
+}
+
+.resolve-tab {
+    padding: 0.625rem 1.125rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--pub-text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+}
+
+.resolve-tab:hover {
+    color: var(--pub-text);
+    background: var(--pub-hover);
+}
+
+.resolve-tab.active {
+    color: var(--pub-primary);
+    border-bottom-color: var(--pub-primary);
+    background: var(--pub-card);
+}
+
 .resolve-meta-chip {
     display: inline-block;
     padding: 0.1875rem 0.625rem;

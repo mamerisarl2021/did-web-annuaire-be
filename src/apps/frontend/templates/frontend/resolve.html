@@ -84,17 +84,32 @@
         </div>
     </div>
 
+
     <!-- ── Result panel ───────────────────────────────────────────── -->
     <div id="result-panel" class="resolve-result hidden">
         <div class="resolve-result-header">
             <div class="resolve-result-did" id="result-did"></div>
             <div class="resolve-result-actions">
-                <button class="pub-btn pub-btn-ghost pub-btn-sm" onclick="copyResult()">Copy JSON</button>
+                <button class="pub-btn pub-btn-ghost pub-btn-sm" onclick="copyDoc()"
+                        title="Copy only the DID Document JSON">Copy DID Doc
+                </button>
+                <button class="pub-btn pub-btn-ghost pub-btn-sm" onclick="copyFull()"
+                        title="Copy the full W3C Resolution Result">Copy Full
+                </button>
                 <button class="pub-btn pub-btn-ghost pub-btn-sm" onclick="downloadResult()">Download</button>
             </div>
         </div>
         <div class="resolve-meta" id="result-meta"></div>
-        <pre class="resolve-json" id="result-json"></pre>
+
+        <!-- Tabs -->
+        <div class="resolve-tabs">
+            <button class="resolve-tab active" onclick="switchTab('tab-document', this)">DID Document</button>
+            <button class="resolve-tab" onclick="switchTab('tab-resolution', this)">Resolution Metadata</button>
+            <button class="resolve-tab" onclick="switchTab('tab-docmeta', this)">Document Metadata</button>
+        </div>
+        <pre class="resolve-json" id="tab-document"></pre>
+        <pre class="resolve-json hidden" id="tab-resolution"></pre>
+        <pre class="resolve-json hidden" id="tab-docmeta"></pre>
     </div>
 
     <!-- ── Error panel ─────────────────────────────────────────────── -->
@@ -103,6 +118,7 @@
         <h3 id="error-title">Resolution Failed</h3>
         <p id="error-detail"></p>
     </div>
+
 </div>
 
 <footer class="pub-footer">
@@ -110,7 +126,7 @@
 </footer>
 
 <script>
-    let lastResult = null;
+    let lastResult = null; // full W3C resolution result
 
     function fill(did) {
         document.getElementById("did-input").value = did;
@@ -134,7 +150,6 @@
         setLoading(true);
 
         try {
-            const encoded = encodeURIComponent(did);
             const res = await fetch(`/api/v2/public/resolve?did=${encodeURIComponent(did)}`, {
                 headers: {"Accept": "application/json"},
             });
@@ -151,11 +166,12 @@
             const doc = data.didDocument;
             if (!doc) throw {detail: "No DID document returned."};
 
-            lastResult = doc;
+            lastResult = data; // store full W3C result
 
+            // Header DID label
             document.getElementById("result-did").textContent = doc.id || did;
-            document.getElementById("result-json").textContent = JSON.stringify(doc, null, 2);
 
+            // Chips
             const chips = [];
             if (doc.verificationMethod?.length)
                 chips.push(`${doc.verificationMethod.length} verification method${doc.verificationMethod.length > 1 ? "s" : ""}`);
@@ -163,10 +179,19 @@
                 chips.push(`${doc.service.length} service${doc.service.length > 1 ? "s" : ""}`);
             if (doc.proof)
                 chips.push(doc.proof.cryptosuite || doc.proof.type || "Signed");
+            if (meta.contentType)
+                chips.push(meta.contentType);
             chips.push("DID Document");
-
             document.getElementById("result-meta").innerHTML =
                 chips.map(c => `<span class="resolve-meta-chip">${c}</span>`).join("");
+
+            // Populate tab panels
+            document.getElementById("tab-document").textContent = JSON.stringify(doc, null, 2);
+            document.getElementById("tab-resolution").textContent = JSON.stringify(data.didResolutionMetadata || {}, null, 2);
+            document.getElementById("tab-docmeta").textContent = JSON.stringify(data.didDocumentMetadata || {}, null, 2);
+
+            // Reset to first tab
+            switchTab("tab-document", document.querySelector(".resolve-tab"));
 
             show("result-panel");
         } catch (err) {
@@ -180,19 +205,33 @@
         }
     }
 
-    function copyResult() {
+    function switchTab(tabId, btn) {
+        // Hide all tab panels and deactivate all tab buttons
+        ["tab-document", "tab-resolution", "tab-docmeta"].forEach(id => hide(id));
+        document.querySelectorAll(".resolve-tab").forEach(b => b.classList.remove("active"));
+        show(tabId);
+        if (btn) btn.classList.add("active");
+    }
+
+    function copyDoc() {
+        if (!lastResult?.didDocument) return;
+        navigator.clipboard.writeText(JSON.stringify(lastResult.didDocument, null, 2));
+        flashAlert("DID Document copied.", "success");
+    }
+
+    function copyFull() {
         if (!lastResult) return;
         navigator.clipboard.writeText(JSON.stringify(lastResult, null, 2));
-        showAlert("Copied to clipboard.", "success");
-        setTimeout(clearAlert, 2000);
+        flashAlert("Full resolution result copied.", "success");
     }
 
     function downloadResult() {
-        if (!lastResult) return;
+        if (!lastResult?.didDocument) return;
+        const doc = lastResult.didDocument;
         const blob = new Blob([JSON.stringify(lastResult, null, 2)], {type: "application/did+json"});
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = (lastResult.id || "did") + ".json";
+        a.download = (doc.id || "did-resolution") + ".json";
         a.click();
         URL.revokeObjectURL(a.href);
     }
@@ -210,6 +249,11 @@
         btn.querySelector(".btn-label").style.display = on ? "none" : "inline";
         document.getElementById("resolve-spinner").style.display = on ? "inline-block" : "none";
         btn.disabled = on;
+    }
+
+    function flashAlert(msg, type = "error") {
+        document.getElementById("alert-box").innerHTML = `<div class="pub-alert pub-alert-${type}">${msg}</div>`;
+        setTimeout(clearAlert, 2500);
     }
 
     function showAlert(msg, type = "error") {
