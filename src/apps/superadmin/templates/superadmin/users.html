@@ -85,11 +85,17 @@ function renderTable() {
 
   const rows = filtered.map(u => {
     let actions = "";
-    actions += `<button class="sa-btn sa-btn-sm" style="margin-right:0.25rem; font-size: 0.75rem;" onclick="promptAddToOrg('${u.id}')">Add to Org</button>`;
-    
+
+    let isOrgAdmin = (u.memberships || []).some(m => m.role === "ORG_ADMIN");
+
+    if (!u.is_superadmin && !isOrgAdmin) {
+        actions += `<button class="sa-btn sa-btn-sm" style="margin-right:0.25rem; font-size: 0.75rem;" onclick="promptAddToOrg('${u.id}')">Add to Org</button>`;
+    }
+
     let invites = (u.memberships || []).filter(m => m.status === "INVITED");
     if (invites.length > 0) {
         invites.forEach(inv => {
+            if (u.is_superadmin || inv.role === "ORG_ADMIN") return;
             actions += `<button class="sa-btn sa-btn-sm sa-btn-outline" style="margin-right:0.25rem; font-size: 0.75rem;" onclick="cancelInvite('${u.id}', '${inv.org_id}')">Cancel Invite to ${inv.org_name}</button>`;
         });
     }

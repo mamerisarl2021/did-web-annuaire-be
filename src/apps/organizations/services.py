@@ -146,6 +146,23 @@ def approve_organization(
         update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"]
     )
 
+    invited_admins = Membership.objects.filter(
+        organization=organization,
+        role=Role.ORG_ADMIN,
+        status=MembershipStatus.INVITED
+    )
+    for membership in invited_admins:
+        membership.status = MembershipStatus.PENDING_ACTIVATION
+        membership.save(update_fields=["status", "updated_at"])
+
+        _log_membership_audit(
+            actor=reviewed_by,
+            action="MEMBER_INVITED", # Not fully activated, but state changed
+            membership=membership,
+            organization=organization,
+            description=f"Membership status for '{membership.user.email}' changed to PENDING_ACTIVATION.",
+        )
+
     _log_org_audit(
         actor=reviewed_by,
         action="ORG_APPROVED",
