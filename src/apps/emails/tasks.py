@@ -4,6 +4,7 @@ Email Celery tasks.
 These run asynchronously via Celery. Each task renders an HTML template
 and sends via the email service.
 """
+from urllib.parse import urlparse
 
 import structlog
 from celery import shared_task
@@ -187,8 +188,10 @@ def send_member_invitation_email(
             return
 
         platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
-        scheme = "https" if "localhost" not in platform_domain else "http"
-        activation_url = f"{scheme}://{platform_domain}/activate/{invitation_token}/"
+        parsed = urlparse(platform_domain)
+        host = parsed.netloc or parsed.path  # handles cases without scheme
+        scheme = "https" if "localhost" not in host else "http"
+        activation_url = f"{scheme}://{host}/activate/{invitation_token}/"
 
         role_display = {
             "ORG_MEMBER": "Member — can manage documents & certificates",
