@@ -45,12 +45,12 @@ class PublicDocResult(dict):
     summary="Search published DID documents (public, no auth)",
 )
 def search_documents(
-    request: HttpRequest,
-    q: str = Query("", description="Search term (label, DID URI, org name)"),
-    org_id: str = Query("", description="Filter by organization ID"),
-    sort: str = Query("-updated_at", description="Sort field"),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+        request: HttpRequest,
+        q: str = Query("", description="Search term (label, DID URI, org name)"),
+        org_id: str = Query("", description="Filter by organization ID"),
+        sort: str = Query("-updated_at", description="Sort field"),
+        page: int = Query(1, ge=1),
+        page_size: int = Query(20, ge=1, le=100),
 ):
     """
     Public search across all published DID documents.
@@ -96,7 +96,7 @@ def search_documents(
     total = qs.count()
     total_pages = max(1, math.ceil(total / page_size))
     offset = (page - 1) * page_size
-    docs = list(qs[offset : offset + page_size])
+    docs = list(qs[offset: offset + page_size])
 
     domain = settings.PLATFORM_DOMAIN
     domain = urlparse(domain)
@@ -157,3 +157,28 @@ def list_organizations(request: HttpRequest):
     )
 
     return [{"id": str(o["id"]), "name": o["name"], "slug": o["slug"]} for o in orgs]
+
+
+# ── DID Resolver proxy ──────────────────────────────────────────────────
+
+
+@router.get(
+    "/resolve/{did_uri:path}",
+    response=dict,
+    summary="Resolve a DID via the Universal Resolver (public, no auth)",
+)
+def resolve_did_proxy(request: HttpRequest, did_uri: str):
+    """
+    Proxy DID resolution through the backend to the configured Universal Resolver.
+
+    The DID URI is URL-encoded so path separators are preserved.
+    Returns the full W3C DID Resolution Result:
+      {
+        "didDocument": { ... },
+        "didResolutionMetadata": { ... },
+        "didDocumentMetadata": { ... }
+      }
+    """
+    from src.integrations.resolver import resolve_did
+
+    return resolve_did(did_uri)

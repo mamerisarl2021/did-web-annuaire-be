@@ -135,13 +135,13 @@
 
         try {
             const encoded = encodeURIComponent(did);
-            const res = await fetch(`/resolver/1.0/identifiers/${encoded}`, {
+            const res = await fetch(`/api/v2/public/resolve/${encoded}`, {
                 headers: {"Accept": "application/json"},
             });
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw {detail: err.didResolutionMetadata?.error || `HTTP ${res.status}`};
+                throw {detail: err.detail || err.didResolutionMetadata?.error || `HTTP ${res.status}`};
             }
 
             const data = await res.json();
