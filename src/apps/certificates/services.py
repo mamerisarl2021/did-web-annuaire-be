@@ -1,23 +1,23 @@
 """
-Certificate services (write operations).
+Services de certificats (opérations d'écriture).
 
-Upload flow:
-  1. Save PEM via files app (upload_certificate_file)
-  2. Call JAR --metadata to extract JWK + cert metadata
-  3. Create Certificate + CertificateVersion
-  4. Log audit entry
+Flux de téléchargement :
+  1. Enregistrer PEM via l'application files (upload_certificate_file)
+  2. Appeler JAR --metadata pour extraire le JWK + métadonnées du certif
+  3. Créer le Certificat + CertificateVersion
+  4. Consigner l'entrée d'audit
 
-Rotation flow:
-  1. Save new PEM
-  2. Extract metadata
-  3. Create new CertificateVersion (mark as current)
-  4. Archive old version (is_current=False)
-  5. Update Certificate.current_version
+Flux de rotation :
+  1. Enregistrer le nouveau PEM
+  2. Extraire les métadonnées
+  3. Créer une nvelle CertificateVersion (marquer comme current)
+  4. Archiver l'ancienne version (is_current=False)
+  5. Mettre à jour Certificate.current_version
 
-Revocation flow:
-  1. Set Certificate.status = REVOKED
-  2. Cascade: set is_active=False on all linked DocumentVerificationMethods
-  3. Log audit entry
+Flux de révocation :
+  1. Définir Certificate.status = REVOKED
+  2. En cascade : is_active=False sur ttes les DocumentVerificationMethods liées
+  3. Consigner l'entrée d'audit
 """
 
 from datetime import datetime
@@ -51,17 +51,17 @@ def upload_certificate(
     p12_password: str | None = None,
 ) -> Certificate:
     """
-    Upload a new certificate.
+    Télécharger un nouveau certificat.
 
-    1. Saves the file via the files app
-    2. Calls the JAR to extract JWK + metadata
-    3. Creates Certificate + first CertificateVersion
+    1. Enregistre le fichier via l'application de fichiers
+    2. Appelle le JAR pour extraire JWK + métadonnées
+    3. Crée le Certificat + première CertificateVersion
 
-    Returns the Certificate instance.
+    Renvoie l'instance Certificate.
     """
     from src.apps.certificates.selectors import certificate_label_exists
 
-    # Validate label uniqueness
+    # Valider l'unicité de l'étiquette
     label = label.strip()
     if not label:
         raise ValidationError("Certificate label is required.")
@@ -71,15 +71,15 @@ def upload_certificate(
             f"Certificate label '{label}' already exists in this organization."
         )
 
-    # 1. Save file
+    # 1. Enregistrer le fichier
     file_instance = upload_certificate_file(file=file, uploaded_by=uploaded_by)
 
-    # 2. Extract metadata via JAR
+    # 2. Extraire les métadonnées via JAR
     file_instance.file.seek(0)
     cert_bytes = file_instance.file.read()
     metadata = extract_metadata(cert_pem_bytes=cert_bytes, p12_password=p12_password)
 
-    # 3. Create Certificate
+    # 3. Créer le certificat
     cert = Certificate.objects.create(
         organization=organization,
         label=label,
@@ -87,7 +87,7 @@ def upload_certificate(
         created_by=uploaded_by,
     )
 
-    # 4. Create first version
+    # 4. Créer la première version
     version = _create_version(
         certificate=cert,
         version_number=1,
@@ -132,31 +132,31 @@ def rotate_certificate(
     p12_password: str | None = None,
 ) -> CertificateVersion:
     """
-    Rotate a certificate — upload a new version.
+    Faire tourner un certificat — télécharger une nouvelle version.
 
-    - Certificate must be ACTIVE.
-    - Old version is archived (is_current=False).
-    - New version becomes current.
+    - Le certificat doit être ACTIVE.
+    - L'ancienne version est archivée (is_current=False).
+    - La nouvelle version devient courante.
     """
     if certificate.status != CertificateStatus.ACTIVE:
         raise ValidationError(
             f"Cannot rotate a {certificate.status} certificate. Only ACTIVE certificates can be rotated."
         )
 
-    # Save file + extract
+    # Enregistrer le fichier + extraire
     file_instance = upload_certificate_file(file=file, uploaded_by=uploaded_by)
     file_instance.file.seek(0)
     cert_bytes = file_instance.file.read()
     metadata = extract_metadata(cert_pem_bytes=cert_bytes, p12_password=p12_password)
 
-    # Archive current version
+    # Archiver la version courante
     current_version_number = 0
     if certificate.current_version:
         certificate.current_version.is_current = False
         certificate.current_version.save(update_fields=["is_current", "updated_at"])
         current_version_number = certificate.current_version.version_number
 
-    # Create new version
+    # Créer une nouvelle version
     new_version = _create_version(
         certificate=certificate,
         version_number=current_version_number + 1,
@@ -198,10 +198,10 @@ def revoke_certificate(
     reason: str = "",
 ) -> Certificate:
     """
-    Revoke a certificate.
+    Révoquer un certificat.
 
-    - Sets status to REVOKED.
-    - Cascades: deactivates all linked verification methods in DID documents.
+    - Définit le statut sur REVOKED.
+    - En cascade : désactive ttes les méth de vérification liées ds les doc DID.
     """
     if certificate.status == CertificateStatus.REVOKED:
         raise ValidationError("Certificate is already revoked.")
@@ -210,7 +210,7 @@ def revoke_certificate(
     certificate.status = CertificateStatus.REVOKED
     certificate.save(update_fields=["status", "updated_at"])
 
-    # Cascade to verification methods
+    # En cascade vers les méthodes de vérification
     from src.apps.documents.models import DocumentVerificationMethod
 
     affected = DocumentVerificationMethod.objects.filter(
@@ -241,7 +241,7 @@ def revoke_certificate(
     return certificate
 
 
-# ── Internal helpers ─────────────────────────────────────────────────────
+# ── Aides internes ──────────────────────────────────────────────────────
 
 
 def _create_version(
@@ -253,7 +253,7 @@ def _create_version(
     uploaded_by: User,
     is_current: bool,
 ) -> CertificateVersion:
-    """Create a CertificateVersion from extracted metadata."""
+    """Créer une CertificateVersion à partir des métadonnées extraites."""
     not_valid_before = _parse_iso_datetime(metadata.get("not_valid_before"))
     not_valid_after = _parse_iso_datetime(metadata.get("not_valid_after"))
 
@@ -279,7 +279,7 @@ def _create_version(
 def _parse_iso_datetime(value: str | None) -> datetime | None:
     if not value:
         return None
-    # The JAR outputs ISO 8601 e.g. "2025-12-25T14:32:06Z"
+    # Le JAR génère un format ISO 8601 par ex. "2025-12-25T14:32:06Z"
     dt = parse_datetime(value)
     if dt and timezone.is_naive(dt):
         dt = timezone.make_aware(dt)
@@ -287,7 +287,7 @@ def _parse_iso_datetime(value: str | None) -> datetime | None:
 
 
 def _log_cert_audit(*, actor, action, certificate, description, metadata):
-    """Log audit entry for certificate operations."""
+    """Consigner une entrée d'audit pour les ops de certificat."""
     try:
         from src.apps.audits.services import log_action
 
@@ -301,5 +301,5 @@ def _log_cert_audit(*, actor, action, certificate, description, metadata):
             metadata=metadata,
         )
     except Exception as e:
-        # Audit logging should never break the main operation
+        # L'audit ne doit jamais interrompre l'opération principale
         logger.warning("audit_log_failed", error=str(e))

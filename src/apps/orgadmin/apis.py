@@ -2,7 +2,6 @@
 Org Admin API endpoints.
 
 All endpoints require JWT auth and an active membership in the target org.
-Permission checks use the RBAC system from common/permissions.py.
 """
 
 from typing import Optional

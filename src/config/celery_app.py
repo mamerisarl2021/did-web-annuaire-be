@@ -31,7 +31,7 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 # Auto-discover tasks.py in each app
 app.autodiscover_tasks()
 
-from celery.schedules import crontab
+from celery.schedules import crontab  # noqa: E402
 
 app.conf.beat_schedule = {
     "clear-blacklisted-tokens-daily": {

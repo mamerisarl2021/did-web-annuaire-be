@@ -1,15 +1,15 @@
 """
-Base Django settings.
+Paramètres de base de Django.
 
-Imports split configuration from src/config/others/*.py to keep this file lean.
-Production and test settings override specific values from here.
+Importe la configuration scindée depuis src/config/others/*.py pour alléger ce fichier.
+Les paramètres de production et de test écrasent des valeurs spécifiques d'ici.
 """
 
 import os
 
 from src.config.env import env, BASE_DIR
 
-# ── Core ────────────────────────────────────────────────────────────────
+# ── Cœur ────────────────────────────────────────────────────────────────
 
 SECRET_KEY = env.SECRET_KEY
 DEBUG = env.DEBUG
@@ -24,13 +24,13 @@ AUTH_USER_MODEL = "users.User"
 
 CSRF_TRUSTED_ORIGINS = env.CSRF_TRUSTED_ORIGINS
 
-# ── Others ──────────────────────────────────────────────────────
+# ── Autres ──────────────────────────────────────────────────────────────
 
 PLATFORM_DOMAIN = env.PLATFORM_DOMAIN
 CSRF_COOKIE_SECURE = env.CSRF_COOKIE_SECURE
 _DOMAIN = "localhost"
 
-# ── External Services ──────────────────────────────────────────────────────
+# ── Services Externes ───────────────────────────────────────────────────
 
 UNIVERSAL_REGISTRAR_URL = env.UNIVERSAL_REGISTRAR_URL
 UNIVERSAL_RESOLVER_URL = env.UNIVERSAL_RESOLVER_URL
@@ -39,7 +39,7 @@ SIGNSERVER_WORKER_NAME = env.SIGNSERVER_WORKER_NAME
 JWK_EXTRACTOR_JAR = env.JWK_EXTRACTOR_JAR
 PLATFORM_DOMAIN_WITHOUT_SCHEME = env.PLATFORM_DOMAIN_WITHOUT_SCHEME
 
-# ── Installed Apps ──────────────────────────────────────────────────────
+# ── Applications Installées ─────────────────────────────────────────────
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -80,7 +80,7 @@ LOCAL_APPS = [
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
-# ── Middleware ──────────────────────────────────────────────────────────
+# ── Intergiciels (Middleware) ───────────────────────────────────────────
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -113,7 +113,7 @@ TEMPLATES = [
     },
 ]
 
-# ── Database ────────────────────────────────────────────────────────────
+# ── Base de Données ─────────────────────────────────────────────────────
 
 DATABASES = {
     "default": {
@@ -142,7 +142,7 @@ CACHES = {
     },
 }
 
-# ── Auth ────────────────────────────────────────────────────────────────
+# ── Authentification ────────────────────────────────────────────────────
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -159,7 +159,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# ── i18n ────────────────────────────────────────────────────────────────
+# ── Internationalisation (i18n) ─────────────────────────────────────────
 
 LANGUAGE_CODE = "en-us"
 # LANGUAGE_CODE = 'fr-fr'
@@ -177,8 +177,8 @@ USE_TZ = True
 
 # MANAGERS = ADMINS
 
-# ── Split configs (imported from others/) ───────────────────────────────
-# Each file exports top-level Django settings variables.
+# ── Configurations scindées (importées depuis others/) ──────────────────
+# Chaque fichier exporte des variables de paramètres Django de haut niveau.
 
 from src.config.others.jwt import *  # noqa: E402, F401, F403
 

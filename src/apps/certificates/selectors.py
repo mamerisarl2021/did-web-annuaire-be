@@ -1,10 +1,5 @@
 """
-Certificate selectors (read operations).
-
-Scoping:
-  - ORG_ADMIN: sees ALL certificates in the organization
-  - ORG_MEMBER: sees ONLY certificates they uploaded (created_by = self)
-  - AUDITOR: sees ALL (read-only)
+Sélecteurs de certificats (opérations de lecture).
 """
 
 from uuid import UUID
@@ -28,7 +23,7 @@ def get_certificate_by_id(*, cert_id: UUID) -> Certificate | None:
 
 
 def get_org_certificates(*, organization_id: UUID) -> QuerySet[Certificate]:
-    """All certificates for an organization (for ORG_ADMIN / AUDITOR)."""
+    """Tous les certificats pour une organisation (pour ORG_ADMIN / AUDITOR)."""
     return (
         Certificate.objects.filter(organization_id=organization_id)
         .select_related("current_version", "created_by")
@@ -41,7 +36,7 @@ def get_user_certificates(
     organization_id: UUID,
     user_id: UUID,
 ) -> QuerySet[Certificate]:
-    """Certificates uploaded by a specific user within an organization (for ORG_MEMBER)."""
+    """Certifs uploadés par un utilisateur spé. dans une organisation (ORG_MEMBER)."""
     return (
         Certificate.objects.filter(
             organization_id=organization_id, created_by_id=user_id
@@ -52,7 +47,7 @@ def get_user_certificates(
 
 
 def get_certificate_versions(*, certificate_id: UUID) -> QuerySet[CertificateVersion]:
-    """All versions of a certificate, newest first."""
+    """Toutes les versions d'un certificat, du plus récent au plus ancien."""
     return (
         CertificateVersion.objects.filter(certificate_id=certificate_id)
         .select_related("uploaded_by", "certificate_file")
@@ -61,7 +56,7 @@ def get_certificate_versions(*, certificate_id: UUID) -> QuerySet[CertificateVer
 
 
 def get_active_org_certificates(*, organization_id: UUID) -> QuerySet[Certificate]:
-    """Only ACTIVE certificates for an organization."""
+    """Uniquement les certificats ACTIVE pour une organisation."""
     return (
         Certificate.objects.filter(
             organization_id=organization_id,
@@ -77,7 +72,7 @@ def get_active_user_certificates(
     organization_id: UUID,
     user_id: UUID,
 ) -> QuerySet[Certificate]:
-    """Only ACTIVE certificates uploaded by a specific user."""
+    """Uniquement les certificats ACTIVE uploadés par un utilisateur spécifique."""
     return (
         Certificate.objects.filter(
             organization_id=organization_id,
@@ -103,10 +98,8 @@ def certificate_label_exists(
 
 def count_linked_documents_for_cert(*, cert_id: UUID) -> int:
     """
-    Count the number of distinct DID documents that reference a given certificate
-    via at least one DocumentVerificationMethod.
-
-    Moved here from apis.py to keep raw ORM out of the API layer.
+    Compte le nombre de documents DID distincts qui font réf à un certificat donné
+    via au moins une DocumentVerificationMethod.
     """
     from src.apps.documents.models import DocumentVerificationMethod
 
@@ -120,10 +113,10 @@ def count_linked_documents_for_cert(*, cert_id: UUID) -> int:
 
 def get_verification_method_with_cert(*, vm_id: UUID):
     """
-    Fetch a DocumentVerificationMethod with its certificate and current version
-    pre-loaded via select_related.
+    Récupère une DocumentVerificationMethod avec son certif. et sa version actuelle
+    préchargés via select_related.
 
-    Returns None if not found.
+    Renvoie None s'il n'est pas trouvé.
     """
     from src.apps.documents.models import DocumentVerificationMethod
 

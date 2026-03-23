@@ -1,10 +1,10 @@
 """
-Certificate models.
+Modèles de certificat.
 
-A Certificate is the stable identity — DID verification methods reference it.
-CertificateVersion tracks the actual PEM uploads, supporting rotation.
-When a cert is rotated, a new CertificateVersion is created and the old one
-is archived. Revocation deactivates all linked verification methods.
+Un Certificat est l'identité stable — les méthodes de vérif DID y font référence.
+CertificateVersion suit les téléchargements PEM réels, prenant en charge la rotation.
+Lorsqu'un cert est tourné, une nouvelle CertificateVersion est créée et l'ancienne
+est archivée. La révocation désactive ttes les méthodes de vérification liées.
 """
 
 from django.db import models
@@ -26,7 +26,7 @@ class Certificate(BaseModel):
     )
     label = models.CharField(
         max_length=120,
-        help_text="Human-friendly name, e.g. 'prod-signing-2025'.",
+        help_text="Nom convivial, par ex. 'prod-signature-2025'.",
     )
     status = models.CharField(
         max_length=10,
@@ -39,7 +39,7 @@ class Certificate(BaseModel):
         null=True,
         blank=True,
         related_name="+",
-        help_text="Points to the active version of this certificate.",
+        help_text="Pointe vers la version active de ce certificat.",
     )
     created_by = models.ForeignKey(
         "users.User",
@@ -73,32 +73,32 @@ class CertificateVersion(BaseModel):
         "files.File",
         on_delete=models.PROTECT,
         related_name="+",
-        help_text="The uploaded PEM file.",
+        help_text="Le fichier téléchargé.",
     )
 
-    # ── Extracted JWK (the core output) ─────────────────────────────
+    # ── JWK extrait (la sortie principale) ──────────────────────────
     public_key_jwk = models.JSONField(
-        help_text="Extracted JWK representation of the public key.",
+        help_text="Représentation JWK extraite de la clé publique.",
     )
 
-    # ── Certificate metadata (extracted from X.509) ─────────────────
+    # ── Métadonnées du certificat (extraites de X.509) ──────────────
     subject_dn = models.CharField(
         max_length=512,
         blank=True,
         default="",
-        help_text="Subject DN, e.g. 'CN=example,O=Acme'.",
+        help_text="DN du sujet, par ex. 'CN=exemple,O=Acme'.",
     )
     issuer_dn = models.CharField(
         max_length=512,
         blank=True,
         default="",
-        help_text="Issuer DN, e.g. 'CN=EJBCA CA'.",
+        help_text="DN de l'émetteur, par ex. 'CN=EJBCA CA'.",
     )
     serial_number = models.CharField(
         max_length=128,
         blank=True,
         default="",
-        help_text="Hex-encoded serial number.",
+        help_text="Numéro de série encodé en hexadécimal.",
     )
     not_valid_before = models.DateTimeField(
         null=True,
@@ -109,32 +109,32 @@ class CertificateVersion(BaseModel):
         blank=True,
     )
 
-    # ── Key info ────────────────────────────────────────────────────
+    # ── Infos sur la clé ────────────────────────────────────────────
     key_type = models.CharField(
         max_length=10,
-        help_text="EC, RSA, or Ed25519.",
+        help_text="EC, RSA, ou Ed25519.",
     )
     key_curve = models.CharField(
         max_length=20,
         blank=True,
         default="",
-        help_text="P-256, P-384, etc. EC keys only.",
+        help_text="P-256, P-384, etc. Pour les clés EC.",
     )
     key_size = models.IntegerField(
         null=True,
         blank=True,
-        help_text="2048, 4096, etc. RSA keys only.",
+        help_text="2048, 4096, etc. Pour les clés RSA.",
     )
 
-    # ── Fingerprint ─────────────────────────────────────────────────
+    # ── Empreinte digitale ──────────────────────────────────────────
     fingerprint_sha256 = models.CharField(
         max_length=64,
-        help_text="Hex SHA-256 of the DER-encoded certificate.",
+        help_text="Empreinte SHA-256 hexa du certificat encodé DER.",
     )
 
     is_current = models.BooleanField(
         default=True,
-        help_text="Denormalized flag — True for the active version.",
+        help_text="Indicateur dénormalisé — True pour la version active.",
     )
 
     uploaded_by = models.ForeignKey(

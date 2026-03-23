@@ -1,10 +1,5 @@
 """
-DID Document selectors (read operations).
-
-Scoping:
-  - ORG_ADMIN:  sees all org documents
-  - ORG_MEMBER: sees only own documents
-  - AUDITOR:    sees all org documents (read-only)
+Sélecteurs de Document DID (opérations de lecture).
 """
 
 from uuid import UUID
@@ -19,7 +14,7 @@ from src.apps.documents.models import (
 )
 
 
-# ── Single-object lookups ────────────────────────────────────────────────
+# ── Recherches d'objet unique ───────────────────────────────────────────
 
 
 def get_document_by_id(*, doc_id: UUID) -> DIDDocument | None:
@@ -36,11 +31,11 @@ def get_document_by_id(*, doc_id: UUID) -> DIDDocument | None:
         return None
 
 
-# ── List queries ─────────────────────────────────────────────────────────
+# ── Requêtes de liste ───────────────────────────────────────────────────
 
 
 def get_org_documents(*, organization_id: UUID, user_id: UUID) -> QuerySet[DIDDocument]:
-    """All documents for an organization (for ORG_ADMIN / AUDITOR)."""
+    """Tous les documents pour une organisation (pour ORG_ADMIN / AUDITOR)."""
     from django.db.models import Q
 
     return (
@@ -56,7 +51,7 @@ def get_org_documents(*, organization_id: UUID, user_id: UUID) -> QuerySet[DIDDo
 def get_user_documents(
     *, organization_id: UUID, user_id: UUID
 ) -> QuerySet[DIDDocument]:
-    """Documents owned by a specific user within an organization."""
+    """Documents appartenant à un utilisateur spécifique dans une organisation."""
     return (
         DIDDocument.objects.filter(organization_id=organization_id, owner_id=user_id)
         .select_related("owner", "created_by", "current_version")
@@ -65,7 +60,7 @@ def get_user_documents(
 
 
 def get_pending_review_documents(*, organization_id: UUID) -> QuerySet[DIDDocument]:
-    """Documents awaiting review (for ORG_ADMIN dashboard)."""
+    """Documents en attente d'examen (pour le tableau de bord ORG_ADMIN)."""
     return (
         DIDDocument.objects.filter(
             organization_id=organization_id,
@@ -76,7 +71,7 @@ def get_pending_review_documents(*, organization_id: UUID) -> QuerySet[DIDDocume
     )
 
 
-# ── Verification methods ────────────────────────────────────────────────
+# ── Méthodes de vérification ────────────────────────────────────────────
 
 
 def get_document_verification_methods(
@@ -101,7 +96,7 @@ def get_active_verification_methods(
     )
 
 
-# ── Versions ─────────────────────────────────────────────────────────────
+# ── Versions ────────────────────────────────────────────────────────────
 
 
 def get_document_versions(*, document_id: UUID) -> QuerySet[DIDDocumentVersion]:
@@ -112,7 +107,7 @@ def get_document_versions(*, document_id: UUID) -> QuerySet[DIDDocumentVersion]:
     )
 
 
-# ── Validation helpers ───────────────────────────────────────────────────
+# ── Aides à la validation ───────────────────────────────────────────────
 
 
 def document_label_exists(
@@ -122,7 +117,7 @@ def document_label_exists(
     label: str,
     exclude_id: UUID | None = None,
 ) -> bool:
-    """Check if a label already exists for this owner in this org."""
+    """Vérifier si une étiquette existe déjà pour ce proprio dans cette org."""
     qs = DIDDocument.objects.filter(
         organization_id=organization_id,
         owner_id=owner_id,
@@ -147,11 +142,11 @@ def get_org_document_counts(*, organization_id: UUID) -> dict:
 
 def get_verifiable_credential(document: DIDDocument) -> dict | None:
     """
-    Build a Verifiable Credential for a published DID document.
+    Construire un Identifiant Vérifiable pour un doc DID publié.
 
-    Pure read operation — no side effects, no DB writes.
-    Moved here from services.py to respect the read/write split.
-    Returns None if the document is not yet published.
+    Opération de lecture pure — sans effets second, ni écritures BD.
+    Déplacé d'ici depuis services.py pr resp. la séparation lecture/écriture.
+    Renvoie None si le document n'est pas encore publié.
     """
     from django.utils import timezone
 

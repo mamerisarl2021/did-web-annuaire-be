@@ -1,19 +1,8 @@
 """
-DID Document models.
+Modèles de document DID.
 
-Organization-scoped DID documents following the did:web method.
-URI pattern: did:web:<host>:<org_slug>:<user>:<label>
-
-Ownership & permissions:
-  - Any org member can CREATE a document (they become its owner).
-  - Only the OWNER can EDIT their document (draft_content).
-  - Even the org admin CANNOT edit a document they didn't create.
-  - All org members can VIEW all documents in the organization.
-  - The org admin REVIEWS and APPROVES/REJECTS documents submitted by members.
-
-Lifecycle:
-  DRAFT → PENDING_REVIEW → APPROVED → SIGNED → PUBLISHED → DEACTIVATED
-                         ↘ REJECTED (→ back to DRAFT for edits by owner)
+Documents DID à l'échelle de l'organisation suivant la méthode did:web.
+Modèle d'URI : did:web:<host>:<org_slug>:<user>:<label>
 """
 
 from django.db import models
@@ -47,19 +36,16 @@ class DIDDocument(BaseModel):
     )
     label = models.CharField(
         max_length=120,
-        help_text="Path segment in the DID URI: did:web:<host>:<org_slug>:<user>:<label>",
+        help_text="Segment de chemin dans l'URI DID : did:web:<host>:<org_slug>:<user>:<label>",
     )
 
-    # ── Owner — the user who created this document ──────────────────
-    # This user appears in the DID URI and is the ONLY person who can
-    # edit draft_content. Org admins review but do NOT have write access.
     owner = models.ForeignKey(
         "users.User",
         on_delete=models.CASCADE,
         related_name="owned_documents",
-        help_text="The user who created and owns this document. "
-        "Appears in the DID URI as the <user> segment. "
-        "Only this user can edit the document.",
+        help_text="L'utilisateur qui a créé et possède ce document. "
+        "Apparaît dans l'URI DID comme segment <user>. "
+        "Seul cet utilisateur peut modifier le document.",
     )
 
     status = models.CharField(
@@ -68,28 +54,26 @@ class DIDDocument(BaseModel):
         default=DocumentStatus.DRAFT,
     )
 
-    # ── Content ─────────────────────────────────────────────────────
     content = models.JSONField(
         null=True,
         blank=True,
-        help_text="Last published DID document JSON. Immutable once set; "
-        "overwritten only on next publish.",
+        help_text="Dernier JSON de document DID publié. Immuable une fois défini ; "
+        "écrasé uniquement lors de la prochaine publication.",
     )
     draft_content = models.JSONField(
         null=True,
         blank=True,
-        help_text="Working draft. Editable ONLY by the owner. "
-        "Becomes content on publish.",
+        help_text="Brouillon de travail. Modifiable UNIQUEMENT par le propriétaire. "
+        "Devient contenu lors de la publication.",
     )
 
-    # ── Review workflow ─────────────────────────────────────────────
     submitted_by = models.ForeignKey(
         "users.User",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="submitted_documents",
-        help_text="The owner who submitted this document for review.",
+        help_text="Soumetteur du document",
     )
     submitted_at = models.DateTimeField(null=True, blank=True)
 
@@ -99,23 +83,22 @@ class DIDDocument(BaseModel):
         null=True,
         blank=True,
         related_name="reviewed_documents",
-        help_text="Org admin who approved or rejected.",
+        help_text="Administrateur de l'organisation qui a approuvé ou rejeté.",
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
     review_comment = models.TextField(
         blank=True,
         default="",
-        help_text="Approval or rejection comment from the org admin.",
+        help_text="Commentaire d'approbation ou de rejet de l'administrateur de l'organisation.",
     )
-
-    # ── Version tracking ────────────────────────────────────────────
+    
     current_version = models.OneToOneField(
         "documents.DIDDocumentVersion",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="+",
-        help_text="Points to the most recent published version.",
+        help_text="Pointe vers la version publiée la plus récente.",
     )
 
     created_by = models.ForeignKey(
@@ -123,14 +106,14 @@ class DIDDocument(BaseModel):
         on_delete=models.SET_NULL,
         null=True,
         related_name="created_documents",
-        help_text="Same as owner at creation time. Kept for BaseModel consistency.",
+        help_text="Identique au propriétaire à la création. Conservé pour la cohérence de BaseModel.",
     )
 
     class Meta:
         db_table = "did_documents"
         ordering = ["-created_at"]
         constraints = [
-            # A user can only have one document with a given label per org
+            # Un utilisateur ne peut avoir qu'un seul doc avec une étiquette donnée par org
             models.UniqueConstraint(
                 fields=["organization", "owner", "label"],
                 name="unique_doc_label_per_owner_per_org",
@@ -145,12 +128,12 @@ class DIDDocument(BaseModel):
     @property
     def owner_identifier(self) -> str:
         """
-        The <user> segment for the DID URI.
-        Uses the owner's email local part (before @), slugified.
+        Le segment <user> pour l'URI DID.
+        Utilise la partie locale de l'e-mail du propriétaire (avant @), slugifié.
         """
         if self.owner:
             local_part = self.owner.email.split("@")[0]
-            # Replace dots and special chars with hyphens for URI safety
+            # Remplace les points et les caractères spéciaux par des tirets pour la sécurité des URI
             import re
 
             return re.sub(r"[^a-zA-Z0-9-]", "-", local_part).strip("-").lower()
@@ -158,27 +141,27 @@ class DIDDocument(BaseModel):
 
     @property
     def did_uri_suffix(self) -> str:
-        """Returns the org_slug:user:label part. Full URI requires host config."""
+        """Retourne la partie org_slug:user:label. L'URI complet nécessite la conf de l'hôte."""
         return f"{self.organization.slug}:{self.owner_identifier}:{self.label}"
 
     def is_owner(self, user) -> bool:
-        """Check if the given user is the owner of this document."""
+        """Vérifie si l'utilisateur donné est le propriétaire de ce document."""
         return self.owner_id == user.id
 
     def can_edit(self, user) -> bool:
         """
-        Only the owner can edit a document, and only in editable states.
-        Org admins CANNOT edit — they can only review.
+        Seul le propriétaire peut modifier un doc, et uniquement dans les états modifiables.
+        Les admins de l'organisation NE PEUVENT PAS modifier — ils peuvent seulement examiner.
         """
         if not self.is_owner(user):
             return False
         return self.status in (
             DocumentStatus.DRAFT,
-            DocumentStatus.REJECTED,  # Owner can revise after rejection
+            DocumentStatus.REJECTED,  # Le propriétaire peut réviser après rejet
         )
 
     def can_submit_for_review(self, user) -> bool:
-        """Only the owner can submit from DRAFT or REJECTED status, or if updating a PUBLISHED doc."""
+        """Seul le proprio peut soumettre depuis DRAFT ou REJECTED, ou en mettant à jour PUBLISHED."""
         if not self.is_owner(user):
             return False
         return (
@@ -188,8 +171,8 @@ class DIDDocument(BaseModel):
 
     def can_review(self, user) -> bool:
         """
-        Only org admins can review, and only PENDING_REVIEW documents.
-        The owner cannot review their own document.
+        Seuls les administrateur de l'organisation peuvent examiner, et uniquement PENDING_REVIEW.
+        Le propriétaire ne peut pas examiner son propre document.
         """
         if self.is_owner(user):
             return False
@@ -198,8 +181,8 @@ class DIDDocument(BaseModel):
     @property
     def has_pending_draft(self) -> bool:
         """
-        True when a document has been published (content exists) and has
-        uncommitted draft changes pending review or republish.
+        True quand un document a été publié (le contenu existe) et a
+        des modifications de brouillon non validées en attente d'examen ou de republication.
         """
         return (
             self.content is not None
@@ -216,19 +199,16 @@ class DIDDocumentVersion(BaseModel):
     )
     version_number = models.PositiveIntegerField()
 
-    # ── Snapshot ────────────────────────────────────────────────────
     content = models.JSONField(
-        help_text="Full DID document JSON at the time of publish.",
+        help_text="JSON complet du document DID au moment de la publication.",
     )
 
-    # ── Signing ─────────────────────────────────────────────────────
     signature = models.TextField(
         blank=True,
         default="",
-        help_text="JWS or proof block from SignServer.",
+        help_text="Bloc JWS ou de preuve depuis SignServer.",
     )
 
-    # ── Publishing ──────────────────────────────────────────────────
     published_at = models.DateTimeField(null=True, blank=True)
     published_by = models.ForeignKey(
         "users.User",
@@ -239,7 +219,7 @@ class DIDDocumentVersion(BaseModel):
     registrar_response = models.JSONField(
         null=True,
         blank=True,
-        help_text="Response from the Universal Registrar.",
+        help_text="Réponse depuis le Universal Registrar.",
     )
 
     class Meta:
@@ -258,11 +238,8 @@ class DIDDocumentVersion(BaseModel):
 
 class DocumentVerificationMethod(BaseModel):
     """
-    Links a DID document to a certificate.
-    Maps to a verificationMethod entry in the DID document JSON.
-
-    A single document can have multiple verification methods (different certs).
-    A single cert can appear in multiple documents.
+    Lie un document DID à un certificat.
+    Correspond à une entrée verificationMethod dans le JSON du document DID.
     """
 
     document = models.ForeignKey(
@@ -278,28 +255,25 @@ class DocumentVerificationMethod(BaseModel):
 
     method_id_fragment = models.CharField(
         max_length=64,
-        help_text="Fragment identifier, e.g. 'key-1'. "
-        "Full ID: did:web:...:org:user:label#key-1",
+        help_text="Identifiant de fragment, par ex. 'key-1'. "
+        "ID complet : did:web:...:org:user:label#key-1",
     )
     method_type = models.CharField(
         max_length=64,
         default="JsonWebKey2020",
-        help_text="Verification method type per DID spec.",
+        help_text="Type de méthode de vérification selon la spec DID.",
     )
 
-    # ── Relationships ───────────────────────────────────────────────
-    # Stored as comma-separated values.
-    # Choices: authentication, assertionMethod, keyAgreement,
-    #          capabilityInvocation, capabilityDelegation
+
     relationships = models.CharField(
         max_length=255,
         default="authentication,assertionMethod",
-        help_text="Comma-separated verification relationships.",
+        help_text="Relations de vérification séparées par des virgules.",
     )
 
     is_active = models.BooleanField(
         default=True,
-        help_text="Auto-set to False when the linked certificate is revoked.",
+        help_text="Défini auto sur False quand le certificat lié est révoqué.",
     )
 
     class Meta:

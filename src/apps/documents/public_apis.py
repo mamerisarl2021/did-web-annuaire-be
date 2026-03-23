@@ -1,15 +1,3 @@
-"""
-Public search API endpoints.
-
-These endpoints are accessible WITHOUT authentication.
-They expose only published DID documents and approved organizations.
-
-Rate limiting should be enforced at the nginx level or via Django's
-cache-based throttling.
-
-Mounted at: /api/v2/public/search/
-"""
-
 import math
 from urllib.parse import urlparse
 from uuid import UUID
@@ -132,8 +120,6 @@ def search_documents(
         "total_pages": total_pages,
     }
 
-
-# ── List approved organizations (for filter dropdown) ────────────────────
 
 
 @router.get(

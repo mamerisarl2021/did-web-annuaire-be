@@ -12,8 +12,8 @@ class ActivationMethod(models.TextChoices):
 
 
 class User(AbstractUser, PermissionsMixin, BaseModel):
-    # ── Kill fields inherited from AbstractUser ─────────────────────
-    # We use email as login and full_name instead of first/last.
+    # ── Supprime les champs hérités de AbstractUser ─────────────────────────
+    # Nous utilisons l'e-mail comme identifiant et full_name au lieu de first/last.
     username = None
     first_name = None
     last_name = None
@@ -25,18 +25,18 @@ class User(AbstractUser, PermissionsMixin, BaseModel):
         max_length=255,
         blank=True,
         default="",
-        help_text="Job title / role within the organization.",
+        help_text="Titre du poste / rôle au sein de l'organisation.",
     )
 
-    # Activation & auth state
+    # État d'activation et d'authentification
     is_active = models.BooleanField(
         default=False,
-        help_text="Becomes True after OTP/QR activation. Controls login ability.",
+        help_text="Devient True après l'activation OTP/QR. Contrôle la capacité de connexion.",
     )
     is_staff = models.BooleanField(default=False)
     is_superadmin = models.BooleanField(
         default=False,
-        help_text="Platform-level admin. Separate from org roles.",
+        help_text="Administrateur au niveau de la plateforme. Distinct des rôles de l'organisation.",
     )
 
     # OTP / 2FA
@@ -49,7 +49,7 @@ class User(AbstractUser, PermissionsMixin, BaseModel):
         max_length=64,
         blank=True,
         default="",
-        help_text="TOTP secret for authenticator apps.",
+        help_text="Secret TOTP pour les applications d'authentification.",
     )
     account_activated_at = models.DateTimeField(null=True, blank=True)
 

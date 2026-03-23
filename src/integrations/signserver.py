@@ -8,7 +8,8 @@ The higher-level ecdsa-jcs-2019 proof construction lives in
 ``src.common.did.assembler``.
 
 Configuration (environment / Django settings):
-  SIGNSERVER_URL          — e.g. "http://signserver-node:8080"
+  SIGNSERVER_URL          — e.g. "http://signserver-node:8080" Internally
+  SIGNSERVER_URL=http://signserver.qcdigitalhub.com/signserver
   SIGNSERVER_WORKER_NAME  — e.g. "PlainSigner"
 
 If SIGNSERVER_URL is not set, a deterministic stub signature is returned

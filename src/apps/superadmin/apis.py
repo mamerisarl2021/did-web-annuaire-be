@@ -346,7 +346,6 @@ def delete_organization(request: HttpRequest, org_id: UUID):
     if org is None:
         raise NotFoundError("Organization not found.")
 
-    org_name = org.name
     org_services.delete_organization(organization=org, deleted_by=request.auth)
 
 # ── Users ───────────────────────────────────────────────────────────────

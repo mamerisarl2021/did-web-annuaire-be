@@ -1,9 +1,9 @@
 """
-Organization and Membership models.
+Modèles Organization et Membership.
 
-Organizations go through PENDING_REVIEW → APPROVED (by superadmin) lifecycle.
-Authorization document belongs on the Organization model because it's proof
-about the organization itself, not the user.
+Les organisations traversent le cycle de vie PENDING_REVIEW → APPROVED (par le superadmin).
+Le document d'autorisation appartient au modèle Organization car c'est une preuve
+concernant l'organisation elle-même, pas l'utilisateur.
 """
 
 import uuid
@@ -21,7 +21,7 @@ class Organization(BaseModel):
         max_length=100,
         unique=True,
         db_index=True,
-        help_text="URL-safe identifier. Used in DID URI path.",
+        help_text="Identifiant sécurisé pour les URL. Utilisé dans le chemin de l'URI DID.",
     )
     description = models.TextField(blank=True, default="")
     type = models.CharField(blank=True, default="", max_length=50)
@@ -30,17 +30,17 @@ class Organization(BaseModel):
     email = models.EmailField(
         blank=True,
         default="",
-        help_text="Official organization contact email.",
+        help_text="E-mail de contact officiel de l'organisation.",
     )
 
-    # ── Registration documents ──────────────────────────────────────────
+    # ── Documents d'inscription ─────────────────────────────────────────
     authorization_document = models.ForeignKey(
         "files.File",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="org_authorization_docs",
-        help_text="Required. Administrative proof for platform registration.",
+        help_text="Requis. Preuve administrative pour l'inscription sur la plateforme.",
     )
     justification_document = models.ForeignKey(
         "files.File",
@@ -48,10 +48,10 @@ class Organization(BaseModel):
         null=True,
         blank=True,
         related_name="org_justification_docs",
-        help_text="Optional. Additional justification document.",
+        help_text="Optionnel. Document de justification supplémentaire.",
     )
 
-    # ── Lifecycle ───────────────────────────────────────────────────────
+    # ── Cycle de vie ────────────────────────────────────────────────────
     status = models.CharField(
         max_length=20,
         choices=[(s.value, s.value) for s in OrgStatus],
@@ -105,8 +105,8 @@ class Membership(BaseModel):
     )
     has_audit_access = models.BooleanField(
         default=False,
-        help_text="Grant this member access to audit logs. "
-        "ORG_ADMIN always has audit access regardless of this flag.",
+        help_text="Accorde à ce membre l'accès aux journaux d'audit. "
+        "ORG_ADMIN a toujours un accès d'audit indépendamment de cet indicateur.",
     )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -132,5 +132,5 @@ class Membership(BaseModel):
 
     @property
     def can_view_audits(self) -> bool:
-        """ORG_ADMIN always can; others need the flag."""
+        """ORG_ADMIN peut toujours ; les autres ont besoin de l'indicateur."""
         return self.role == Role.ORG_ADMIN or self.has_audit_access

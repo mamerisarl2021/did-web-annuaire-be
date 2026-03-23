@@ -1,25 +1,5 @@
 """
-DID Document services (write operations).
-
-Lifecycle:
-  ORG_MEMBER: DRAFT → PENDING_REVIEW → APPROVED → PUBLISHED → DEACTIVATED
-                                      → REJECTED → re-edit → DRAFT
-  ORG_ADMIN:  DRAFT → PUBLISHED (direct, skips review)
-
-Updates to PUBLISHED documents:
-  Any owner or admin can edit draft_content on a PUBLISHED document.
-  Re-publishing creates a new version. The document was already reviewed
-  and approved once; subsequent edits go through a lighter flow:
-    - ORG_ADMIN: edit → re-publish directly (new version)
-    - ORG_MEMBER owner: edit → re-publish (new version)
-  If stricter review is needed, the admin can deactivate the document.
-
-sign_and_publish uses a SAGA pattern for all-or-none semantics with external services:
-  1. Validate state (pure)
-  2. Sign via SignServer (pure cryptographic computation — no external state change)
-  3. Register via Universal Registrar (external state change)
-  4. Persist to DB atomically
-  5. On DB failure → compensating call: deactivate the DID from the registrar
+Services de Document DID (opérations d'écriture).
 """
 
 import re
@@ -50,7 +30,7 @@ LABEL_RE = re.compile(r"^[a-z0-9][a-z0-9\-]{0,118}[a-z0-9]$")
 
 
 def _did_uri_for(doc: DIDDocument) -> str:
-    """Build the DID URI from a document's relations."""
+    """Construit l'URI DID à partir des relations d'un document."""
     return build_did_uri(
         org_slug=doc.organization.slug,
         owner_identifier=doc.owner_identifier,
@@ -58,7 +38,7 @@ def _did_uri_for(doc: DIDDocument) -> str:
     )
 
 
-# ── Create ───────────────────────────────────────────────────────────────
+# ── Créer ───────────────────────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -121,7 +101,7 @@ def create_document(
     return doc
 
 
-# ── Update draft ─────────────────────────────────────────────────────────
+# ── Mettre à jour le brouillon ──────────────────────────────────────────
 
 
 @transaction.atomic
@@ -133,12 +113,12 @@ def update_draft(
     service_endpoints: list[dict] | None = None,
 ) -> DIDDocument:
     """
-    Update the draft content of a document.
+    Met à jour le contenu brouillon d'un document.
 
-    Allowed statuses: DRAFT, REJECTED, PUBLISHED.
-      - DRAFT/REJECTED: normal editing before (re-)submission.
-      - PUBLISHED: editing creates a new draft for the next version.
-        The live content stays in `content`; changes go into `draft_content`.
+    Statuts autorisés : DRAFT, REJECTED, PUBLISHED.
+      - DRAFT/REJECTED : édition normale avant (re-)soumission.
+      - PUBLISHED : l'édition crée un nouveau brouillon pour la prochaine version.
+        Le contenu en direct reste dans `content` ; les modifs vont dans `draft_content`.
     """
     editable = {DocumentStatus.DRAFT, DocumentStatus.REJECTED, DocumentStatus.PUBLISHED}
     if document.status not in editable:
@@ -183,7 +163,7 @@ def update_draft(
     return document
 
 
-# ── Add / remove verification methods ───────────────────────────────────
+# ── Ajouter / supprimer méthodes de vérification ────────────────────────
 
 
 @transaction.atomic
@@ -266,7 +246,7 @@ def remove_verification_method(*, document: DIDDocument, vm_id, removed_by: User
     )
 
 
-# ── Submit for review ────────────────────────────────────────────────────
+# ── Soumettre pour examen ───────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -312,7 +292,7 @@ def submit_for_review(*, document: DIDDocument, submitted_by: User) -> DIDDocume
     return document
 
 
-# ── Approve / reject ────────────────────────────────────────────────────
+# ── Approuver / rejeter ─────────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -405,18 +385,18 @@ def reject_document(
     return document
 
 
-# ── Sign + Publish (SAGA pattern) ───────────────────────────────────────
+# ── Signer + Publier (Modèle SAGA) ──────────────────────────────────────
 #
-# Steps:
-#   1. _validate_for_publish() — read-only checks, no writes
-#   2. sign_and_attach_proof()  — pure crypto, no external state
-#   3. _call_registrar()        — external state change (outside atomic)
-#   4. _persist_publish()       — DB write inside atomic()
-#   5. On step 4 failure        — _call_registrar_deactivate() to undo step 3
+# Étapes :
+#   1. _validate_for_publish() — vérifications en lecture seule, aucune écriture
+#   2. sign_and_attach_proof()  — pure crypto, pas d'état externe
+#   3. _call_registrar()        — changement d'état externe (hors atomicité)
+#   4. _persist_publish()       — écriture DB dans atomic()
+#   5. Sur échec étape 4         — _call_registrar_deactivate() pour annuler l'étape 3
 #
-# The SIGNED intermediate status is removed. We go directly from the
-# source status to PUBLISHED in a single atomic DB write.
-# DOC_SIGNED audit entry is kept to record the signing event.
+# Le statut intermédiaire SIGNED est supprimé. Nous passons directement du
+# statut source à PUBLISHED dans une seule écriture DB atomique.
+# L'entrée d'audit DOC_SIGNED est conservée pour enregistrer l'événement de signature.
 
 
 def sign_and_publish(
@@ -426,23 +406,23 @@ def sign_and_publish(
     skip_review: bool = False,
 ) -> DIDDocument:
     """
-    Sign via SignServer (ecdsa-jcs-2019) and publish via Universal Registrar.
+    Signer via SignServer (ecdsa-jcs-2019) et publier via Universal Registrar.
 
-    Allowed source statuses:
-      - APPROVED   : normal flow after review
-      - DRAFT      : ORG_ADMIN direct publish (skip_review=True)
-      - PUBLISHED  : re-publish with updated draft_content (new version)
+    Statuts sources autorisés :
+      - APPROVED   : flux normal après examen
+      - DRAFT      : publication directe ORG_ADMIN (skip_review=True)
+      - PUBLISHED  : re-publier avec draft_content mis à jour (nouvelle version)
 
-    For PUBLISHED re-publish, draft_content must differ from content.
+    Pour la republi. depuis PUBLISHED, draft_content doit différer de content.
     """
-    # ── Step 1: Validate (pure — no writes) ─────────────────────────
+    # ── Étape 1 : Valider (pur — aucune écriture) ───────────────────
     _validate_for_publish(document, skip_review)
 
     content = document.draft_content
     if not content:
         raise ValidationError("No draft content to publish.")
 
-    # ── Step 2: Sign (pure crypto — no external state change) ────────
+    # ── Étape 2 : Signer (pure crypto — pas de changement d'état ext) ────────
     signed_doc, proof_value = sign_and_attach_proof(content)
 
     _log(
@@ -459,12 +439,12 @@ def sign_and_publish(
         cryptosuite="ecdsa-jcs-2019",
     )
 
-    # ── Step 3: Register externally (outside transaction) ────────────
+    # ── Étape 3 : Enregistrer en externe (hors transaction) ─────────
     is_first = document.current_version is None
     registrar_resp = _call_registrar(signed_doc, is_create=is_first)
 
-    # ── Step 4: Persist to DB atomically ─────────────────────────────
-    # On failure → Step 5: compensating deactivate to undo step 3.
+    # ── Étape 4 : Persister dans la BD de manière atomique ──────────
+    # Sur échec → Étape 5 : désactivation compensatoire pr annuler l'étape 3.
     did_uri = _did_uri_for(document)
     try:
         document = _persist_publish(
@@ -502,7 +482,7 @@ def sign_and_publish(
 
 
 def _validate_for_publish(document: DIDDocument, skip_review: bool) -> None:
-    """Pure read-only validation before signing/publishing. Raises ValidationError."""
+    """Validation pure en lecture seule avant de signer/publier. Lève ValidationError."""
     allowed = {DocumentStatus.APPROVED, DocumentStatus.PUBLISHED}
     if skip_review:
         allowed.add(DocumentStatus.DRAFT)
@@ -556,8 +536,8 @@ def _persist_publish(
     registrar_resp: dict,
 ) -> DIDDocument:
     """
-    Atomic DB write: create version record and promote draft → live.
-    Called after external signing + registration succeed.
+    Écriture BD atomique : créer l'enreg de version et promouvoir le brouillon en direct.
+    Appelé après le succès externe de signature + enregistrement.
     """
     next_ver = 1
     if document.current_version:
@@ -608,7 +588,7 @@ def _persist_publish(
     return document
 
 
-# ── Deactivate ───────────────────────────────────────────────────────────
+# ── Désactiver ──────────────────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -640,7 +620,7 @@ def deactivate_document(
 
 
 # ═════════════════════════════════════════════════════════════════════════
-# Internal helpers
+# Aides internes
 # ═════════════════════════════════════════════════════════════════════════
 
 
@@ -716,13 +696,13 @@ def _reassemble_draft(document):
     document.save(update_fields=["draft_content", "updated_at"])
 
 
-# ── External service clients ─────────────────────────────────────────────
+# ── Clients de services externes ────────────────────────────────────────
 
 
 def _call_registrar(did_document: dict, is_create: bool) -> dict:
     """
-    Register or update a DID document via the Universal Registrar.
-    Called OUTSIDE @transaction.atomic — result feeds into _persist_publish.
+    Enregistrer ou mettre à jour un document DID via Universal Registrar.
+    Appelé HORS DE @transaction.atomic — le résultat alimente _persist_publish.
     """
     from src.integrations.registrar import create_did, update_did
 
@@ -734,8 +714,8 @@ def _call_registrar(did_document: dict, is_create: bool) -> dict:
 
 def _call_registrar_deactivate(did_uri: str) -> dict:
     """
-    Deactivate a DID via the Universal Registrar.
-    Used both by deactivate_document() and as compensation in sign_and_publish saga.
+    Désactiver un DID via Universal Registrar.
+    Utilisé par deactivate_document() et comme comp. dans la saga sign_and_publish.
     """
     from src.integrations.registrar import deactivate_did
 

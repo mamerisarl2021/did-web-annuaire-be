@@ -1,8 +1,5 @@
 """
-Authentication services.
-
-Handles registration (with file uploads), OTP setup/verification,
-logout (token blacklisting), and password reset.
+Services d'authentification.
 """
 
 import base64
@@ -30,13 +27,13 @@ RESET_TOKEN_PREFIX = "pwd_reset:"
 RESET_TOKEN_TTL = timedelta(hours=1)
 
 
-# ── Registration ────────────────────────────────────────────────────────
+# ── Inscription ─────────────────────────────────────────────────────────
 
 
 @transaction.atomic
 def register_user_and_org(
     *,
-    # Organization fields (step 1)
+    # Champs d'organisation (étape 1)
     org_name: str,
     org_slug: str,
     org_description: str = "",
@@ -46,7 +43,7 @@ def register_user_and_org(
     org_email: str = "",
     authorization_document: UploadedFile,
     justification_document: UploadedFile | None = None,
-    # User fields (step 2)
+    # Champs utilisateur (étape 2)
     email: str,
     full_name: str,
     password: str,
@@ -54,17 +51,12 @@ def register_user_and_org(
     functions: str = "",
 ) -> User:
     """
-    Register a new user and their organization.
-
-    1. Creates the user (inactive).
-    2. Uploads the documents.
-    3. Creates the organization (PENDING_REVIEW).
-    4. Creates the ORG_ADMIN membership (INVITED).
+    Inscrit un nouvel utilisateur et son organisation.
     """
     from src.apps.organizations import services as org_services
     from src.common.types import MembershipStatus, Role
 
-    # 1. Create user
+    # 1. Crée l'utilisateur
     user = create_user(
         email=email,
         full_name=full_name,
@@ -74,13 +66,13 @@ def register_user_and_org(
         is_active=False,
     )
 
-    # 2. Upload documents
+    # 2. Téléverse les documents
     auth_doc = upload_document(file=authorization_document, uploaded_by=user)
     just_doc = None
     if justification_document:
         just_doc = upload_document(file=justification_document, uploaded_by=user)
 
-    # 3. Create organization
+    # 3. Crée l'organisation
     org = org_services.create_organization(
         name=org_name,
         slug=org_slug,
@@ -94,7 +86,7 @@ def register_user_and_org(
         created_by=user,
     )
 
-    # 4. Create membership
+    # 4. Crée l'adhésion
     org_services.create_membership(
         user=user,
         organization=org,
@@ -113,7 +105,7 @@ def register_user_and_org(
     return user
 
 
-# ── OTP Setup ───────────────────────────────────────────────────────────
+# ── Configuration OTP ───────────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -143,7 +135,7 @@ def setup_otp(*, user: User) -> dict:
     }
 
 
-# ── OTP Verification ───────────────────────────────────────────────────
+# ── Vérification OTP ────────────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -155,7 +147,7 @@ def verify_otp_and_activate(*, user: User, otp_code: str, password: str) -> User
     if not totp.verify(otp_code, valid_window=1):
         raise ValidationError("Invalid OTP code.")
 
-    # Validate and set the new password
+    # Valide et définit le nouveau mot de passe
     from django.contrib.auth.password_validation import validate_password
 
     try:
@@ -178,7 +170,7 @@ def verify_otp_and_activate(*, user: User, otp_code: str, password: str) -> User
     return user
 
 
-# ── Token generation ────────────────────────────────────────────────────
+# ── Génération de jeton ─────────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -194,7 +186,7 @@ def generate_tokens_for_user(*, user: User) -> dict:
     }
 
 
-# ── Logout ──────────────────────────────────────────────────────────────
+# ── Déconnexion ─────────────────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -220,14 +212,14 @@ def logout_user(*, refresh_token: str) -> None:
         raise ValidationError(f"Invalid or expired token: {e}")
 
 
-# ── Password Reset ──────────────────────────────────────────────────────
+# ── Réinitialisation du mot de passe ────────────────────────────────────
 
 
 @transaction.atomic
 def request_password_reset(*, email: str) -> None:
     """
-    Generate a reset token in Redis and trigger a reset email.
-    Always returns silently to prevent email enumeration.
+    Génère un jeton de réinitialisation dans Redis et déclenche un e-mail de réinitialisation.
+    Retourne toujours silencieusement pour éviter l'énumération d'e-mails.
     """
     from src.apps.users.selectors import get_user_by_email
 
@@ -302,11 +294,11 @@ def change_password(*, user: User, old_password: str, new_password: str) -> None
     logger.info("password_changed", user_id=str(user.id))
 
 
-# ── Audit helpers ────────────────────────────────────────────────────────
+# ── Assistants d'audit ──────────────────────────────────────────────────
 
 
 def _log_auth_audit(*, actor, action, description, metadata=None):
-    """Log an audit entry for an authentication action."""
+    """Enregistre une entrée d'audit pour une action d'authentification."""
     try:
         from src.apps.audits.services import log_action
 

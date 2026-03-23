@@ -1,8 +1,8 @@
 """
-Authentication API endpoints.
+Points de terminaison de l'API d'authentification.
 
-Register is multipart (Form fields + file uploads).
-Login is via ninja_jwt's NinjaJWTDefaultController (token/pair, token/refresh).
+L'inscription est multipart (champs de formulaire + téléversements de fichiers).
+La connexion se fait via NinjaJWTDefaultController de ninja_jwt (token/pair, token/refresh).
 """
 
 from uuid import UUID
@@ -35,7 +35,7 @@ from src.common.exceptions import NotFoundError
 router = Router(tags=["Authentication"])
 
 
-# ── Register (multipart) ───────────────────────────────────────────────
+# ── Inscription (multipart) ─────────────────────────────────────────────
 
 
 @router.post(
@@ -49,7 +49,7 @@ router = Router(tags=["Authentication"])
 )
 def register(
     request: HttpRequest,
-    # ── Organization fields (step 1 of the frontend form) ───────────
+    # ── Champs d'organisation (étape 1) ──────
     org_name: str = Form(...),
     org_slug: str = Form(...),
     org_type: str = Form(""),
@@ -59,7 +59,7 @@ def register(
     org_email: str = Form(""),
     authorization_document: UploadedFile = File(...),
     justification_document: UploadedFile = File(None),
-    # ── User fields (step 2 of the frontend form) ──────────────────
+    # ── Champs utilisateur (étape 2) ─────────
     email: str = Form(...),
     full_name: str = Form(...),
     password: str = Form(""),
@@ -67,10 +67,11 @@ def register(
     functions: str = Form(""),
 ) -> dict:
     """
-    Creates a new user (inactive) and an organization (PENDING_REVIEW).
-    Accepts multipart/form-data with PDF file uploads.
-    Password is optional — if not provided a random unusable placeholder is
-    generated. The real password is always set during account activation.
+    Crée un nouvel utilisateur (inactif) et une organisation (PENDING_REVIEW).
+    Accepte multipart/form-data avec des téléversements de fichiers PDF.
+    Le mot de passe est optionnel — s'il n'est pas fourni, un espace réservé
+    aléatoire inutilisable est généré. Le vrai mot de passe est toujours
+    défini lors de l'activation du compte.
     """
     import secrets as _secrets
 
@@ -99,7 +100,7 @@ def register(
     }
 
 
-# ── OTP Setup ───────────────────────────────────────────────────────────
+# ── Configuration OTP ───────────────────────────────────────────────────
 
 
 @router.get(
@@ -121,7 +122,7 @@ def activate_setup(request: HttpRequest, invitation_token: UUID):
     }
 
 
-# ── OTP Verify + Activate ──────────────────────────────────────────────
+# ── Vérification OTP + Activation ───────────────────────────────────────
 
 
 @router.post(
@@ -160,7 +161,7 @@ def activate_verify(
     }
 
 
-# ── Logout ──────────────────────────────────────────────────────────────
+# ── Déconnexion ─────────────────────────────────────────────────────────
 
 
 @router.post(
@@ -174,7 +175,7 @@ def logout(request: HttpRequest, payload: LogoutRequestSchema):
     return 200, {"message": "Successfully logged out."}
 
 
-# ── Profile ─────────────────────────────────────────────────────────────
+# ── Profil ──────────────────────────────────────────────────────────────
 
 
 @router.get(
@@ -195,10 +196,7 @@ def me(request: HttpRequest):
 )
 def update_me(request: HttpRequest, payload: UpdateProfileSchema):
     """
-    Update the current user's personal information.
-
-    Only `full_name`, `phone`, and `email` are editable by the user. The `functions`
-    (job title) field is set by an org admin and cannot be changed here.
+    Met à jour les informations personnelles de l'utilisateur actuel.
     """
 
     user = update_user_profile(
@@ -206,12 +204,12 @@ def update_me(request: HttpRequest, payload: UpdateProfileSchema):
         full_name=payload.full_name,
         phone=payload.phone,
         email=payload.email,
-        # functions intentionally excluded
+        # functions intentionnellement exclus
     )
     return 200, user
 
 
-# ── Password Reset (public) ─────────────────────────────────────────────
+# ── Réinitialisation de mot de passe (public) ───────────────────────────
 
 
 @router.post(
@@ -238,7 +236,7 @@ def password_reset_confirm(request: HttpRequest, payload: PasswordResetConfirmSc
     return 200, {"message": "Password has been reset successfully."}
 
 
-# ── Password Change (authenticated) ─────────────────────────────────────
+# ── Changement de mot de passe (authentifié) ────────────────────────────
 
 
 @router.post(

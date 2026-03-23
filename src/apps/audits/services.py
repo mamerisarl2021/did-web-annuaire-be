@@ -1,7 +1,5 @@
 """
-Audit log service.
-
-Provides a simple API to create immutable audit entries.
+Service de journalisation d'audit.
 """
 
 import structlog
@@ -25,23 +23,22 @@ def log_action(
     ip_address: str | None = None,
 ) -> AuditLog:
     """
-    Create an audit log entry.
+    Créer une entrée de journal d'audit.
 
-    Args:
-        actor: User instance (or None for system actions)
-        action: AuditAction value
-        resource_type: ResourceType value
-        resource_id: UUID of the affected resource
-        organization: Organization instance (optional)
-        description: Human-readable summary
-        metadata: Extra context dict
-        ip_address: Request IP. If None, automatically read from
-            the thread-local request context (set by middleware).
+    Arguments :
+        actor: Instance User (ou None pour les actions système)
+        action: Valeur AuditAction
+        resource_type: Valeur ResourceType
+        resource_id: UUID de la ressource concernée
+        organization: Instance Organization (optionnel)
+        description: Résumé lisible par l'homme
+        metadata: Dictionnaire de contexte supplémentaire
+        ip_address: IP de req. Si None, lu auto dans le contexte local.
 
-    Returns:
-        AuditLog instance
+    Retours :
+        Instance AuditLog
     """
-    # Auto-read IP from middleware context if not explicitly provided
+    # Lecture auto de l'IP depuis le mw si non fournie explicitement
     if ip_address is None:
         from src.common.request_context import get_request_ip
 
@@ -73,13 +70,9 @@ def log_action(
 
 def get_client_ip(request) -> str | None:
     """
-    Extract client IP from a Django request, handling reverse proxies.
+    Extrait l'IP du client depuis une requête Django.
 
-    Checks X-Forwarded-For (set by nginx) first, then falls back
-    to REMOTE_ADDR.
-
-    Note: This is intentionally NOT wrapped in @transaction.atomic —
-    it's a pure read helper, not a DB operation.
+    Vérifie d'abord X-Forwarded-For (par nginx), puis REMOTE_ADDR.
     """
     if request is None:
         return None

@@ -1,15 +1,15 @@
 """
-Root URL configuration.
+Configuration racine des URL.
 
-- /api/v2/              → Main NinjaExtraAPI (JWT auth, REST endpoints)
-- /api/v2/org/          → Org Admin API (scoped to user's orgs)
-- /api/v2/public/       → Public API (no auth required)
-- /superadmin/api/v2/   → Superadmin API
-- /superadmin/          → Superadmin frontend (Django templates)
-- /workspace/           → Org admin frontend (Django templates)
-- /resolve/, /search/   → Public pages (no auth)
-- /login/, /register/   → Public frontend (Django templates)
-- /admin/               → Django admin
+- /api/v2/              → API NinjaExtra principale (Auth JWT, points de terminaison REST)
+- /api/v2/org/          → API Admin Org (limitée aux organisations de l'utilisateur)
+- /api/v2/public/       → API publique (aucune authentification requise)
+- /superadmin/api/v2/   → API Superadmin
+- /superadmin/          → Interface Superadmin (modèles Django)
+- /workspace/           → Interface Admin Org (modèles Django)
+- /resolve/, /search/   → Pages publiques (sans auth)
+- /login/, /register/   → Interface publique (modèles Django)
+- /admin/               → Administration Django
 """
 
 from django.contrib import admin
@@ -25,7 +25,7 @@ from src.apps.orgadmin.apis import router as orgadmin_router
 from src.apps.superadmin.apis import router as superadmin_router
 from src.common.exceptions import configure_exception_handlers
 
-# ── Main API ────────────────────────────────────────────────────────────
+# ── API Principale ──────────────────────────────────────────────────────
 
 api = NinjaExtraAPI(
     title="Annuaire DID API",
@@ -39,22 +39,22 @@ configure_exception_handlers(api)
 # ninja_jwt: /api/v2/token/pair, /api/v2/token/refresh, /api/v2/token/verify
 api.register_controllers(NinjaJWTDefaultController)
 
-# Custom auth: /api/v2/auth/...
+# Auth personnalisée : /api/v2/auth/...
 api.add_router("/auth", auth_router)
 
-# Org admin: /api/v2/org/...
+# Admin org : /api/v2/org/...
 api.add_router("/org", orgadmin_router)
 
-# Certificates: /api/v2/org/organizations/{org_id}/certificates/...
+# Certificats : /api/v2/org/organizations/{org_id}/certificates/...
 api.add_router("/org", cert_router)
 
-# Documents: /api/v2/org/organizations/{org_id}/documents/...
+# Documents : /api/v2/org/organizations/{org_id}/documents/...
 api.add_router("/org", doc_router)
 
-# Public search (no auth): /api/v2/public/search/...
+# Recherche publique (sans auth) : /api/v2/public/search/...
 api.add_router("/public", public_search_router)
 
-# ── Superadmin API ──────────────────────────────────────────────────────
+# ── API Superadmin ──────────────────────────────────────────────────────
 
 superadmin_api = NinjaExtraAPI(
     title="Annuaire DID Superadmin API",
@@ -66,18 +66,18 @@ superadmin_api = NinjaExtraAPI(
 configure_exception_handlers(superadmin_api)
 superadmin_api.add_router("/", superadmin_router)
 
-# ── URL patterns ────────────────────────────────────────────────────────
+# ── Modèles d'URL ───────────────────────────────────────────────────────
 
 urlpatterns = [
-    # APIs
+    # API
     path("api/v2/", api.urls),
     path("superadmin/api/v2/", superadmin_api.urls),
-    # Django admin
+    # Administration Django
     path("admin/", admin.site.urls),
-    # Superadmin frontend (templates)
+    # Frontend Superadmin (modèles)
     path("superadmin/", include("src.apps.superadmin.urls")),
-    # Org admin frontend (templates)
+    # Frontend Admin Org (modèles)
     path("workspace/", include("src.apps.orgadmin.urls")),
-    # Public frontend (templates) — must be last (catch-all paths)
+    # Frontend public (modèles) — doit être en dernier (chemins fourre-tout)
     path("", include("src.apps.frontend.urls")),
 ]

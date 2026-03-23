@@ -1,7 +1,7 @@
 """
-Email sending service.
+Service d'envoi d'e-mails.
 
-Wraps Django's email backend with a stable API.
+Enveloppe le backend d'e-mail de Django avec une API stable.
 """
 
 import re
@@ -33,9 +33,9 @@ def email_send(
     connection_kwargs: dict[str, Any] | None = None,
 ) -> bool:
     """
-    Send an email using Django's email backend.
+    Envoyer un e-mail en utilisant le backend d'e-mail de Django.
 
-    Returns True if sent successfully.
+    Renvoie True en cas d'envoi réussi.
     """
     connection = get_connection(**(connection_kwargs or {}))
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@didannuaire.com")

@@ -1,21 +1,21 @@
 """
-DID Document API endpoints.
+Points de terminaison de l'API Document DID.
 
-Mounted at: /api/v2/org/   (alongside orgadmin and cert routers)
-Full paths:  /api/v2/org/organizations/{org_id}/documents/...
+Monté sous : /api/v2/org/   (aux côtés des routeurs orgadmin et cert)
+Chemins complets :  /api/v2/org/organizations/{org_id}/documents/...
 
-Scoping:
-  - ORG_ADMIN:  sees all, reviews others', publishes directly from DRAFT
-  - ORG_MEMBER: sees/edits own, submits for review, publishes/deactivates own
-  - AUDITOR:    sees all (read-only)
+Portée :
+  - ORG_ADMIN : voit tout, examine ceux des autres, publie directement depuis DRAFT
+  - ORG_MEMBER : voit/modifie les siens, soumet pour examen, publie/désactive les siens
+  - AUDITOR : voit tout (lecture seule)
 
-Lifecycle:
-  ORG_MEMBER: DRAFT → PENDING_REVIEW → APPROVED → PUBLISHED → DEACTIVATED
-  ORG_ADMIN:  DRAFT → PUBLISHED (direct, skips review)
+Cycle de vie :
+  ORG_MEMBER : DRAFT → PENDING_REVIEW → APPROVED → PUBLISHED → DEACTIVATED
+  ORG_ADMIN :  DRAFT → PUBLISHED (direct, ignore l'examen)
 
-Update flow (for already-PUBLISHED documents):
-  Owner edits draft_content → re-publishes (creates new version).
-  ORG_ADMIN can also re-publish any document.
+Flux de mise à jour (pour les documents déjà PUBLISHED) :
+  Le propriétaire modifie draft_content → re-publie (crée une nouvelle version).
+  L'ORG_ADMIN peut également re-publier n'importe quel document.
 """
 
 from uuid import UUID
@@ -57,7 +57,7 @@ router = Router(tags=["DID Documents"])
 _P = "/organizations/{org_id}/documents"
 
 
-# ── Scoping helpers ──────────────────────────────────────────────────────
+# ── Aides à la portée ───────────────────────────────────────────────────
 
 
 def _can_view_all(membership) -> bool:
@@ -68,7 +68,7 @@ def _is_admin(membership) -> bool:
     return membership.role == Role.ORG_ADMIN
 
 
-# ── Serialization helpers ────────────────────────────────────────────────
+# ── Aides à la sérialisation ────────────────────────────────────────────
 
 
 def _did_uri(doc) -> str:
@@ -164,18 +164,14 @@ def _get_doc_or_404(doc_id: UUID, org_id: UUID):
 
 
 # ═════════════════════════════════════════════════════════════════════════
-# IMPORTANT: literal paths (pending-review) BEFORE parameterized ({doc_id})
+# IMPORTANT : chemins littéraux (pending-review) AVANT paramétré ({doc_id})
 # ═════════════════════════════════════════════════════════════════════════
-
-
-# ── List documents ───────────────────────────────────────────────────────
-
 
 @router.get(
     f"{_P}",
     response=list[DocListItemSchema],
     auth=JWTAuth(),
-    summary="List DID documents (scoped by role)",
+    summary="Liste des documents DID (portée par rôle)",
 )
 def list_documents(request: HttpRequest, org_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
@@ -194,14 +190,11 @@ def list_documents(request: HttpRequest, org_id: UUID):
     return [_doc_list_item(d) for d in docs]
 
 
-# ── Create document ──────────────────────────────────────────────────────
-
-
 @router.post(
     f"{_P}",
     response={201: DocDetailSchema, 400: ErrorSchema, 409: ErrorSchema},
     auth=JWTAuth(),
-    summary="Create a new DID document (DRAFT)",
+    summary="Créer un nouveau document DID (DRAFT)",
 )
 def create_document(request: HttpRequest, org_id: UUID, payload: CreateDocumentSchema):
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
@@ -225,14 +218,11 @@ def create_document(request: HttpRequest, org_id: UUID, payload: CreateDocumentS
     return 201, _doc_detail(doc)
 
 
-# ── Pending review (literal path — MUST be before {doc_id}) ─────────────
-
-
 @router.get(
     f"{_P}/pending-review",
     response=list[DocListItemSchema],
     auth=JWTAuth(),
-    summary="List documents pending review (ORG_ADMIN only)",
+    summary="Liste des documents en attente d'examen (ORG_ADMIN uniquement)",
 )
 def list_pending_review(request: HttpRequest, org_id: UUID):
     require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
@@ -240,14 +230,11 @@ def list_pending_review(request: HttpRequest, org_id: UUID):
     return [_doc_list_item(d) for d in docs]
 
 
-# ── Document detail ──────────────────────────────────────────────────────
-
-
 @router.get(
     f"{_P}/{{doc_id}}",
     response={200: DocDetailSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Get DID document detail",
+    summary="Obtenir les détails du document DID",
 )
 def get_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
@@ -259,14 +246,11 @@ def get_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     return _doc_detail(doc)
 
 
-# ── Update draft ─────────────────────────────────────────────────────────
-
-
 @router.patch(
     f"{_P}/{{doc_id}}/draft",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Update document draft (DRAFT, REJECTED, or PUBLISHED)",
+    summary="Mettre à jour le brouillon du document (DRAFT, REJECTED ou PUBLISHED)",
 )
 def update_draft(
     request: HttpRequest,
@@ -275,13 +259,13 @@ def update_draft(
     payload: UpdateDraftSchema,
 ):
     """
-    Update the draft content of a DID document.
+    Mettre à jour le contenu brouillon d'un document DID.
 
-    Works on DRAFT, REJECTED, and PUBLISHED documents:
-    - DRAFT/REJECTED: normal editing before (re-)submission
-    - PUBLISHED: creates a new draft for the next version
+    Fonctionne sur les documents DRAFT, REJECTED et PUBLISHED :
+    - DRAFT/REJECTED : édition normale avant (re-)soumission
+    - PUBLISHED : crée un nouveau brouillon pour la prochaine version
 
-    Only the document owner can edit.
+    Seul le propriétaire du document peut modifier.
     """
     require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
@@ -308,10 +292,6 @@ def update_draft(
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
     return _doc_detail(doc)
 
-
-# ── Add verification method ─────────────────────────────────────────────
-
-
 @router.post(
     f"{_P}/{{doc_id}}/verification-methods",
     response={
@@ -321,7 +301,7 @@ def update_draft(
         409: ErrorSchema,
     },
     auth=JWTAuth(),
-    summary="Add a verification method to a document",
+    summary="Ajouter une méthode de vérification à un document",
 )
 def add_verification_method(
     request: HttpRequest,
@@ -346,14 +326,11 @@ def add_verification_method(
     return 201, _vm_response(vm)
 
 
-# ── Remove verification method ──────────────────────────────────────────
-
-
 @router.delete(
     f"{_P}/{{doc_id}}/verification-methods/{{vm_id}}",
     response={200: MessageSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Remove a verification method from a document",
+    summary="Supprimer une méthode de vérification d'un document",
 )
 def remove_verification_method(
     request: HttpRequest,
@@ -373,14 +350,11 @@ def remove_verification_method(
     return {"message": "Verification method removed."}
 
 
-# ── Submit for review (ORG_MEMBER only — admins publish directly) ──────
-
-
 @router.post(
     f"{_P}/{{doc_id}}/submit",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Submit document for review (DRAFT → PENDING_REVIEW)",
+    summary="Soumettre le document pour examen (DRAFT → PENDING_REVIEW)",
 )
 def submit_for_review(request: HttpRequest, org_id: UUID, doc_id: UUID):
     require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
@@ -393,14 +367,11 @@ def submit_for_review(request: HttpRequest, org_id: UUID, doc_id: UUID):
     return _doc_detail(doc)
 
 
-# ── Approve ──────────────────────────────────────────────────────────────
-
-
 @router.post(
     f"{_P}/{{doc_id}}/approve",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Approve document (PENDING_REVIEW → APPROVED)",
+    summary="Approuver le document (PENDING_REVIEW → APPROVED)",
 )
 def approve_document(
     request: HttpRequest,
@@ -422,14 +393,11 @@ def approve_document(
     return _doc_detail(doc)
 
 
-# ── Reject ───────────────────────────────────────────────────────────────
-
-
 @router.post(
     f"{_P}/{{doc_id}}/reject",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Reject document (PENDING_REVIEW → REJECTED)",
+    summary="Rejeter le document (PENDING_REVIEW → REJECTED)",
 )
 def reject_document(
     request: HttpRequest,
@@ -451,23 +419,20 @@ def reject_document(
     return _doc_detail(doc)
 
 
-# ── Publish (sign + register) ───────────────────────────────────────────
-
-
 @router.post(
     f"{_P}/{{doc_id}}/publish",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Sign and publish document (or re-publish with new version)",
+    summary="Signer et publier le document (ou re-publier avec nouvelle version)",
 )
 def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     """
-    Sign and publish a DID document.
+    Signer et publier un document DID.
 
-    Allowed flows:
-      - ORG_ADMIN on DRAFT: direct publish (skip review)
-      - Any role on APPROVED: publish after review
-      - Owner or ORG_ADMIN on PUBLISHED: re-publish (new version from draft_content)
+    Flux autorisés :
+      - ORG_ADMIN sur DRAFT : publication directe (ignore l'examen)
+      - Tout rôle sur APPROVED : publication après examen
+      - Propriétaire ou ORG_ADMIN sur PUBLISHED : re-publier (nouvelle version du draft_content)
     """
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
@@ -485,14 +450,11 @@ def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     return _doc_detail(doc)
 
 
-# ── Deactivate ───────────────────────────────────────────────────────────
-
-
 @router.post(
     f"{_P}/{{doc_id}}/deactivate",
     response={200: MessageSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Deactivate a published document",
+    summary="Désactiver un document publié",
 )
 def deactivate_document(
     request: HttpRequest,
@@ -512,14 +474,12 @@ def deactivate_document(
     return {"message": f"Document '{doc.label}' has been deactivated."}
 
 
-# ── Version history ──────────────────────────────────────────────────────
-
 
 @router.get(
     f"{_P}/{{doc_id}}/versions",
     response=list[DocVersionSchema],
     auth=JWTAuth(),
-    summary="List published versions of a document",
+    summary="Liste des versions publiées d'un document",
 )
 def list_versions(request: HttpRequest, org_id: UUID, doc_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
@@ -532,30 +492,12 @@ def list_versions(request: HttpRequest, org_id: UUID, doc_id: UUID):
     return [_version_response(v) for v in versions]
 
 
-# ── Public DID resolution (no auth) ─────────────────────────────────────
-
-
-@router.get(
-    f"{_P}/{{doc_id}}/did.json",
-    response={200: dict, 404: ErrorSchema},
-    summary="Resolve published DID document (public, no auth)",
-)
-def resolve_did_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
-    doc = doc_selectors.get_document_by_id(doc_id=doc_id)
-    if doc is None or str(doc.organization_id) != str(org_id):
-        raise NotFoundError("DID document not found.")
-    if not doc.content or doc.status == DocumentStatus.DEACTIVATED:
-        raise NotFoundError("DID document not published or has been deactivated.")
-    return doc.content
-
-
-# ── Verifiable Credential (no auth) ─────────────────────────────────────
-
+# Try
 
 @router.get(
     f"{_P}/{{doc_id}}/vc.json",
     response={200: dict, 404: ErrorSchema},
-    summary="Get Verifiable Credential for a published document",
+    summary="Obtenir un Identifiant Vérifiable pour un document publié",
 )
 def get_verifiable_credential(request: HttpRequest, org_id: UUID, doc_id: UUID):
     doc = doc_selectors.get_document_by_id(doc_id=doc_id)

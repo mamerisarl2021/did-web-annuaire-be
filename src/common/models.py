@@ -1,5 +1,3 @@
-# src/common/models.py
-
 import uuid
 
 from django.db import models

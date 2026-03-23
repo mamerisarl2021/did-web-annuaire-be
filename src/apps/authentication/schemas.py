@@ -1,8 +1,5 @@
 """
-Authentication schemas.
-
-Registration is multipart (Form fields + file uploads), so we don't use a
-request Schema for it — the API endpoint uses Form() and File() parameters directly.
+Schémas d'authentification.
 """
 
 from uuid import UUID
@@ -15,7 +12,7 @@ from ninja_jwt.tokens import RefreshToken
 from src.apps.users.models import User
 
 
-# ── Custom token obtain (login) ─────────────────────────────────────────
+# ── Obtention de jeton personnalisée (connexion) ────────────────────────
 
 
 class CustomTokenObtainPairInput(TokenObtainPairInputSchema):
@@ -46,7 +43,7 @@ class CustomTokenObtainPairInput(TokenObtainPairInputSchema):
         return token
 
 
-# ── Request schemas ─────────────────────────────────────────────────────
+# ── Schémas de requête ────────────────────────────────────────────────────
 
 
 class ActivateVerifyRequestSchema(Schema):
@@ -81,9 +78,7 @@ class PasswordChangeSchema(Schema):
 
 class UpdateProfileSchema(Schema):
     """
-    Allows users to update their own personal info.
-    `functions` (job title) is intentionally excluded — it is set by an admin
-    and ORG_MEMBERs cannot modify it themselves.
+    Permet aux utilisateurs de mettre à jour leurs informations personnelles.
     """
 
     full_name: str | None = None
@@ -91,7 +86,7 @@ class UpdateProfileSchema(Schema):
     email: str | None = None
 
 
-# ── Response schemas ────────────────────────────────────────────────────
+# ── Schémas de réponse ────────────────────────────────────────────────────
 
 
 class UserResponseSchema(Schema):

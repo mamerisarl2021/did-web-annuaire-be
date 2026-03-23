@@ -1,15 +1,15 @@
 """
-Certificate API endpoints.
+Endpoints de l'API Certificat.
 
-Mounted at: /api/v2/org/organizations/{org_id}/certificates/
+Monté sur : /api/v2/org/organizations/{org_id}/certificates/
 
-Scoping:
-  - ORG_ADMIN:  sees ALL org certs, can rotate/revoke any
-  - ORG_MEMBER: sees ONLY own certs (created_by = self), can rotate own
-  - AUDITOR:    sees ALL (read-only)
+Portée :
+  - ORG_ADMIN :  voit TOUS les certifs. de l'org, peut faire tourner/révoquer n'importe lequel
+  - ORG_MEMBER : voit UNIQUEMENT ses propres certifs (created_by = self), peut faire tourner les siens
+  - AUDITOR :    voit TOUT (lecture seule)
 
-All endpoints require JWT auth and membership in the target org.
-Upload and rotate use multipart form data (file + metadata).
+Tous les endpoints nécessitent une authentification JWT et l'appartenance à l'org cible.
+Upload et rotate utilisent des données multipart form (fichier + métadonnées).
 """
 
 from uuid import UUID
@@ -39,18 +39,18 @@ router = Router(tags=["Certificates"])
 _P = "/organizations/{org_id}/certificates"
 
 
-# ── Scoping helpers ──────────────────────────────────────────────────────
+# ── Aides à la portée ───────────────────────────────────────────────────
 
 
 def _can_view_all(membership) -> bool:
-    """ORG_ADMIN and AUDITOR see all org certificates."""
+    """ORG_ADMIN et AUDITOR voient tous les certificats de l'org."""
     return membership.role in (Role.ORG_ADMIN, Role.AUDITOR)
 
 
 def _require_cert_access(cert, user, membership, action="access"):
     """
-    Enforce ownership scoping: ORG_MEMBER can only access their own certs.
-    ORG_ADMIN and AUDITOR can access any cert in the org.
+    Appliquer la portée de propriété : ORG_MEMBER ne peut accéder qu'à ses propres certifs.
+    ORG_ADMIN et AUDITOR peuvent accéder à n'importe quel certif. dans l'org.
     """
     if _can_view_all(membership):
         return
@@ -61,8 +61,8 @@ def _require_cert_access(cert, user, membership, action="access"):
 
 def _require_cert_mutate(cert, user, membership, action="modify"):
     """
-    Enforce ownership for mutations: ORG_MEMBER can only modify own certs.
-    ORG_ADMIN can modify any cert in the org.
+    Appliquer la prot. pr les mutations : ORG_MEMBER ne pet modif que ses propres certifs.
+    ORG_ADMIN peut modifier n'importe quel certificat dans l'organisation.
     """
     if membership.role == Role.ORG_ADMIN:
         return
@@ -71,7 +71,7 @@ def _require_cert_mutate(cert, user, membership, action="modify"):
     raise PermissionDeniedError(f"You can only {action} certificates you uploaded.")
 
 
-# ── Serialization helpers ────────────────────────────────────────────────
+# ── Aides à la sérialisation ────────────────────────────────────────────
 
 
 def _cert_list_item(cert) -> dict:
@@ -145,19 +145,19 @@ def _cert_detail(cert) -> dict:
     }
 
 
-# ── List certificates ────────────────────────────────────────────────────
+# ── Liste des certificats ───────────────────────────────────────────────
 
 
 @router.get(
     f"{_P}",
     response=list[CertListItemSchema],
     auth=JWTAuth(),
-    summary="List certificates (scoped by role)",
+    summary="Lister les certificats (portée par rôle)",
 )
 def list_certificates(request: HttpRequest, org_id: UUID):
     """
-    ORG_ADMIN / AUDITOR: all org certificates.
-    ORG_MEMBER: only certificates uploaded by the requesting user.
+    ORG_ADMIN / AUDITOR : tous les certificats de l'organisation.
+    ORG_MEMBER : uniquement les certificats téléchargés par l'ut. demandeur.
     """
     membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
 
@@ -172,14 +172,14 @@ def list_certificates(request: HttpRequest, org_id: UUID):
     return [_cert_list_item(c) for c in certs]
 
 
-# ── Upload certificate ───────────────────────────────────────────────────
+# ── Télécharger un certificat ───────────────────────────────────────────
 
 
 @router.post(
     f"{_P}/upload",
     response={201: CertDetailSchema, 400: ErrorSchema, 409: ErrorSchema},
     auth=JWTAuth(),
-    summary="Upload a new certificate",
+    summary="Télécharger un nouveau certificat",
 )
 def upload_certificate(
     request: HttpRequest,
@@ -204,14 +204,14 @@ def upload_certificate(
     return 201, _cert_detail(cert)
 
 
-# ── Certificate detail ───────────────────────────────────────────────────
+# ── Détails du certificat ───────────────────────────────────────────────
 
 
 @router.get(
     f"{_P}/{{cert_id}}",
     response={200: CertDetailSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Get certificate detail",
+    summary="Obtenir les détails du certificat",
 )
 def get_certificate(request: HttpRequest, org_id: UUID, cert_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
@@ -225,14 +225,14 @@ def get_certificate(request: HttpRequest, org_id: UUID, cert_id: UUID):
     return _cert_detail(cert)
 
 
-# ── Rotate certificate ──────────────────────────────────────────────────
+# ── Faire tourner le certificat ─────────────────────────────────────────
 
 
 @router.post(
     f"{_P}/{{cert_id}}/rotate",
     response={200: CertDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Rotate a certificate (upload new version)",
+    summary="Faire tourner un certificat (télécharger no. version)",
 )
 def rotate_certificate(
     request: HttpRequest,
@@ -262,14 +262,14 @@ def rotate_certificate(
     return _cert_detail(cert)
 
 
-# ── Revoke certificate ──────────────────────────────────────────────────
+# ── Révoquer le certificat ──────────────────────────────────────────────
 
 
 @router.post(
     f"{_P}/{{cert_id}}/revoke",
     response={200: MessageSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Revoke a certificate",
+    summary="Révoquer un certificat",
 )
 def revoke_certificate(
     request: HttpRequest,
@@ -285,7 +285,7 @@ def revoke_certificate(
     if cert is None or str(cert.organization_id) != str(org_id):
         raise NotFoundError("Certificate not found.")
 
-    # ORG_ADMIN can revoke any; ORG_MEMBER can only revoke own
+    # ORG_ADMIN peut révoquer n'im. lequel ; ORG_MEMBER uniq. le sien
     _require_cert_mutate(cert, request.auth, membership, action="revoke")
 
     cert_services.revoke_certificate(
@@ -297,14 +297,14 @@ def revoke_certificate(
     return {"message": f"Certificate '{cert.label}' has been revoked."}
 
 
-# ── Version history ──────────────────────────────────────────────────────
+# ── Historique des versions ─────────────────────────────────────────────
 
 
 @router.get(
     f"{_P}/{{cert_id}}/versions",
     response=list[CertVersionSummarySchema],
     auth=JWTAuth(),
-    summary="List certificate versions",
+    summary="Lister les versions de certificats",
 )
 def list_versions(request: HttpRequest, org_id: UUID, cert_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
@@ -319,14 +319,14 @@ def list_versions(request: HttpRequest, org_id: UUID, cert_id: UUID):
     return [_version_summary(v) for v in versions]
 
 
-# ── Version detail ───────────────────────────────────────────────────────
+# ── Détails de la version ───────────────────────────────────────────────
 
 
 @router.get(
     f"{_P}/{{cert_id}}/versions/{{version_id}}",
     response={200: CertVersionDetailSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Get certificate version detail (includes JWK)",
+    summary="Détails de v. du certif (inclut JWK)",
 )
 def get_version(request: HttpRequest, org_id: UUID, cert_id: UUID, version_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)

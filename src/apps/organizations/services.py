@@ -1,7 +1,7 @@
 """
-Organization services (write operations).
+Services d'organisation (opérations d'écriture).
 
-Audit logging wired into every mutating function via _log_org_audit().
+La journalisation d'audit est intégrée dans chaque fonction de mutation via _log_org_audit().
 """
 
 import structlog
@@ -19,7 +19,7 @@ from .models import Membership, Organization
 logger = structlog.get_logger(__name__)
 
 
-# ── Organization lifecycle ──────────────────────────────────────────────
+# ── Cycle de vie de l'organisation ──────────────────────────────────────
 
 
 @transaction.atomic
@@ -81,7 +81,7 @@ def update_organization(
     address: str | None = None,
     description: str | None = None,
 ) -> Organization:
-    """Update organization details (only allowed for ORG_ADMIN)."""
+    """Mettre à jour les détails de l'organisation (autorisé uniquement pour ORG_ADMIN)."""
     update_fields = ["updated_at"]
     metadata = {}
 
@@ -157,7 +157,7 @@ def approve_organization(
 
         _log_membership_audit(
             actor=reviewed_by,
-            action="MEMBER_ACTIVATED", # Not fully activated, but state changed
+            action="MEMBER_ACTIVATED",  # Pas complètement activé, mais l'état a changé
             membership=membership,
             organization=organization,
             description=f"Membership status for '{membership.user.email}' changed to PENDING_ACTIVATION.",
@@ -225,7 +225,7 @@ def suspend_organization(
             update_fields=["status", "reviewed_by", "reviewed_at", "suspension_reason", "updated_at"]
         )
     else:
-        # Fallback if no such column exists
+        # Solution de repli s'il n'y a pas de telle colonne
         organization.save(
             update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"]
         )
@@ -238,7 +238,7 @@ def suspend_organization(
         metadata={"reason": reason} if reason else None
     )
 
-    # Send email to the ORG_ADMIN
+    # Envoyer un e-mail à l'ORG_ADMIN
     from src.apps.emails.tasks import send_organization_suspended_email
     from .models import Membership
     admin_memberships = Membership.objects.filter(organization=organization, role=Role.ORG_ADMIN)
@@ -267,12 +267,12 @@ def reactivate_organization(
 
     _log_org_audit(
         actor=reviewed_by,
-        action="ORG_APPROVED", # or we could add ORG_REACTIVATED if we had it
+        action="ORG_APPROVED",  # ou nous pourrions ajouter ORG_REACTIVATED si nous l'avions
         organization=organization,
         description=f"Organization '{organization.name}' reactivated.",
     )
 
-    # Send email to the ORG_ADMIN
+    # Envoyer un e-mail à l'ORG_ADMIN
     from src.apps.emails.tasks import send_organization_reactivated_email
     from .models import Membership
     admin_memberships = Membership.objects.filter(organization=organization, role=Role.ORG_ADMIN)
@@ -295,7 +295,7 @@ def delete_organization(*, organization: Organization, deleted_by: User) -> None
     organization.delete()
 
 
-# ── Membership management ───────────────────────────────────────────────
+# ── Gestion des adhésions ───────────────────────────────────────────────
 
 
 @transaction.atomic
@@ -474,11 +474,11 @@ def cancel_membership_invitation(*, membership: Membership, canceled_by: User) -
     )
 
 
-# ── Audit helpers ────────────────────────────────────────────────────────
+# ── Assistants d'audit ──────────────────────────────────────────────────
 
 
 def _log_org_audit(*, actor, action, organization, description, metadata=None):
-    """Log an audit entry for an organization-level action."""
+    """Enregistre une entrée d'audit pour une action au niveau de l'organisation."""
     try:
         from src.apps.audits.services import log_action
 
@@ -498,7 +498,7 @@ def _log_org_audit(*, actor, action, organization, description, metadata=None):
 def _log_membership_audit(
     *, actor, action, membership, organization, description, metadata=None
 ):
-    """Log an audit entry for a membership-level action."""
+    """Enregistre une entrée d'audit pour une action au niveau de l'adhésion."""
     try:
         from src.apps.audits.services import log_action
 

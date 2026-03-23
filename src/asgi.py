@@ -1,7 +1,7 @@
 """
-ASGI config for project.
+Configuration ASGI pour le projet.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
+Il expose l'appelable ASGI en tant que variable de niveau module nommée ``application``.
 """
 
 import os

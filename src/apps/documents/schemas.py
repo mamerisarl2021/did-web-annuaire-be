@@ -1,5 +1,5 @@
 """
-DID Document API schemas.
+Schémas de l'API Document DID.
 """
 
 from typing import Any
@@ -8,7 +8,7 @@ from uuid import UUID
 from ninja import Schema
 
 
-# ── Request schemas ──────────────────────────────────────────────────────
+# ── Schémas de requête ──────────────────────────────────────────────────
 
 
 class VerificationMethodSpec(Schema):
@@ -50,7 +50,7 @@ class DeactivateSchema(Schema):
     reason: str = ""
 
 
-# ── Response schemas ─────────────────────────────────────────────────────
+# ── Schémas de réponse ──────────────────────────────────────────────────
 
 
 class VerificationMethodResponse(Schema):

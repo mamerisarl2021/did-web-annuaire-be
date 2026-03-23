@@ -1,10 +1,10 @@
 """
-Logging configuration with structlog + django-structlog.
+Configuration du journal avec structlog + django-structlog.
 
-Development: colored, human-readable console output.
-Production:  JSON lines (one JSON object per log line — ready for log aggregators).
+Développement : sortie console colorée et lisible.
+Production : lignes JSON (un objet JSON par ligne).
 
-The switch is automatic based on DJANGO_ENV.
+Le basculement est automatique selon DJANGO_ENV.
 """
 
 import structlog
@@ -12,8 +12,8 @@ import structlog
 from src.config.env import env
 
 
-# ── structlog shared processors ─────────────────────────────────────────
-# These run for every log event regardless of environment.
+# ── Processeurs partagés structlog ──────────────────────────────────────
+# Exécutés pour chaque événement de journal, quel que soit l'environnement.
 
 shared_processors: list[structlog.types.Processor] = [
     structlog.contextvars.merge_contextvars,
@@ -26,22 +26,22 @@ shared_processors: list[structlog.types.Processor] = [
     structlog.processors.UnicodeDecoder(),
 ]
 
-# ── Environment-specific renderer ───────────────────────────────────────
+# ── Rendu spécifique à l'environnement ──────────────────────────────────
 
 if env.is_production:
-    # JSON renderer for production (one JSON object per line)
+    # Rendu JSON pour la production (un objet JSON par ligne)
     renderer = structlog.processors.JSONRenderer()
 else:
-    # Colored, human-readable output for development
+    # Sortie colorée et lisible pour le développement
     renderer = structlog.dev.ConsoleRenderer(colors=True)
 
 
-# ── structlog configuration ─────────────────────────────────────────────
+# ── Configuration de structlog ──────────────────────────────────────────
 
 structlog.configure(
     processors=[
         *shared_processors,
-        # Prepare for stdlib logging integration
+        # Préparation pour l'intégration de la journalisation stdlib
         structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
     ],
     logger_factory=structlog.stdlib.LoggerFactory(),
@@ -50,8 +50,8 @@ structlog.configure(
 )
 
 
-# ── Django LOGGING dict ─────────────────────────────────────────────────
-# Routes Django's stdlib logging through structlog's ProcessorFormatter.
+# ── Dictionnaire LOGGING de Django ──────────────────────────────────────
+# Routage de la journalisation stdlib de Django via ProcessorFormatter.
 
 LOGGING = {
     "version": 1,
@@ -83,7 +83,7 @@ LOGGING = {
         },
         "django.db.backends": {
             "handlers": ["console"],
-            "level": "WARNING",  # Suppress SQL noise unless debugging
+            "level": "WARNING",  # Supprime le bruit SQL sauf en débogage
             "propagate": False,
         },
         "django.request": {
@@ -105,6 +105,6 @@ LOGGING = {
 }
 
 # ── django-structlog ────────────────────────────────────────────────────
-# Automatically logs request metadata (user, IP, request_id, etc.)
+# Journalise automatiquement les métadonnées (utilisateur, IP, etc.)
 
 DJANGO_STRUCTLOG_COMMAND_LOGGING_ENABLED = True

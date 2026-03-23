@@ -1,8 +1,8 @@
 """
-Email Celery tasks.
+Tâches Celery pour les e-mails.
 
-These run asynchronously via Celery. Each task renders an HTML template
-and sends via the email service.
+S'exécutent de manière asynchrone via Celery. Chq t. rend un modèle HTML
+et l'envoie via le service d'e-mail.
 """
 
 import structlog
@@ -19,8 +19,8 @@ logger = structlog.get_logger(__name__)
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_activation_email(self, user_id: str, invitation_token: str, org_name: str):
     """
-    Send account activation email after org approval.
-    Contains the activation link with the invitation_token.
+    Envoyer un e-mail d'activ. de cmpte après l'approbation de l'org.
+    Contient le lien d'activation avec le invitation_token.
     """
     from src.apps.users.selectors import get_user_by_id
 
@@ -57,7 +57,7 @@ def send_activation_email(self, user_id: str, invitation_token: str, org_name: s
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_rejection_email(self, user_id: str, org_name: str, reason: str = ""):
-    """Send organization rejection email."""
+    """Envoyer un e-mail de rejet d'organisation."""
     from src.apps.users.selectors import get_user_by_id
 
     try:
@@ -89,7 +89,7 @@ def send_rejection_email(self, user_id: str, org_name: str, reason: str = ""):
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_password_reset_email(self, user_id: str, reset_token: str):
-    """Send password reset email."""
+    """Envoyer un e-mail de réinitialisation de mot de passe."""
     from src.apps.users.selectors import get_user_by_id
 
     try:
@@ -125,7 +125,7 @@ def send_password_reset_email(self, user_id: str, reset_token: str):
 def send_superadmin_new_registration_email(
     self, org_name: str, org_slug: str, admin_email: str
 ):
-    """Notify superadmins about a new organization registration."""
+    """Informer les superadmins d'une nouvelle inscr d'organisation."""
     from src.apps.users.models import User
 
     try:
@@ -175,9 +175,9 @@ def send_member_invitation_email(
     invited_by_name: str,
 ):
     """
-    Send invitation email to a newly invited org member.
-    Distinct from send_activation_email — this makes it clear the user
-    was invited by someone, shows their role, and uses 'Accept Invitation' CTA.
+    Env. un e-mail d'invit. à un membre de l'org nouvellement invité.
+    D. de send_activation_email — rend clair que l'utilisateur 
+    a été inv. par qn, mf son rôle et util le CTA 'Accept Invitation'.
     """
     from src.apps.users.selectors import get_user_by_id
 
@@ -189,7 +189,7 @@ def send_member_invitation_email(
 
         platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
         parsed = urlparse(platform_domain)
-        host = parsed.netloc or parsed.path  # handles cases without scheme
+        host = parsed.netloc or parsed.path  # gère les cas sans schéma
         scheme = "https" if "localhost" not in host else "http"
         activation_url = f"{scheme}://{host}/activate/{invitation_token}/"
 
@@ -253,7 +253,7 @@ def send_document_submitted_email(self, doc_id: str, org_id: str, submitter_id: 
 
         platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
         parsed = urlparse(platform_domain)
-        host = parsed.netloc or parsed.path  # handles cases without scheme
+        host = parsed.netloc or parsed.path  # gère les cas sans schéma
         scheme = "https" if "localhost" not in host else "http"
         review_url = f"{scheme}://{host}/workspace/documents/"
 
@@ -296,7 +296,7 @@ def send_document_reviewed_email(
 
         platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
         parsed = urlparse(platform_domain)
-        host = parsed.netloc or parsed.path  # handles cases without scheme
+        host = parsed.netloc or parsed.path  # gère les cas sans schéma
         scheme = "https" if "localhost" not in host else "http"
         doc_url = f"{scheme}://{host}/workspace/documents/{doc.id}"
 

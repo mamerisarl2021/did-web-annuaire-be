@@ -1,23 +1,23 @@
 """
-DID Document assembler.
+Assembleur de document DID.
 
-Builds W3C DID Core v1.0 compliant JSON documents and creates
-``ecdsa-jcs-2019`` Data Integrity proofs via SignServer.
+Construit des documents JSON conformes à W3C DID Core v1.0 et crée
+des preuves d'intégrité de données ``ecdsa-jcs-2019`` via SignServer.
 
-DID URI format: did:web:<host>:<org_slug>:<owner_identifier>:<label>
+Format de l'URI DID : did:web:<hôte>:<slug_org>:<identifiant_propriétaire>:<étiquette>
 
-Proof algorithm (W3C Data Integrity ECDSA Cryptosuites v1.0):
-  1. Build proof options (type, cryptosuite, created, proofPurpose,
-     verificationMethod) — *without* ``proofValue``.
-  2. JCS-canonicalise proof options → bytes.
-  3. JCS-canonicalise the unsigned document → bytes.
-  4. hash_data = SHA-256(proof_options_bytes) || SHA-256(document_bytes)
-  5. Send hash_data to SignServer PlainSigner (SHA256withECDSA).
-  6. Convert the returned DER signature to raw r||s (64 bytes for P-256).
-  7. Multibase-encode: ``'z' + base58btc(raw_sig)``  — or —
-     ``'u' + base64url_no_pad(raw_sig)``.
-     We use ``'z' + base58btc`` which is the default in the spec.
-  8. Set ``proof.proofValue`` and attach proof to the document.
+Algorithme de preuve (W3C Data Integrity ECDSA Cryptosuites v1.0) :
+  1. Construit les options de preuve (type, cryptosuite, created, proofPurpose,
+     verificationMethod) — *sans* ``proofValue``.
+  2. Canonicalise les options de preuve en JCS → octets.
+  3. Canonicalise le document non signé en JCS → octets.
+  4. hash_data = SHA-256(octets_options_preuve) || SHA-256(octets_document)
+  5. Envoie hash_data au PlainSigner de SignServer (SHA256withECDSA).
+  6. Convertit la signature DER retournée en r||s brut (64 octets pour P-256).
+  7. Encode en Multibase : ``'z' + base58btc(sig_brute)`` — ou —
+     ``'u' + base64url_no_pad(sig_brute)``.
+     Nous utilisons ``'z' + base58btc`` qui est le défaut dans la spécification.
+  8. Définit ``proof.proofValue`` et attache la preuve au document.
 """
 
 import base64
@@ -30,7 +30,7 @@ from django.conf import settings
 
 logger = structlog.get_logger(__name__)
 
-# ── Constants ────────────────────────────────────────────────────────────
+# ── Constantes ──────────────────────────────────────────────────────────
 
 RELATIONSHIP_TYPES = [
     "authentication",
@@ -44,7 +44,7 @@ DID_CORE_CONTEXT = "https://www.w3.org/ns/did/v1"
 DATA_INTEGRITY_CONTEXT = "https://w3id.org/security/data-integrity/v2"
 JWS_2020_CONTEXT = "https://w3id.org/security/suites/jws-2020/v1"
 
-# Map (kty, crv) → alg per RFC 7518 / DID spec conventions
+# Mappe (kty, crv) → alg selon la convention RFC 7518 / spécification DID
 _ALG_MAP = {
     ("EC", "P-256"): "ES256",
     ("EC", "P-384"): "ES384",
@@ -57,16 +57,16 @@ _ALG_MAP = {
 
 
 # ═════════════════════════════════════════════════════════════════════════
-#  DID Document Assembly
+#  Assemblage du document DID
 # ═════════════════════════════════════════════════════════════════════════
 
 
 def build_did_uri(org_slug: str, owner_identifier: str, label: str) -> str:
     """
-    Build the full DID URI for a did:web document.
+    Construit l'URI DID complet pour un document did:web.
 
-    Format: did:web:<domain>:<org_slug>:<owner_identifier>:<label>
-    Port colons become %3A per did:web spec.
+    Format : did:web:<domaine>:<slug_org>:<identifiant_propriétaire>:<étiquette>
+    Les deux-points du port deviennent %3A selon la spécification did:web.
     """
     domain = settings.PLATFORM_DOMAIN_WITHOUT_SCHEME
     encoded_domain = domain.replace(":", "%3A")

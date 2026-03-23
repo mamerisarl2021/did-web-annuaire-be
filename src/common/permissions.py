@@ -1,13 +1,13 @@
 """
-RBAC permission system.
+Système de permissions RBAC.
 
-Roles: SUPERADMIN (platform), ORG_ADMIN, ORG_MEMBER, AUDITOR (per-org).
-Permissions are derived from role — no separate permission table.
+Rôles : SUPERADMIN (plateforme), ORG_ADMIN, ORG_MEMBER, AUDITOR.
+Les permissions dérivent du rôle — pas de table séparée.
 
-Audit access is now controlled by the has_audit_access flag on Membership
-rather than a standalone AUDITOR role. ORG_ADMIN always has audit access.
-AUDITOR role is kept for backwards compatibility but is functionally
-equivalent to ORG_MEMBER + has_audit_access=True.
+L'accès à l'audit est contrôlé par le drapeau has_audit_access sur Membership
+plutôt que par un rôle AUDITOR. ORG_ADMIN a toujours l'accès à l'audit.
+Le rôle AUDITOR est conservé pour la compatibilité descendante mais est
+fonctionnellement équivalent à ORG_MEMBER + has_audit_access=True.
 """
 
 import enum
@@ -26,9 +26,9 @@ class Permission(str, enum.Enum):
     VIEW_AUDITS = "VIEW_AUDITS"
 
 
-# ── Role → Permission mapping ───────────────────────────────────────────
-# VIEW_AUDITS is no longer in the base mappings — it's resolved dynamically
-# via membership.has_audit_access or the ORG_ADMIN role.
+# ── Mappage Rôle → Permission ───────────────────────────────────────────
+# VIEW_AUDITS n'est plus dans les mappages de base — résolu dynamiquement
+# via membership.has_audit_access ou le rôle ORG_ADMIN.
 
 ROLE_PERMISSIONS: dict[str, set[Permission]] = {
     Role.ORG_ADMIN: {
@@ -46,7 +46,7 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.VIEW_CERTIFICATES,
         Permission.MUTATE_CERTIFICATES,
     },
-    # Backwards compat: AUDITOR role = read-only + audit access
+    # Compatibilité : rôle AUDITOR = lecture seule + accès à l'audit
     Role.AUDITOR: {
         Permission.VIEW_DOCUMENTS,
         Permission.VIEW_CERTIFICATES,
@@ -57,47 +57,47 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
 
 def _get_effective_permissions(membership) -> set[Permission]:
     """
-    Compute the effective permission set for a membership,
-    accounting for the has_audit_access flag.
+    Calcule l'ensemble des permissions effectives pour une adhésion,
+    en tenant compte du drapeau has_audit_access.
     """
     base = ROLE_PERMISSIONS.get(membership.role, set()).copy()
 
-    # Grant VIEW_AUDITS if the flag is set, regardless of role
+    # Accorde VIEW_AUDITS si le drapeau est défini, quel que soit le rôle
     if getattr(membership, "has_audit_access", False):
         base.add(Permission.VIEW_AUDITS)
 
     return base
 
 
-# ── Guards ───────────────────────────────────────────────────────────────
+# ── Gardes ───────────────────────────────────────────────────────────────
 
 
 def require_superadmin(user) -> None:
-    """Raise PermissionDeniedError if user is not a superadmin."""
+    """Lève PermissionDeniedError si l'utilisateur n'est pas superadmin."""
     if not getattr(user, "is_superadmin", False):
         raise PermissionDeniedError("Superadmin access required.")
 
 
 def require_permission(user, org_id, permission: Permission):
     """
-    Verify the user has the given permission in the specified organization.
+    Vérifie que l'utilisateur a la permission donnée dans l'organisation spécifiée.
 
-    Returns the active Membership instance so callers can use it
-    (e.g., to get the org object).
+    Retourne l'instance Membership active pour que les appelants puissent l'utiliser
+    (ex. pour obtenir l'objet organisation).
 
-    Superadmins bypass org membership checks.
+    Les superadmins contournent les vérifications d'adhésion.
     """
     from src.apps.organizations.models import Membership, Organization
     from src.common.types import MembershipStatus
 
-    # ── FIX: Superadmin bypass ──────────────────────────────────────
-    # Old code returned a random org member's membership (or None),
-    # which meant membership.user was the wrong person and
-    # membership.organization could crash with AttributeError.
+    # ── CORRECTION : Contournement Superadmin ───────────────────────
+    # L'ancien code retournait l'adhésion d'un membre aléatoire de l'org,
+    # ce qui entraînait une mauvaise personne pour membership.user et
+    # un crash possible d'AttributeError pour membership.organization.
     #
-    # New: try the superadmin's own membership first; if they don't
-    # have one, build a synthetic unsaved Membership so callers get
-    # valid .organization and .user references.
+    # Nouveau : essaie d'abord la propre adhésion du superadmin ; s'il n'en
+    # a pas, construit une adhésion Memory (non sauvegardée) synthétique pour que 
+    # les appelants obtiennent des références valides pour .organization et .user.
     if getattr(user, "is_superadmin", False):
         org = Organization.objects.filter(id=org_id).first()
         if org is None:
@@ -111,7 +111,7 @@ def require_permission(user, org_id, permission: Permission):
         if own_membership:
             return own_membership
 
-        # Synthetic (unsaved) membership for API consistency
+        # Adhésion synthétique (non sauvegardée) pour la cohérence de l'API
         synthetic = Membership(
             user=user,
             organization=org,
@@ -148,7 +148,7 @@ def require_permission(user, org_id, permission: Permission):
 
 
 def require_role(user, org_id, role: Role):
-    """Verify the user has at least the specified role in the org."""
+    """Vérifie que l'utilisateur a au moins le rôle spécifié dans l'org."""
     from src.apps.organizations.models import Membership
     from src.common.types import MembershipStatus
 
@@ -174,10 +174,11 @@ def require_role(user, org_id, role: Role):
 
 def require_document_owner(user, document) -> None:
     """
-    Verify the user is the owner of the DID document.
+    Vérifie que l'utilisateur est le propriétaire du document DID.
 
-    Uses owner_id (the canonical owner field), not created_by_id.
-    Even org admins CANNOT edit documents they didn't create.
+    Utilise owner_id (le champ de propriétaire canonique), pas created_by_id.
+    Même les administrateurs d'organisation NE PEUVENT PAS éditer des
+    documents qu'ils n'ont pas créés.
     """
     if document.owner_id != user.id:
         raise PermissionDeniedError("Only the document owner can modify this document.")
@@ -187,8 +188,8 @@ def require_document_owner_or_admin(
     user, org_id, document, action: str = "access"
 ) -> None:
     """
-    Verify the user is the document owner OR an ORG_ADMIN in the organization.
-    Used for actions like publish and deactivate where admins have broader rights.
+    Vérifie que l'utilisateur est le propriétaire du document OU un ORG_ADMIN.
+    Utilisé pour des actions comme publier et désactiver.
     """
     from src.apps.organizations.models import Membership
     from src.common.types import MembershipStatus
@@ -215,10 +216,11 @@ def require_document_owner_or_admin(
 
 def require_document_reviewer(user, org_id, document) -> None:
     """
-    Verify the user can review (approve/reject) the DID document.
-    Requirements:
-      1. User must be an ORG_ADMIN in the organization.
-      2. User must NOT be the document owner (can't review your own work).
+    Vérifie que l'utilisateur peut réviser (approuver/rejeter) le document.
+    Prérequis :
+      1. L'utilisateur doit être un ORG_ADMIN dans l'organisation.
+      2. L'utilisateur NE doit PAS être le propriétaire du document (on ne 
+         peut pas réviser son propre travail).
     """
     require_permission(user, org_id, Permission.MANAGE_MEMBERS)
 

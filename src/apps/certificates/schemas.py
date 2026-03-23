@@ -1,5 +1,5 @@
 """
-Certificate API schemas.
+Schémas de l'API Certificat.
 """
 
 from uuid import UUID
@@ -7,7 +7,7 @@ from uuid import UUID
 from ninja import Schema
 
 
-# ── Request ─────────────────────────────────────────────────────────────
+# ── Requête ─────────────────────────────────────────────────────────────
 
 
 class CertUploadSchema(Schema):
@@ -19,7 +19,7 @@ class CertRevokeSchema(Schema):
     reason: str = ""
 
 
-# ── Response ────────────────────────────────────────────────────────────
+# ── Réponse ─────────────────────────────────────────────────────────────
 
 
 class CertVersionSummarySchema(Schema):

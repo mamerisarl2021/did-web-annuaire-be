@@ -1,5 +1,5 @@
 """
-User services (write operations).
+Services utilisateur (opérations d'écriture).
 """
 
 import structlog
@@ -125,7 +125,7 @@ def set_otp_secret(*, user: User, otp_secret: str) -> User:
 def delete_user(*, user: User, deleted_by: User) -> None:
     log_action(
         actor=deleted_by,
-        action=AuditAction.USER_UPDATED, # or add USER_DELETED
+        action=AuditAction.USER_UPDATED,  # ou ajouter USER_DELETED
         resource_type=ResourceType.USER,
         resource_id=user.id,
         description=f"User '{user.email}' deleted.",

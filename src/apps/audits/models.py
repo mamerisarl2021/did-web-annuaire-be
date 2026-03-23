@@ -1,8 +1,8 @@
 """
-Audit log model.
+Modèle de journal d'audit.
 
-Immutable records of all significant platform actions.
-Denormalized so logs survive entity deletion.
+Enregistrements immuables de toutes les actions importantes de la plateforme.
+Dénormalisé pour survivre à la suppression d'entités.
 """
 
 import uuid
@@ -11,7 +11,7 @@ from django.db import models
 
 
 class AuditAction(models.TextChoices):
-    # Organization lifecycle
+    # Cycle de vie de l'organisation
     ORG_CREATED = "ORG_CREATED", "Organization created"
     ORG_UPDATED = "ORG_UPDATED", "Organization updated"
     ORG_APPROVED = "ORG_APPROVED", "Organization approved"
@@ -19,18 +19,18 @@ class AuditAction(models.TextChoices):
     ORG_SUSPENDED = "ORG_SUSPENDED", "Organization suspended"
     ORG_DELETED = "ORG_DELETED", "Organization deleted"
 
-    # Membership
+    # Adhésion
     MEMBER_INVITED = "MEMBER_INVITED", "Member invited"
     MEMBER_ACTIVATED = "MEMBER_ACTIVATED", "Member activated"
     MEMBER_ROLE_CHANGED = "MEMBER_ROLE_CHANGED", "Member role changed"
     MEMBER_DEACTIVATED = "MEMBER_DEACTIVATED", "Member deactivated"
 
-    # Certificates
+    # Certificats
     CERT_UPLOADED = "CERT_UPLOADED", "Certificate uploaded"
     CERT_ROTATED = "CERT_ROTATED", "Certificate rotated"
     CERT_REVOKED = "CERT_REVOKED", "Certificate revoked"
 
-    # DID Documents
+    # Documents DID
     DOC_CREATED = "DOC_CREATED", "Document created"
     DOC_DRAFT_UPDATED = "DOC_DRAFT_UPDATED", "Document draft updated"
     DOC_VM_ADDED = "DOC_VM_ADDED", "Verification method added"
@@ -42,7 +42,7 @@ class AuditAction(models.TextChoices):
     DOC_PUBLISHED = "DOC_PUBLISHED", "Document published"
     DOC_DEACTIVATED = "DOC_DEACTIVATED", "Document deactivated"
 
-    # Auth
+    # Authentification
     USER_LOGIN = "USER_LOGIN", "User login"
     USER_LOGOUT = "USER_LOGOUT", "User logout"
     USER_ACTIVATED = "USER_ACTIVATED", "User account activated"
@@ -50,7 +50,7 @@ class AuditAction(models.TextChoices):
     USER_PASSWORD_CHANGED = "USER_PASSWORD_CHANGED", "Password changed"
     USER_PASSWORD_RESET = "USER_PASSWORD_RESET", "Password reset"
 
-    # Resolve (public)
+    # Résoudre (public)
     DID_RESOLVED = "DID_RESOLVED", "DID document resolved"
     DID_SEARCHED = "DID_SEARCHED", "DID search performed"
 
@@ -64,13 +64,9 @@ class ResourceType(models.TextChoices):
 
 
 class AuditLog(models.Model):
-    """
-    Immutable audit log entry. No updated_at — once written, never modified.
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # ── Who ─────────────────────────────────────────────────────────
     actor = models.ForeignKey(
         "users.User",
         on_delete=models.SET_NULL,
@@ -80,10 +76,9 @@ class AuditLog(models.Model):
     )
     actor_email = models.CharField(
         max_length=255,
-        help_text="Denormalized — survives user deletion.",
+        help_text="Dénormalisé — survit à la suppression de l'utilisateur.",
     )
 
-    # ── Where ───────────────────────────────────────────────────────
     organization = models.ForeignKey(
         "organizations.Organization",
         on_delete=models.SET_NULL,
@@ -92,7 +87,6 @@ class AuditLog(models.Model):
         related_name="audit_logs",
     )
 
-    # ── What ────────────────────────────────────────────────────────
     action = models.CharField(
         max_length=30,
         choices=AuditAction.choices,
@@ -102,23 +96,21 @@ class AuditLog(models.Model):
         choices=ResourceType.choices,
     )
     resource_id = models.UUIDField(
-        help_text="PK of the affected resource.",
+        help_text="PK de la ressource concernée.",
     )
     description = models.TextField(
         blank=True,
         default="",
-        help_text="Human-readable summary.",
+        help_text="Résumé lisible par un humain.",
     )
 
-    # ── Context ─────────────────────────────────────────────────────
     metadata = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Extra context: old_status→new_status, fingerprint, etc.",
+        help_text="Contexte sup : old_status→new_status, empreinte, etc.",
     )
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
-    # ── When ────────────────────────────────────────────────────────
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:

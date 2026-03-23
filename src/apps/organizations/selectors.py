@@ -1,5 +1,5 @@
 """
-Organization selectors (read operations).
+Sélecteurs d'organisation (opérations de lecture).
 """
 
 from django.db.models import QuerySet
@@ -24,7 +24,7 @@ def get_organization_by_slug(*, slug: str) -> Organization | None:
 
 
 def get_user_organizations(*, user: User) -> list[Organization]:
-    """Return all organizations where the user has an active membership."""
+    """Retourne toutes les organisations où l'utilisateur a une adhésion active."""
     org_ids = Membership.objects.filter(
         user=user, status=MembershipStatus.ACTIVE
     ).values_list("organization_id", flat=True)
@@ -54,12 +54,12 @@ def get_membership_by_invitation_token(*, token) -> Membership | None:
 
 
 def get_organization_members(*, organization_id) -> list[Membership]:
-    """Return all members for an organization."""
+    """Retourne tous les membres d'une organisation."""
     return list(
         Membership.objects.filter(organization_id=organization_id)
         .select_related("user", "invited_by")
         .order_by(
-            # ORG_ADMIN first, then by creation date
+            # ORG_ADMIN en premier, puis par date de création
             "-role",
             "-created_at",
         )

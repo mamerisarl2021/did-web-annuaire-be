@@ -1,9 +1,9 @@
 """
-Custom middleware.
+Intergiciel personnalisé.
 
-RequestContextMiddleware: stores the client IP address in a thread-local
-so that audit log entries created deep in the service layer can include
-the IP without needing the ``request`` object passed through every call.
+RequestContextMiddleware : stocke l'adresse IP du client dans une variable locale au thread
+afin que les entrées de journal d'audit créées profondément dans la couche de service
+puissent inclure l'IP sans avoir besoin de passer l'objet ``request`` à chaque appel.
 """
 
 from src.common.request_context import clear_request_context, set_request_ip
@@ -11,10 +11,10 @@ from src.common.request_context import clear_request_context, set_request_ip
 
 class RequestContextMiddleware:
     """
-    Extracts the client IP from the request (handling X-Forwarded-For
-    from nginx) and stores it in thread-local storage.
+    Extrait l'IP du client de la requête (gère X-Forwarded-For
+    depuis nginx) et la stocke dans le stockage local au thread.
 
-    Add to MIDDLEWARE *after* SecurityMiddleware, *before* any app logic:
+    Ajouter à MIDDLEWARE *après* SecurityMiddleware, *avant* toute logique d'application :
 
         MIDDLEWARE = [
             ...
@@ -28,7 +28,7 @@ class RequestContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Extract IP — X-Forwarded-For is set by nginx
+        # Extrait l'IP — X-Forwarded-For est défini par nginx
         xff = request.META.get("HTTP_X_FORWARDED_FOR")
         if xff:
             ip = xff.split(",")[0].strip()

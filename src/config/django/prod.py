@@ -1,27 +1,27 @@
 """
-Production settings.
+Paramètres de production.
 
-Only overrides values that MUST differ from base.py.
-Imported via DJANGO_SETTINGS_MODULE=src.config.django.prod
+N'écrase que les valeurs qui DOIVENT différer de base.py.
+Importé via DJANGO_SETTINGS_MODULE=src.config.django.prod
 """
 
 from src.config.django.base import *  # noqa: F401, F403
 from src.config.env import env
 
-# ── Security ────────────────────────────────────────────────────────────
+# ── Sécurité ────────────────────────────────────────────────────────────
 
 DEBUG = env.DEBUG
 
 ALLOWED_HOSTS = env.ALLOWED_HOSTS
 
-SECURE_SSL_REDIRECT = False  # Handled by nginx / reverse proxy
+SECURE_SSL_REDIRECT = False  # Géré par nginx / proxy inverse
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# ── Cookies (stricter in production) ────────────────────────────────────
+# ── Cookies (plus stricts en production) ────────────────────────────────
 
 SESSION_COOKIE_SECURE = True
 # SESSION_COOKIE_DOMAIN = env.SESSION_COOKIE_DOMAIN or None
@@ -30,18 +30,18 @@ CSRF_TRUSTED_ORIGINS: list[str] = [
     f"https://{host}" for host in env.ALLOWED_HOSTS if host != "*"
 ]
 
-# ── Database ────────────────────────────────────────────────────────────
+# ── Base de données ─────────────────────────────────────────────────────
 
 DATABASES["default"]["CONN_MAX_AGE"] = 600  # noqa: F405
 
-# ── Logging override ───────────────────────────────────────────────────
-# In production, structlog renders JSON (configured in logging_conf.py
-# based on env.is_production). No override needed here — it's automatic.
+# ── Surcharge de journalisation ─────────────────────────────────────────
+# En production, structlog rend du JSON (configuré dans logging_conf.py
+# basé sur env.is_production). Aucune surcharge nécessaire ici — c'est automatique.
 
-# ── Email ───────────────────────────────────────────────────────────────
+# ── E-mail ──────────────────────────────────────────────────────────────
 
 EMAIL_BACKEND = env.EMAIL_BACKEND
 
-# ── Others ───────────────────────────────────────────────────
+# ── Autres ──────────────────────────────────────────────────────────────
 JWK_EXTRACTOR_JAR = "/app/bin/ecdsa-extractor.jar"
 JWK_EXTRACTOR_JAVA = "java"
