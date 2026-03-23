@@ -6,9 +6,9 @@ Il expose l'appelable ASGI en tant que variable de niveau module nommée ``appli
 
 import os
 
-from src.config.env import env
-
 from django.core.asgi import get_asgi_application
+
+from src.config.env import env
 
 _settings_map = {
     "production": "src.config.django.prod",

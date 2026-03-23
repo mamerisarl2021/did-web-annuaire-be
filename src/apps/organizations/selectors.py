@@ -2,7 +2,7 @@
 Sélecteurs d'organisation (opérations de lecture).
 """
 
-from django.db.models import QuerySet
+from django.db.models import Count, Q, QuerySet
 
 from src.apps.organizations.models import Membership, Organization
 from src.apps.users.models import User
@@ -28,7 +28,13 @@ def get_user_organizations(*, user: User) -> QuerySet[Organization]:
     org_ids = Membership.objects.filter(
         user=user, status=MembershipStatus.ACTIVE
     ).values_list("organization_id", flat=True)
-    return Organization.objects.filter(id__in=org_ids).order_by("-created_at")
+    
+    return Organization.objects.filter(id__in=org_ids).annotate(
+        annotated_member_count=Count(
+            "memberships",
+            filter=~Q(memberships__status=MembershipStatus.DEACTIVATED)
+        )
+    ).order_by("-created_at")
 
 
 def get_active_membership(
@@ -79,8 +85,8 @@ def get_organization_stats(*, organization_id, user_id=None) -> dict:
     Retourne les statistiques de l'organisation.
     Si `user_id` est fourni, filtre les docs/certs par utilisateur (scope "me").
     """
-    from src.apps.documents.models import DIDDocument, DocumentStatus
     from src.apps.certificates.models import Certificate
+    from src.apps.documents.models import DIDDocument, DocumentStatus
 
     members = Membership.objects.filter(organization_id=organization_id)
 

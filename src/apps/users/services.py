@@ -6,10 +6,11 @@ import structlog
 from django.db import transaction
 from django.utils import timezone
 
-from .models import User
 from src.apps.audits.models import AuditAction, ResourceType
 from src.apps.audits.services import log_action
 from src.common.exceptions import ConflictError, ValidationError
+
+from .models import User
 
 logger = structlog.get_logger(__name__)
 

@@ -188,7 +188,7 @@ def create_proof(
         verification_method_id = _resolve_verification_method(did_document)
 
     # ── 2. Build proof options (without proofValue) ─────────────────
-    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     proof_options = {
         "type": "DataIntegrityProof",
         "cryptosuite": "ecdsa-jcs-2019",

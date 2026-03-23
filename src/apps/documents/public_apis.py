@@ -6,9 +6,9 @@ from django.http import HttpRequest
 from ninja import Query, Router
 from ninja.throttling import AnonRateThrottle
 
+from src.apps.documents.models import DocumentStatus
 from src.apps.documents.selectors import search_published_documents
 from src.apps.organizations.models import Organization
-from src.apps.documents.models import DocumentStatus
 from src.common.types import OrgStatus
 
 public_throttle = AnonRateThrottle("60/m")

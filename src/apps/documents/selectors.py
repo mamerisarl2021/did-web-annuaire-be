@@ -13,7 +13,6 @@ from src.apps.documents.models import (
     DocumentVerificationMethod,
 )
 
-
 # ── Recherches d'objet unique ───────────────────────────────────────────
 
 

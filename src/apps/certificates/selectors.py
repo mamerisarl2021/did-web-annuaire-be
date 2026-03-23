@@ -8,8 +8,8 @@ from django.db.models import QuerySet
 
 from src.apps.certificates.models import (
     Certificate,
-    CertificateVersion,
     CertificateStatus,
+    CertificateVersion,
 )
 
 

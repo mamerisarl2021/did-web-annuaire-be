@@ -6,31 +6,32 @@ All endpoints require JWT auth + is_superadmin.
 
 from uuid import UUID
 
+from django.db.models import Prefetch
 from django.http import HttpRequest
 from ninja import Query, Router
 from ninja_jwt.authentication import JWTAuth
 
+from src.apps.audits.models import AuditLog
+from src.apps.certificates.models import Certificate
+from src.apps.documents.models import DIDDocument
+from src.apps.organizations import services as org_services
 from src.apps.organizations.models import Membership, Organization
 from src.apps.organizations.selectors import (
     get_organization_by_id,
 )
-from src.apps.organizations import services as org_services
 from src.apps.superadmin.schemas import (
+    AddUserToOrgSchema,
     DashboardStatsSchema,
     ErrorSchema,
     MessageSchema,
     OrgDetailSchema,
     OrgRejectSchema,
     OrgSuspendSchema,
-    AddUserToOrgSchema,
 )
 from src.apps.users.models import User
-from src.apps.documents.models import DIDDocument
-from src.apps.certificates.models import Certificate
-from src.apps.audits.models import AuditLog
 from src.common.exceptions import NotFoundError
-from src.common.permissions import require_superadmin
 from src.common.pagination import PaginatedResponse, paginate_queryset
+from src.common.permissions import require_superadmin
 from src.common.types import OrgStatus, Role
 
 router = Router(tags=["Superadmin"])
@@ -92,7 +93,12 @@ def list_organizations(
 ):
     _ensure_superadmin(request)
 
-    qs = Organization.objects.select_related("created_by").order_by("-created_at")
+    org_admin_prefetch = Prefetch(
+        "memberships",
+        queryset=Membership.objects.filter(role=Role.ORG_ADMIN).select_related("user"),
+        to_attr="admin_memberships",
+    )
+    qs = Organization.objects.prefetch_related(org_admin_prefetch).select_related("created_by").order_by("-created_at")
     if status:
         qs = qs.filter(status=status)
 
@@ -105,12 +111,8 @@ def list_organizations(
 
     results = []
     for org in sliced_qs:
-        # Get the org admin email
-        admin_membership = (
-            Membership.objects.filter(organization=org, role=Role.ORG_ADMIN)
-            .select_related("user")
-            .first()
-        )
+        # Get the prefetched org admin info
+        admin_membership = org.admin_memberships[0] if org.admin_memberships else None
 
         results.append(
             {

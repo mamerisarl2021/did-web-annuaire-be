@@ -141,11 +141,11 @@ def _get(endpoint: str, did_uri: str) -> dict:
     except ImportError:
         logger.error("resolver_requests_missing", hint="pip install requests")
         from src.common.exceptions import ValidationError
-        raise ValidationError("HTTP client (requests) not installed.")
+        raise ValidationError("HTTP client (requests) not installed.") from None
 
     except Exception as e:
         if type(e).__name__ in ("ValidationError", "NotFoundError"):
             raise
         logger.error("resolver_failed", did=did_uri, error=str(e))
         from src.common.exceptions import ValidationError
-        raise ValidationError(f"Resolver failed: {e}")
+        raise ValidationError(f"Resolver failed: {e}") from e

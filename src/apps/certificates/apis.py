@@ -15,7 +15,8 @@ Upload et rotate utilisent des données multipart form (fichier + métadonnées)
 from uuid import UUID
 
 from django.http import HttpRequest
-from ninja import File, Form, Router, UploadedFile as NinjaFile
+from ninja import File, Form, Router
+from ninja import UploadedFile as NinjaFile
 from ninja_jwt.authentication import JWTAuth
 
 from src.apps.certificates import selectors as cert_selectors
@@ -371,6 +372,6 @@ def get_version(request: HttpRequest, org_id: UUID, cert_id: UUID, version_id: U
             "certificate__organization", "uploaded_by", "certificate_file"
         ).get(id=version_id, certificate_id=cert_id)
     except CertificateVersion.DoesNotExist:
-        raise NotFoundError("Version not found.")
+        raise NotFoundError("Version not found.") from None
 
     return _version_detail(version)

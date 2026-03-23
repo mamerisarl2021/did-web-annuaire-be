@@ -5,8 +5,9 @@ S'exécutent de manière asynchrone via Celery. Chq t. rend un modèle HTML
 et l'envoie via le service d'e-mail.
 """
 
-import structlog
 from urllib.parse import urlparse
+
+import structlog
 from celery import shared_task
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -52,7 +53,7 @@ def send_activation_email(self, user_id: str, invitation_token: str, org_name: s
 
     except Exception as exc:
         logger.error("activation_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -84,7 +85,7 @@ def send_rejection_email(self, user_id: str, org_name: str, reason: str = ""):
 
     except Exception as exc:
         logger.error("rejection_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -118,7 +119,7 @@ def send_password_reset_email(self, user_id: str, reset_token: str):
 
     except Exception as exc:
         logger.error("password_reset_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -162,7 +163,7 @@ def send_superadmin_new_registration_email(
 
     except Exception as exc:
         logger.error("superadmin_notification_failed", error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -223,7 +224,7 @@ def send_member_invitation_email(
 
     except Exception as exc:
         logger.error("invitation_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -275,7 +276,7 @@ def send_document_submitted_email(self, doc_id: str, org_id: str, submitter_id: 
 
     except Exception as exc:
         logger.error("send_document_submitted_email_failed", error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -323,7 +324,7 @@ def send_document_reviewed_email(
 
     except Exception as exc:
         logger.error("send_document_reviewed_email_failed", error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -351,7 +352,7 @@ def send_organization_suspended_email(self, user_id: str, org_name: str, reason:
 
     except Exception as exc:
         logger.error("suspension_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -377,4 +378,4 @@ def send_organization_reactivated_email(self, user_id: str, org_name: str):
 
     except Exception as exc:
         logger.error("reactivation_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc

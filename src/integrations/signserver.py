@@ -114,13 +114,13 @@ def sign_bytes(data: bytes) -> bytes:
 
     except ImportError:
         logger.error("signserver_requests_missing", hint="pip install requests")
-        raise ValidationError("HTTP client (requests) not installed.")
+        raise ValidationError("HTTP client (requests) not installed.") from None
 
     except Exception as e:
         if "ValidationError" in type(e).__name__:
             raise
         logger.error("signserver_failed", error=str(e), url=url)
-        raise ValidationError(f"SignServer signing failed: {e}")
+        raise ValidationError(f"SignServer signing failed: {e}") from e
 
 
 def health_check() -> dict:

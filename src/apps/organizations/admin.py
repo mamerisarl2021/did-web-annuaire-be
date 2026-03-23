@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Organization, Membership
+
+from .models import Membership, Organization
 
 # Enregistrez vos modèles ici.
 

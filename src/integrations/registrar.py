@@ -233,7 +233,7 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
         logger.error("registrar_requests_missing", hint="pip install requests")
         from src.common.exceptions import ValidationError
 
-        raise ValidationError("HTTP client (requests) not installed.")
+        raise ValidationError("HTTP client (requests) not installed.") from None
 
     except Exception as e:
         if "ValidationError" in type(e).__name__:
@@ -241,7 +241,7 @@ def _post(endpoint: str, payload: dict, operation: str) -> dict:
         logger.error("registrar_failed", operation=operation, error=str(e))
         from src.common.exceptions import ValidationError
 
-        raise ValidationError(f"Registrar {operation} failed: {e}")
+        raise ValidationError(f"Registrar {operation} failed: {e}") from e
 
 
 def _stub_response(operation: str, did_uri: str) -> dict:

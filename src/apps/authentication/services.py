@@ -153,7 +153,7 @@ def verify_otp_and_activate(*, user: User, otp_code: str, password: str) -> User
     try:
         validate_password(password, user)
     except Exception as e:
-        raise ValidationError(str(e))
+        raise ValidationError(str(e)) from e
 
     user.set_password(password)
 
@@ -228,7 +228,7 @@ def logout_user(*, refresh_token: str) -> None:
 
         logger.info("user_logged_out", jti=token["jti"])
     except TokenError as e:
-        raise ValidationError(f"Invalid or expired token: {e}")
+        raise ValidationError(f"Invalid or expired token: {e}") from e
 
 
 # ── Réinitialisation du mot de passe ────────────────────────────────────
@@ -276,7 +276,7 @@ def confirm_password_reset(*, token: str, new_password: str) -> None:
     try:
         validate_password(new_password, user)
     except Exception as e:
-        raise ValidationError(str(e))
+        raise ValidationError(str(e)) from e
 
     user.set_password(new_password)
     user.save(update_fields=["password", "updated_at"])
@@ -300,7 +300,7 @@ def change_password(*, user: User, old_password: str, new_password: str) -> None
     try:
         validate_password(new_password, user)
     except Exception as e:
-        raise ValidationError(str(e))
+        raise ValidationError(str(e)) from e
 
     user.set_password(new_password)
     user.save(update_fields=["password", "updated_at"])

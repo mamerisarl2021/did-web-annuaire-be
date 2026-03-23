@@ -7,7 +7,7 @@ Les paramètres de production et de test écrasent des valeurs spécifiques d'ic
 
 import os
 
-from src.config.env import env, BASE_DIR
+from src.config.env import BASE_DIR, env
 
 # ── Cœur ────────────────────────────────────────────────────────────────
 
@@ -180,11 +180,11 @@ USE_TZ = True
 # ── Configurations scindées (importées depuis others/) ──────────────────
 # Chaque fichier exporte des variables de paramètres Django de haut niveau.
 
-from src.config.others.jwt import *  # noqa: E402, F401, F403
+from src.config.others.celery_conf import *  # noqa: E402, F401, F403
 
 # from src.config.others.session import *  # noqa: E402, F401, F403
 from src.config.others.cors import *  # noqa: E402, F401, F403
-from src.config.others.celery_conf import *  # noqa: E402, F401, F403
-from src.config.others.files_and_storages import *  # noqa: E402, F401, F403
 from src.config.others.email_sending import *  # noqa: E402, F401, F403
+from src.config.others.files_and_storages import *  # noqa: E402, F401, F403
+from src.config.others.jwt import *  # noqa: E402, F401, F403
 from src.config.others.logging_conf import *  # noqa: E402, F401, F403

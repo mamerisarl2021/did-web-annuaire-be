@@ -12,7 +12,6 @@ from ninja import File, Form, Router, UploadedFile
 from ninja_jwt.authentication import JWTAuth
 
 from src.apps.authentication import services as auth_services
-from src.apps.users.services import update_user_profile
 from src.apps.authentication.schemas import (
     ActivateSetupResponseSchema,
     ActivateVerifyRequestSchema,
@@ -29,6 +28,7 @@ from src.apps.authentication.schemas import (
     UserResponseSchema,
 )
 from src.apps.organizations.selectors import get_membership_by_invitation_token
+from src.apps.users.services import update_user_profile
 from src.common.exceptions import NotFoundError
 
 router = Router(tags=["Authentication"])

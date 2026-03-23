@@ -48,7 +48,7 @@ def extract_jwk(*, cert_pem_bytes: bytes, p12_password: str | None = None) -> di
     try:
         return json.loads(result)
     except json.JSONDecodeError as e:
-        raise ValidationError(f"Failed to parse JWK output: {e}")
+        raise ValidationError(f"Failed to parse JWK output: {e}") from e
 
 
 def extract_metadata(*, cert_pem_bytes: bytes, p12_password: str | None = None) -> dict:
@@ -70,7 +70,7 @@ def extract_metadata(*, cert_pem_bytes: bytes, p12_password: str | None = None) 
     try:
         return json.loads(result)
     except json.JSONDecodeError as e:
-        raise ValidationError(f"Failed to parse metadata output: {e}")
+        raise ValidationError(f"Failed to parse metadata output: {e}") from e
 
 
 def _run_extractor(
@@ -102,9 +102,9 @@ def _run_extractor(
             raise ValidationError(
                 f"Java binary not found at '{java_bin}'. "
                 "Ensure JDK is installed and JWK_EXTRACTOR_JAVA is set."
-            )
+            ) from None
         except subprocess.TimeoutExpired:
-            raise ValidationError("Certificate extraction timed out (30s).")
+            raise ValidationError("Certificate extraction timed out (30s).") from None
 
         if result.returncode != 0:
             error_msg = result.stderr.strip() or "Unknown error"

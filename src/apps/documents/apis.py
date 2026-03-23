@@ -24,9 +24,9 @@ from django.http import HttpRequest
 from ninja import Router
 from ninja_jwt.authentication import JWTAuth
 
+from src.apps.certificates import selectors as cert_selectors
 from src.apps.documents import selectors as doc_selectors
 from src.apps.documents import services as doc_services
-from src.common.did.assembler import build_did_uri
 from src.apps.documents.models import DocumentVerificationMethod
 from src.apps.documents.schemas import (
     AddVerificationMethodSchema,
@@ -39,7 +39,7 @@ from src.apps.documents.schemas import (
     UpdateDraftSchema,
     VerificationMethodResponse,
 )
-from src.apps.certificates import selectors as cert_selectors
+from src.common.did.assembler import build_did_uri
 from src.common.exceptions import NotFoundError
 from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import (

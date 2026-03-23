@@ -7,7 +7,6 @@ from uuid import UUID
 
 from ninja import Schema
 
-
 # ── Schémas de requête ──────────────────────────────────────────────────
 
 

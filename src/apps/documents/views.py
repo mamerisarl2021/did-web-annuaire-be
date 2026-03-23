@@ -5,8 +5,8 @@ Thin template-rendering views. All data is fetched
 client-side via the Documents API using JWT auth.
 """
 
-from django.views.decorators.cache import never_cache
 from django.shortcuts import render
+from django.views.decorators.cache import never_cache
 
 
 @never_cache

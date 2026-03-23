@@ -11,7 +11,6 @@ import structlog
 
 from src.config.env import env
 
-
 # ── Processeurs partagés structlog ──────────────────────────────────────
 # Exécutés pour chaque événement de journal, quel que soit l'environnement.
 

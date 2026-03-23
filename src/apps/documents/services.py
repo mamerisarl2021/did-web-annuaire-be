@@ -9,11 +9,6 @@ from django.db import transaction
 from django.utils import timezone
 
 from src.apps.certificates.models import CertificateStatus
-from src.common.did.assembler import (
-    assemble_did_document,
-    build_did_uri,
-    sign_and_attach_proof,
-)
 from src.apps.documents.models import (
     DIDDocument,
     DIDDocumentVersion,
@@ -22,6 +17,11 @@ from src.apps.documents.models import (
     VerificationRelationship,
 )
 from src.apps.users.models import User
+from src.common.did.assembler import (
+    assemble_did_document,
+    build_did_uri,
+    sign_and_attach_proof,
+)
 from src.common.exceptions import ConflictError, NotFoundError, ValidationError
 
 logger = structlog.get_logger(__name__)
@@ -225,7 +225,7 @@ def remove_verification_method(*, document: DIDDocument, vm_id, removed_by: User
     try:
         vm = DocumentVerificationMethod.objects.get(id=vm_id, document=document)
     except DocumentVerificationMethod.DoesNotExist:
-        raise NotFoundError("Verification method not found.")
+        raise NotFoundError("Verification method not found.") from None
 
     fragment = vm.method_id_fragment
     vm.delete()

@@ -21,7 +21,6 @@ from urllib.parse import quote
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # project root (above src/)
 
 

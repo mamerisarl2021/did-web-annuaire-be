@@ -5,12 +5,11 @@ Schémas d'authentification.
 from uuid import UUID
 
 from ninja import Schema
-from pydantic import model_validator
 from ninja_jwt.schema import TokenObtainPairInputSchema
 from ninja_jwt.tokens import RefreshToken
+from pydantic import model_validator
 
 from src.apps.users.models import User
-
 
 # ── Obtention de jeton personnalisée (connexion) ────────────────────────
 
@@ -19,9 +18,10 @@ class CustomTokenObtainPairInput(TokenObtainPairInputSchema):
     @classmethod
     def get_token(cls, user: User) -> RefreshToken:
         if not user.is_superadmin:
-            from src.apps.organizations.models import Membership
-            from src.common.types import OrgStatus, MembershipStatus
             from ninja_jwt.exceptions import AuthenticationFailed
+
+            from src.apps.organizations.models import Membership
+            from src.common.types import MembershipStatus, OrgStatus
 
             active_memberships = Membership.objects.filter(
                 user=user,

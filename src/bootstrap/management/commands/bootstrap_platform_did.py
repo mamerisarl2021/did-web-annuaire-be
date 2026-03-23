@@ -74,12 +74,12 @@ class Command(BaseCommand):
                 )
             )
             # Print the current document
-            with open(output_file, "r") as f:
+            with open(output_file) as f:
                 self.stdout.write(f.read())
             return
 
         # Build the platform DID document
-        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        now = datetime.datetime.now(datetime.UTC).isoformat()
 
         did_document = {
             "@context": [

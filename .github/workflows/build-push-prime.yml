@@ -39,7 +39,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trivy security scan
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@0
         with:
           image-ref: ctrldaviddee/annuaire_did_be:staging-prime-latest
           format: table

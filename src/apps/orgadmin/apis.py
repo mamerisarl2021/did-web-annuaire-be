@@ -11,14 +11,6 @@ from django.http import HttpRequest
 from ninja import Router
 from ninja_jwt.authentication import JWTAuth
 
-from src.apps.organizations.models import Membership, Organization
-from src.apps.organizations.selectors import (
-    get_organization_by_id,
-    get_organization_members,
-    get_organization_stats,
-    get_user_organizations,
-)
-from src.apps.organizations import services as org_services
 from src.apps.orgadmin.schemas import (
     ChangeMemberRoleSchema,
     ErrorSchema,
@@ -29,6 +21,14 @@ from src.apps.orgadmin.schemas import (
     OrgStatsSchema,
     UpdateMemberSchema,
     UpdateOrgSchema,
+)
+from src.apps.organizations import services as org_services
+from src.apps.organizations.models import Membership, Organization
+from src.apps.organizations.selectors import (
+    get_organization_by_id,
+    get_organization_members,
+    get_organization_stats,
+    get_user_organizations,
 )
 from src.common.exceptions import NotFoundError, ValidationError
 from src.common.pagination import PaginatedResponse, paginate_queryset
@@ -42,11 +42,13 @@ router = Router(tags=["Organization Admin"])
 
 
 def _org_summary(org: Organization) -> dict:
-    member_count = (
-        Membership.objects.filter(organization=org)
-        .exclude(status=MembershipStatus.DEACTIVATED)
-        .count()
-    )
+    member_count = getattr(org, "annotated_member_count", None)
+    if member_count is None:
+        member_count = (
+            Membership.objects.filter(organization=org)
+            .exclude(status=MembershipStatus.DEACTIVATED)
+            .count()
+        )
     return {
         "id": org.id,
         "name": org.name,
@@ -199,7 +201,7 @@ def update_organization(
 def organization_stats(
     request: HttpRequest,
     org_id: UUID,
-    scope: Optional[str] = None,
+    scope: str | None = None,
 ):
     """
     Returns org-wide statistics by default.
@@ -381,7 +383,7 @@ def change_member_role(
     try:
         new_role = Role(payload.role)
     except ValueError:
-        raise ValidationError(f"Invalid role: {payload.role}")
+        raise ValidationError(f"Invalid role: {payload.role}") from None
 
     # La garde 'unique admin' est maintenant dans le service
     target = org_services.change_member_role(

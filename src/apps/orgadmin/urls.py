@@ -6,14 +6,14 @@ Frontend (template) routes under /workspace/.
 
 from django.urls import path
 
+from src.apps.certificates.views import certificate_detail_view, certificates_view
+from src.apps.documents.views import document_detail_view, documents_view
 from src.apps.orgadmin.views import (
+    audits_view,
     dashboard_view,
     members_view,
     settings_view,
-    audits_view,
 )
-from src.apps.certificates.views import certificates_view, certificate_detail_view
-from src.apps.documents.views import documents_view, document_detail_view
 
 app_name = "orgadmin"
 
