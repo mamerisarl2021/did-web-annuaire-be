@@ -10,11 +10,6 @@ from ninja import Schema
 # ── Requête ─────────────────────────────────────────────────────────────
 
 
-class CertUploadSchema(Schema):
-    label: str
-    p12_password: str | None = None
-
-
 class CertRevokeSchema(Schema):
     reason: str = ""
 

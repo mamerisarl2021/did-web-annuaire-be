@@ -29,11 +29,6 @@ class MembershipStatus(StrEnum):
     DEACTIVATED = "DEACTIVATED"
 
 
-class CertStatus(StrEnum):
-    ACTIVE = "ACTIVE"
-    REVOKED = "REVOKED"
-    EXPIRED = "EXPIRED"
-
 
 class DocStatus(StrEnum):
     """
@@ -48,14 +43,6 @@ class DocStatus(StrEnum):
     SIGNED = "SIGNED"
     PUBLISHED = "PUBLISHED"
     DEACTIVATED = "DEACTIVATED"
-
-
-class VerificationPurpose(StrEnum):
-    AUTHENTICATION = "authentication"
-    ASSERTION_METHOD = "assertionMethod"
-    KEY_AGREEMENT = "keyAgreement"
-    CAPABILITY_INVOCATION = "capabilityInvocation"
-    CAPABILITY_DELEGATION = "capabilityDelegation"
 
 
 class AuditAction(StrEnum):

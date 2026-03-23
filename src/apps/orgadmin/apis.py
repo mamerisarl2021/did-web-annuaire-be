@@ -11,12 +11,11 @@ from django.http import HttpRequest
 from ninja import Router
 from ninja_jwt.authentication import JWTAuth
 
-from src.apps.certificates.models import Certificate
-from src.apps.documents.models import DIDDocument, DocumentStatus
 from src.apps.organizations.models import Membership, Organization
 from src.apps.organizations.selectors import (
     get_organization_by_id,
     get_organization_members,
+    get_organization_stats,
     get_user_organizations,
 )
 from src.apps.organizations import services as org_services
@@ -28,15 +27,13 @@ from src.apps.orgadmin.schemas import (
     MessageSchema,
     OrgDetailSchema,
     OrgStatsSchema,
-    OrgSummarySchema,
     UpdateMemberSchema,
     UpdateOrgSchema,
 )
 from src.common.exceptions import NotFoundError, ValidationError
 from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import Permission, require_permission
-from src.common.types import MembershipStatus, Role, AuditAction
-from src.apps.audits import services as audit_services
+from src.common.types import MembershipStatus, Role
 
 router = Router(tags=["Organization Admin"])
 
@@ -57,8 +54,6 @@ def _org_summary(org: Organization) -> dict:
         "type": org.type,
         "status": org.status,
         "member_count": member_count,
-        "document_count": DIDDocument.objects.filter(organization_id=org.id).count(),
-        "certificate_count": Certificate.objects.filter(organization_id=org.id).count(),
     }
 
 
@@ -84,14 +79,27 @@ def _member_dict(m: Membership) -> dict:
 
 @router.get(
     "/organizations",
-    response=list[OrgSummarySchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="List my organizations",
 )
-def list_my_organizations(request: HttpRequest):
+def list_my_organizations(
+    request: HttpRequest,
+    page: int = 1,
+    page_size: int = 25,
+):
     """Return all organizations the current user is an active member of."""
-    orgs = get_user_organizations(user=request.auth)
-    return [_org_summary(org) for org in orgs]
+    qs = get_user_organizations(user=request.auth)
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+    return {
+        "count": total,
+        "results": [_org_summary(org) for org in sliced_qs],
+    }
 
 
 # ── Org detail ───────────────────────────────────────────────────────────
@@ -111,11 +119,7 @@ def get_organization_detail(request: HttpRequest, org_id: UUID):
     if org is None:
         raise NotFoundError("Organization not found.")
 
-    member_count = (
-        Membership.objects.filter(organization=org)
-        .exclude(status=MembershipStatus.DEACTIVATED)
-        .count()
-    )
+    stats = get_organization_stats(organization_id=org_id)
 
     return {
         "id": org.id,
@@ -128,9 +132,9 @@ def get_organization_detail(request: HttpRequest, org_id: UUID):
         "email": org.email,
         "status": org.status,
         "created_at": org.created_at.isoformat(),
-        "member_count": member_count,
-        "document_count": DIDDocument.objects.filter(organization_id=org.id).count(),
-        "certificate_count": Certificate.objects.filter(organization_id=org.id).count(),
+        "member_count": stats["total_members"],
+        "document_count": stats["total_documents"],
+        "certificate_count": stats["total_certificates"],
     }
 
 
@@ -164,11 +168,7 @@ def update_organization(
         description=payload.description,
     )
 
-    member_count = (
-        Membership.objects.filter(organization=org)
-        .exclude(status=MembershipStatus.DEACTIVATED)
-        .count()
-    )
+    stats = get_organization_stats(organization_id=org_id)
 
     return {
         "id": org.id,
@@ -181,9 +181,9 @@ def update_organization(
         "email": org.email,
         "status": org.status,
         "created_at": org.created_at.isoformat(),
-        "member_count": member_count,
-        "document_count": DIDDocument.objects.filter(organization_id=org.id).count(),
-        "certificate_count": Certificate.objects.filter(organization_id=org.id).count(),
+        "member_count": stats["total_members"],
+        "document_count": stats["total_documents"],
+        "certificate_count": stats["total_certificates"],
     }
 
 
@@ -196,7 +196,7 @@ def update_organization(
     auth=JWTAuth(),
     summary="Get organization stats — use ?scope=me to get current-user counts only",
 )
-def get_organization_stats(
+def organization_stats(
     request: HttpRequest,
     org_id: UUID,
     scope: Optional[str] = None,
@@ -209,40 +209,13 @@ def get_organization_stats(
     """
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
 
-    if scope == "me":
-        user = request.auth
-        my_docs = DIDDocument.objects.filter(organization_id=org_id, owner=user)
-        return {
-            "total_members": 0,
-            "active_members": 0,
-            "invited_members": 0,
-            "total_documents": my_docs.count(),
-            "draft_documents": my_docs.filter(status=DocumentStatus.DRAFT).count(),
-            "signed_documents": my_docs.filter(status__in=[DocumentStatus.SIGNED, DocumentStatus.PUBLISHED]).count(),
-            "published_documents": my_docs.filter(
-                status=DocumentStatus.PUBLISHED
-            ).count(),
-            "total_certificates": Certificate.objects.filter(
-                organization_id=org_id, created_by=user
-            ).count(),
-            "my_role": membership.role,
-            "can_view_audits": membership.can_view_audits,
-        }
-
-    members = Membership.objects.filter(organization_id=org_id)
-    org_docs = DIDDocument.objects.filter(organization_id=org_id)
+    stats = get_organization_stats(
+        organization_id=org_id,
+        user_id=request.auth.id if scope == "me" else None,
+    )
 
     return {
-        "total_members": members.exclude(status=MembershipStatus.DEACTIVATED).count(),
-        "active_members": members.filter(status=MembershipStatus.ACTIVE).count(),
-        "invited_members": members.filter(status=MembershipStatus.INVITED).count(),
-        "total_documents": org_docs.count(),
-        "draft_documents": org_docs.filter(status=DocumentStatus.DRAFT).count(),
-        "signed_documents": org_docs.filter(status__in=[DocumentStatus.SIGNED, DocumentStatus.PUBLISHED]).count(),
-        "published_documents": org_docs.filter(status=DocumentStatus.PUBLISHED).count(),
-        "total_certificates": Certificate.objects.filter(
-            organization_id=org_id
-        ).count(),
+        **stats,
         "my_role": membership.role,
         "can_view_audits": membership.can_view_audits,
     }
@@ -281,7 +254,7 @@ def list_audits(
     require_permission(request.auth, org_id, Permission.VIEW_AUDITS)
 
     from src.apps.audits.models import AuditLog
-
+    # import circulaire avec audits — intentionnel
     qs = AuditLog.objects.filter(organization_id=org_id).order_by("-created_at")
     sliced_qs, total = paginate_queryset(
         queryset=qs,
@@ -301,16 +274,30 @@ def list_audits(
 
 @router.get(
     "/organizations/{org_id}/members",
-    response=list[MemberSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="List organization members (ORG_ADMIN only)",
 )
-def list_members(request: HttpRequest, org_id: UUID):
+def list_members(
+    request: HttpRequest,
+    org_id: UUID,
+    page: int = 1,
+    page_size: int = 25,
+):
     """Only ORG_ADMINs (MANAGE_MEMBERS permission) can list members."""
     require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
 
-    members = get_organization_members(organization_id=org_id)
-    return [_member_dict(m) for m in members]
+    qs = get_organization_members(organization_id=org_id)
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+    return {
+        "count": total,
+        "results": [_member_dict(m) for m in sliced_qs],
+    }
 
 
 # ── Invite member ────────────────────────────────────────────────────────
@@ -333,26 +320,17 @@ def invite_member(request: HttpRequest, org_id: UUID, payload: InviteMemberSchem
         invited_by=request.auth,
     )
 
-    # Apply optional profile fields to the created user
-    profile_updates = {}
-    if payload.full_name and not new_membership.user.full_name:
-        profile_updates["full_name"] = payload.full_name
-    if payload.phone:
-        profile_updates["phone"] = payload.phone
-    if payload.functions:
-        profile_updates["functions"] = payload.functions
+    # Délègue la mise à jour du profil et l'accès audit au service
+    new_membership = org_services.update_member_profile(
+        membership=new_membership,
+        updated_by=request.auth,
+        full_name=payload.full_name if payload.full_name and not new_membership.user.full_name else None,
+        phone=payload.phone or None,
+        functions=payload.functions or None,
+        has_audit_access=payload.has_audit_access if payload.has_audit_access else None,
+    )
 
-    if profile_updates:
-        from src.apps.users.services import update_user_profile
-
-        update_user_profile(user=new_membership.user, **profile_updates)
-        new_membership.user.refresh_from_db()
-
-    # Apply has_audit_access directly on the membership
-    if payload.has_audit_access:
-        new_membership.has_audit_access = True
-        new_membership.save(update_fields=["has_audit_access"])
-
+    # import circulaire avec emails.tasks — intentionnel
     from src.apps.emails.tasks import send_member_invitation_email
 
     send_member_invitation_email.delay(
@@ -396,25 +374,16 @@ def change_member_role(
     if target is None:
         raise NotFoundError("Membership not found.")
 
-    # Prevent changing own role
+    # Empêche de changer son propre rôle
     if target.user_id == request.auth.id:
         raise ValidationError("You cannot change your own role.")
-
-    # Prevent demoting the only ORG_ADMIN
-    if target.role == Role.ORG_ADMIN:
-        admin_count = (
-            Membership.objects.filter(organization_id=org_id, role=Role.ORG_ADMIN)
-            .exclude(status=MembershipStatus.DEACTIVATED)
-            .count()
-        )
-        if admin_count <= 1:
-            raise ValidationError("Cannot change role of the only organization admin.")
 
     try:
         new_role = Role(payload.role)
     except ValueError:
         raise ValidationError(f"Invalid role: {payload.role}")
 
+    # La garde 'unique admin' est maintenant dans le service
     target = org_services.change_member_role(
         membership=target,
         new_role=new_role,
@@ -453,15 +422,7 @@ def deactivate_member(request: HttpRequest, org_id: UUID, membership_id: UUID):
     if target.user_id == request.auth.id:
         raise ValidationError("You cannot deactivate yourself.")
 
-    if target.role == Role.ORG_ADMIN:
-        admin_count = (
-            Membership.objects.filter(organization_id=org_id, role=Role.ORG_ADMIN)
-            .exclude(status=MembershipStatus.DEACTIVATED)
-            .count()
-        )
-        if admin_count <= 1:
-            raise ValidationError("Cannot deactivate the only organization admin.")
-
+    # La garde 'unique admin' est maintenant dans le service
     org_services.deactivate_membership(membership=target, deactivated_by=request.auth)
 
     return {"message": f"Member {target.user.email} has been deactivated."}
@@ -512,27 +473,16 @@ def reactivate_member(request: HttpRequest, org_id: UUID, membership_id: UUID):
 
     target = (
         Membership.objects.filter(id=membership_id, organization_id=org_id)
-        .select_related("user")
+        .select_related("user", "organization")
         .first()
     )
 
     if target is None:
         raise NotFoundError("Membership not found.")
 
-    if target.status != MembershipStatus.DEACTIVATED:
-        raise ValidationError("Only deactivated members can be reactivated.")
-
-    target.status = MembershipStatus.ACTIVE
-    target.save(update_fields=["status", "updated_at"])
-
-    audit_services.log_action(
-        actor=request.auth,
-        action=AuditAction.MEMBER_ACTIVATED,
-        resource_type="MEMBERSHIP",
-        resource_id=target.id,
-        organization=target.organization,
-        description=f"Member '{target.user.email}' reactivated manually.",
-        metadata={"old_status": "DEACTIVATED", "new_status": "ACTIVE"},
+    # La validation et l'audit sont encapsulés dans le service
+    target = org_services.reactivate_membership(
+        membership=target, reactivated_by=request.auth
     )
 
     return _member_dict(target)
@@ -557,44 +507,21 @@ def update_member(
 
     target_membership = (
         Membership.objects.filter(id=membership_id, organization_id=org_id)
-        .select_related("user")
+        .select_related("user", "organization")
         .first()
     )
 
     if target_membership is None:
         raise NotFoundError("Membership not found.")
 
-    user = target_membership.user
-    update_user = False
-
-    if payload.full_name is not None:
-        user.full_name = payload.full_name
-        update_user = True
-    if payload.phone is not None:
-        user.phone = payload.phone
-        update_user = True
-    if payload.functions is not None:
-        user.functions = payload.functions
-        update_user = True
-
-    if update_user:
-        user.save(update_fields=["full_name", "phone", "functions", "updated_at"])
-
-    if (
-        payload.has_audit_access is not None
-        and target_membership.has_audit_access != payload.has_audit_access
-    ):
-        target_membership.has_audit_access = payload.has_audit_access
-        target_membership.save(update_fields=["has_audit_access", "updated_at"])
-
-    audit_services.log_action(
-        actor=request.auth,
-        action=AuditAction.MEMBER_ROLE_CHANGED,
-        resource_type="MEMBERSHIP",
-        resource_id=target_membership.id,
-        organization=target_membership.organization,
-        description=f"Member '{target_membership.user.email}' details updated.",
-        metadata={"fields_updated": True},
+    # La mise à jour de l'utilisateur et l'audit sont délégués au service
+    target_membership = org_services.update_member_profile(
+        membership=target_membership,
+        updated_by=request.auth,
+        full_name=payload.full_name,
+        phone=payload.phone,
+        functions=payload.functions,
+        has_audit_access=payload.has_audit_access,
     )
 
     return _member_dict(target_membership)

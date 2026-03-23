@@ -10,10 +10,6 @@ from ninja import Schema
 # ── Request ─────────────────────────────────────────────────────────────
 
 
-class OrgApproveSchema(Schema):
-    pass  # No body needed — action is in the URL
-
-
 class OrgRejectSchema(Schema):
     reason: str = ""
 

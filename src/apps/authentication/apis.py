@@ -12,7 +12,6 @@ from ninja import File, Form, Router, UploadedFile
 from ninja_jwt.authentication import JWTAuth
 
 from src.apps.authentication import services as auth_services
-from src.apps.organizations.services import activate_membership
 from src.apps.users.services import update_user_profile
 from src.apps.authentication.schemas import (
     ActivateSetupResponseSchema,
@@ -49,7 +48,7 @@ router = Router(tags=["Authentication"])
 )
 def register(
     request: HttpRequest,
-    # ── Champs d'organisation (étape 1) ──────
+    # ── Champs d'organisation ──────
     org_name: str = Form(...),
     org_slug: str = Form(...),
     org_type: str = Form(""),
@@ -59,7 +58,7 @@ def register(
     org_email: str = Form(""),
     authorization_document: UploadedFile = File(...),
     justification_document: UploadedFile = File(None),
-    # ── Champs utilisateur (étape 2) ─────────
+    # ── Champs utilisateur ─────────
     email: str = Form(...),
     full_name: str = Form(...),
     password: str = Form(""),
@@ -73,11 +72,6 @@ def register(
     aléatoire inutilisable est généré. Le vrai mot de passe est toujours
     défini lors de l'activation du compte.
     """
-    import secrets as _secrets
-
-    if not password:
-        password = _secrets.token_hex(32)
-
     user = auth_services.register_user_and_org(
         org_name=org_name,
         org_slug=org_slug,
@@ -90,7 +84,7 @@ def register(
         justification_document=justification_document,
         email=email,
         full_name=full_name,
-        password=password,
+        password=password,  # le service génère un hash aléatoire si vide
         phone=phone,
         functions=functions,
     )
@@ -143,15 +137,12 @@ def activate_verify(
     if membership is None:
         raise NotFoundError("Invalid or expired activation link.")
 
-    user = auth_services.verify_otp_and_activate(
-        user=membership.user,
+    # OTP verify + membership activation regroupés dans un seul service
+    user, tokens = auth_services.verify_otp_activate_and_tokenize(
+        membership=membership,
         otp_code=payload.otp_code,
         password=payload.password,
     )
-
-    activate_membership(membership=membership)
-
-    tokens = auth_services.generate_tokens_for_user(user=user)
 
     return 200, {
         "message": "Account activated successfully.",

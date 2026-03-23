@@ -4,7 +4,7 @@ Sélecteurs de Document DID (opérations de lecture).
 
 from uuid import UUID
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 
 from src.apps.documents.models import (
     DIDDocument,
@@ -138,6 +138,48 @@ def get_org_document_counts(*, organization_id: UUID) -> dict:
         published=Count("id", filter=Q(status=DocumentStatus.PUBLISHED)),
         deactivated=Count("id", filter=Q(status=DocumentStatus.DEACTIVATED)),
     )
+
+
+def search_published_documents(
+    *,
+    q: str = "",
+    org_id: str = "",
+    sort: str = "-updated_at",
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[QuerySet[DIDDocument], int]:
+    """
+    Recherche paginée dans les documents DID publiés (API publique).
+    Retourne (queryset_tranche, total).
+    """
+    allowed_sorts = {"-updated_at", "-created_at", "created_at", "updated_at", "label", "-label"}
+
+    qs = DIDDocument.objects.filter(status=DocumentStatus.PUBLISHED).select_related(
+        "organization", "owner", "current_version"
+    )
+
+    if q:
+        qs = qs.filter(
+            Q(label__icontains=q)
+            | Q(organization__name__icontains=q)
+            | Q(organization__slug__icontains=q)
+            | Q(owner__full_name__icontains=q)
+            | Q(owner__email__icontains=q)
+        )
+
+    if org_id:
+        try:
+            qs = qs.filter(organization_id=UUID(org_id))
+        except (ValueError, TypeError):
+            pass
+
+    if sort not in allowed_sorts:
+        sort = "-updated_at"
+    qs = qs.order_by(sort)
+
+    total = qs.count()
+    offset = (page - 1) * page_size
+    return qs[offset: offset + page_size], total
 
 
 def get_verifiable_credential(document: DIDDocument) -> dict | None:

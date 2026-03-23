@@ -98,18 +98,6 @@ class OrgStatsSchema(Schema):
     can_view_audits: bool = False
 
 
-class AuditLogSchema(Schema):
-    id: UUID
-    action: str
-    resource_type: str
-    resource_id: UUID
-    description: str
-    metadata: dict
-    actor_email: str
-    created_at: str
-    ip_address: str | None = None
-
-
 class MessageSchema(Schema):
     message: str
 

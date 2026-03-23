@@ -23,14 +23,13 @@ from src.apps.certificates import services as cert_services
 from src.apps.certificates.models import CertificateVersion
 from src.apps.certificates.schemas import (
     CertDetailSchema,
-    CertListItemSchema,
     CertRevokeSchema,
     CertVersionDetailSchema,
-    CertVersionSummarySchema,
     ErrorSchema,
     MessageSchema,
 )
 from src.common.exceptions import NotFoundError, PermissionDeniedError
+from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import Permission, require_permission
 from src.common.types import Role
 
@@ -150,11 +149,16 @@ def _cert_detail(cert) -> dict:
 
 @router.get(
     f"{_P}",
-    response=list[CertListItemSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="Lister les certificats (portée par rôle)",
 )
-def list_certificates(request: HttpRequest, org_id: UUID):
+def list_certificates(
+    request: HttpRequest,
+    org_id: UUID,
+    page: int = 1,
+    page_size: int = 25,
+):
     """
     ORG_ADMIN / AUDITOR : tous les certificats de l'organisation.
     ORG_MEMBER : uniquement les certificats téléchargés par l'ut. demandeur.
@@ -162,14 +166,24 @@ def list_certificates(request: HttpRequest, org_id: UUID):
     membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
 
     if _can_view_all(membership):
-        certs = cert_selectors.get_org_certificates(organization_id=org_id)
+        qs = cert_selectors.get_org_certificates(organization_id=org_id)
     else:
-        certs = cert_selectors.get_user_certificates(
+        qs = cert_selectors.get_user_certificates(
             organization_id=org_id,
             user_id=request.auth.id,
         )
 
-    return [_cert_list_item(c) for c in certs]
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+
+    return {
+        "count": total,
+        "results": [_cert_list_item(c) for c in sliced_qs],
+    }
 
 
 # ── Télécharger un certificat ───────────────────────────────────────────
@@ -302,11 +316,17 @@ def revoke_certificate(
 
 @router.get(
     f"{_P}/{{cert_id}}/versions",
-    response=list[CertVersionSummarySchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="Lister les versions de certificats",
 )
-def list_versions(request: HttpRequest, org_id: UUID, cert_id: UUID):
+def list_versions(
+    request: HttpRequest,
+    org_id: UUID,
+    cert_id: UUID,
+    page: int = 1,
+    page_size: int = 25,
+):
     membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
 
     cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
@@ -315,8 +335,17 @@ def list_versions(request: HttpRequest, org_id: UUID, cert_id: UUID):
 
     _require_cert_access(cert, request.auth, membership, action="view versions of")
 
-    versions = cert_selectors.get_certificate_versions(certificate_id=cert_id)
-    return [_version_summary(v) for v in versions]
+    qs = cert_selectors.get_certificate_versions(certificate_id=cert_id)
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+    return {
+        "count": total,
+        "results": [_version_summary(v) for v in sliced_qs],
+    }
 
 
 # ── Détails de la version ───────────────────────────────────────────────

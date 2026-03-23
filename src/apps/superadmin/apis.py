@@ -20,14 +20,9 @@ from src.apps.superadmin.schemas import (
     ErrorSchema,
     MessageSchema,
     OrgDetailSchema,
-    OrgListItemSchema,
     OrgRejectSchema,
     OrgSuspendSchema,
-    SAUserSchema,
     AddUserToOrgSchema,
-    SAAuditLogSchema,
-    SADIDDocumentSchema,
-    SACertificateSchema,
 )
 from src.apps.users.models import User
 from src.apps.documents.models import DIDDocument
@@ -35,6 +30,7 @@ from src.apps.certificates.models import Certificate
 from src.apps.audits.models import AuditLog
 from src.common.exceptions import NotFoundError
 from src.common.permissions import require_superadmin
+from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.types import OrgStatus, Role
 
 router = Router(tags=["Superadmin"])
@@ -81,7 +77,7 @@ def dashboard_stats(request: HttpRequest):
 
 @router.get(
     "/organizations",
-    response=list[OrgListItemSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="List organizations with optional status filter",
 )
@@ -91,6 +87,8 @@ def list_organizations(
         None,
         description="Filter by status: PENDING_REVIEW, APPROVED, REJECTED, SUSPENDED",
     ),
+    page: int = 1,
+    page_size: int = 25,
 ):
     _ensure_superadmin(request)
 
@@ -98,8 +96,15 @@ def list_organizations(
     if status:
         qs = qs.filter(status=status)
 
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+
     results = []
-    for org in qs:
+    for org in sliced_qs:
         # Get the org admin email
         admin_membership = (
             Membership.objects.filter(organization=org, role=Role.ORG_ADMIN)
@@ -123,7 +128,7 @@ def list_organizations(
             }
         )
 
-    return results
+    return {"count": total, "results": results}
 
 
 # ── Organization detail ─────────────────────────────────────────────────
@@ -353,19 +358,30 @@ def delete_organization(request: HttpRequest, org_id: UUID):
 
 @router.get(
     "/users",
-    response=list[SAUserSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="List all users",
 )
-def list_users(request: HttpRequest):
+def list_users(
+    request: HttpRequest,
+    page: int = 1,
+    page_size: int = 25,
+):
     _ensure_superadmin(request)
 
-    users = User.objects.prefetch_related(
+    qs = User.objects.prefetch_related(
         "memberships", "memberships__organization"
     ).order_by("-created_at")
 
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+
     results = []
-    for u in users:
+    for u in sliced_qs:
         memberships_data = []
         for m in u.memberships.all():
             memberships_data.append({
@@ -386,7 +402,7 @@ def list_users(request: HttpRequest):
             "memberships": memberships_data,
         })
 
-    return results
+    return {"count": total, "results": results}
 
 
 @router.delete(
@@ -458,15 +474,26 @@ def cancel_invite(request: HttpRequest, user_id: UUID, org_id: UUID):
 
 @router.get(
     "/audits",
-    response=list[SAAuditLogSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="List audit logs",
 )
-def list_audits(request: HttpRequest):
+def list_audits(
+    request: HttpRequest,
+    page: int = 1,
+    page_size: int = 25,
+):
     _ensure_superadmin(request)
-    logs = AuditLog.objects.select_related("organization").order_by("-created_at")[:1000]
+    qs = AuditLog.objects.select_related("organization").order_by("-created_at")
 
-    return [
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+
+    results = [
         {
             "id": log.id,
             "actor_email": log.actor_email,
@@ -480,23 +507,35 @@ def list_audits(request: HttpRequest):
             "user_agent": log.metadata.get("user_agent") if isinstance(log.metadata, dict) else None,
             "metadata": log.metadata,
         }
-        for log in logs
+        for log in sliced_qs
     ]
+    return {"count": total, "results": results}
 
 
 # ── DID Documents ──────────────────────────────────────────────────────
 
 @router.get(
     "/documents",
-    response=list[SADIDDocumentSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="List DID Documents",
 )
-def list_documents(request: HttpRequest):
+def list_documents(
+    request: HttpRequest,
+    page: int = 1,
+    page_size: int = 25,
+):
     _ensure_superadmin(request)
-    docs = DIDDocument.objects.select_related("organization", "owner").order_by("-created_at")
+    qs = DIDDocument.objects.select_related("organization", "owner").order_by("-created_at")
 
-    return [
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+
+    results = [
         {
             "id": doc.id,
             "label": doc.label,
@@ -508,8 +547,9 @@ def list_documents(request: HttpRequest):
             "created_at": doc.created_at.isoformat(),
             "updated_at": doc.updated_at.isoformat(),
         }
-        for doc in docs
+        for doc in sliced_qs
     ]
+    return {"count": total, "results": results}
 
 
 @router.delete(
@@ -537,15 +577,26 @@ def delete_document(request: HttpRequest, doc_id: UUID):
 
 @router.get(
     "/certificates",
-    response=list[SACertificateSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="List Certificates",
 )
-def list_certificates(request: HttpRequest):
+def list_certificates(
+    request: HttpRequest,
+    page: int = 1,
+    page_size: int = 25,
+):
     _ensure_superadmin(request)
-    certs = Certificate.objects.select_related("organization", "current_version").order_by("-created_at")
+    qs = Certificate.objects.select_related("organization", "current_version").order_by("-created_at")
 
-    return [
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+
+    results = [
         {
             "id": c.id,
             "label": c.label,
@@ -556,8 +607,9 @@ def list_certificates(request: HttpRequest):
             "key_type": c.current_version.key_type if c.current_version else None,
             "not_valid_after": c.current_version.not_valid_after.isoformat() if c.current_version and c.current_version.not_valid_after else None,
         }
-        for c in certs
+        for c in sliced_qs
     ]
+    return {"count": total, "results": results}
 
 @router.delete(
     "/certificates/{cert_id}",

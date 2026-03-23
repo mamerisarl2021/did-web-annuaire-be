@@ -238,9 +238,8 @@ def suspend_organization(
         metadata={"reason": reason} if reason else None
     )
 
-    # Envoyer un e-mail à l'ORG_ADMIN
+    
     from src.apps.emails.tasks import send_organization_suspended_email
-    from .models import Membership
     admin_memberships = Membership.objects.filter(organization=organization, role=Role.ORG_ADMIN)
     for admin_membership in admin_memberships:
         send_organization_suspended_email.delay(user_id=str(admin_membership.user.id), org_name=organization.name, reason=reason)
@@ -272,9 +271,8 @@ def reactivate_organization(
         description=f"Organization '{organization.name}' reactivated.",
     )
 
-    # Envoyer un e-mail à l'ORG_ADMIN
+    # import circulaire avec emails.tasks — intentionnel
     from src.apps.emails.tasks import send_organization_reactivated_email
-    from .models import Membership
     admin_memberships = Membership.objects.filter(organization=organization, role=Role.ORG_ADMIN)
     for admin_membership in admin_memberships:
         send_organization_reactivated_email.delay(user_id=str(admin_membership.user.id), org_name=organization.name)
@@ -365,6 +363,7 @@ def activate_membership(*, membership: Membership) -> Membership:
 def invite_member(
     *, organization: Organization, email: str, role: Role, invited_by: User
 ) -> Membership:
+    # import circulaire avec users.services — intentionnel
     from src.apps.users.selectors import get_user_by_email
     from src.apps.users.services import create_user
 
@@ -398,7 +397,22 @@ def invite_member(
 def change_member_role(
     *, membership: Membership, new_role: Role, changed_by: User
 ) -> Membership:
+    """Change le rôle d'un membre. Lève ValidationError si last ORG_ADMIN."""
     old_role = membership.role
+
+    # Garde : empêche de retirer le seul ORG_ADMIN
+    if old_role == Role.ORG_ADMIN:
+        admin_count = (
+            Membership.objects.filter(
+                organization_id=membership.organization_id,
+                role=Role.ORG_ADMIN,
+            )
+            .exclude(status=MembershipStatus.DEACTIVATED)
+            .count()
+        )
+        if admin_count <= 1:
+            raise ValidationError("Cannot change role of the only organization admin.")
+
     membership.role = new_role
     membership.save(update_fields=["role", "updated_at"])
 
@@ -426,6 +440,20 @@ def change_member_role(
 def deactivate_membership(
     *, membership: Membership, deactivated_by: User
 ) -> Membership:
+    """Désactive un membre. Lève ValidationError si last ORG_ADMIN."""
+    # Garde : empêche de désactiver le seul ORG_ADMIN
+    if membership.role == Role.ORG_ADMIN:
+        admin_count = (
+            Membership.objects.filter(
+                organization_id=membership.organization_id,
+                role=Role.ORG_ADMIN,
+            )
+            .exclude(status=MembershipStatus.DEACTIVATED)
+            .count()
+        )
+        if admin_count <= 1:
+            raise ValidationError("Cannot deactivate the only organization admin.")
+
     membership.status = MembershipStatus.DEACTIVATED
     membership.save(update_fields=["status", "updated_at"])
 
@@ -472,6 +500,71 @@ def cancel_membership_invitation(*, membership: Membership, canceled_by: User) -
         user=user_email,
         org=org.slug,
     )
+
+
+@transaction.atomic
+def reactivate_membership(*, membership: Membership, reactivated_by: User) -> Membership:
+    """Réactive un membre désactivé."""
+    if membership.status != MembershipStatus.DEACTIVATED:
+        raise ValidationError("Only deactivated members can be reactivated.")
+
+    membership.status = MembershipStatus.ACTIVE
+    membership.save(update_fields=["status", "updated_at"])
+
+    _log_membership_audit(
+        actor=reactivated_by,
+        action="MEMBER_ACTIVATED",
+        membership=membership,
+        organization=membership.organization,
+        description=f"Membership for '{membership.user.email}' in '{membership.organization.slug}' reactivated.",
+        metadata={"reactivated_by": reactivated_by.email},
+    )
+    logger.info(
+        "membership_reactivated",
+        user=membership.user.email,
+        org=membership.organization.slug,
+    )
+    return membership
+
+
+@transaction.atomic
+def update_member_profile(
+    *,
+    membership: Membership,
+    updated_by: User,
+    full_name: str | None = None,
+    phone: str | None = None,
+    functions: str | None = None,
+    has_audit_access: bool | None = None,
+) -> Membership:
+    """
+    Met à jour le profil d'un membre (informations personnelles + accès audit).
+    Délègue la mise à jour utilisateur à `update_user_profile`.
+    """
+    # import circulaire avec users.services — intentionnel
+    from src.apps.users.services import update_user_profile
+
+    update_user_profile(
+        user=membership.user,
+        full_name=full_name,
+        phone=phone,
+        functions=functions,
+    )
+
+    if has_audit_access is not None and membership.has_audit_access != has_audit_access:
+        membership.has_audit_access = has_audit_access
+        membership.save(update_fields=["has_audit_access", "updated_at"])
+
+    _log_membership_audit(
+        actor=updated_by,
+        action="MEMBER_ROLE_CHANGED",
+        membership=membership,
+        organization=membership.organization,
+        description=f"Member '{membership.user.email}' details updated.",
+        metadata={"updated_by": updated_by.email},
+    )
+    logger.info("member_profile_updated", user=membership.user.email)
+    return membership
 
 
 # ── Assistants d'audit ──────────────────────────────────────────────────

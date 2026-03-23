@@ -60,7 +60,7 @@ def register_user_and_org(
     user = create_user(
         email=email,
         full_name=full_name,
-        password=password,
+        password=password or secrets.token_hex(32),  # hash aléatoire si vide
         phone=phone,
         functions=functions,
         is_active=False,
@@ -168,6 +168,25 @@ def verify_otp_and_activate(*, user: User, otp_code: str, password: str) -> User
     )
     logger.info("otp_verified_and_secret_cleared", user_id=str(user.id))
     return user
+
+
+@transaction.atomic
+def verify_otp_activate_and_tokenize(*, membership, otp_code: str, password: str) -> tuple:
+    """
+    Combine la vérification OTP, l'activation du compte et de l'adhésion,
+    et la génération des tokens en un seul appel de service. Retourne (user, tokens).
+    """
+    # import circulaire avec organizations.services — intentionnel
+    from src.apps.organizations.services import activate_membership
+
+    user = verify_otp_and_activate(
+        user=membership.user,
+        otp_code=otp_code,
+        password=password,
+    )
+    activate_membership(membership=membership)
+    tokens = generate_tokens_for_user(user=user)
+    return user, tokens
 
 
 # ── Génération de jeton ─────────────────────────────────────────────────

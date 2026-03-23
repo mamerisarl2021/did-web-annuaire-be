@@ -27,14 +27,12 @@ from ninja_jwt.authentication import JWTAuth
 from src.apps.documents import selectors as doc_selectors
 from src.apps.documents import services as doc_services
 from src.common.did.assembler import build_did_uri
-from src.apps.documents.models import DocumentStatus, DocumentVerificationMethod
+from src.apps.documents.models import DocumentVerificationMethod
 from src.apps.documents.schemas import (
     AddVerificationMethodSchema,
     CreateDocumentSchema,
     DeactivateSchema,
     DocDetailSchema,
-    DocListItemSchema,
-    DocVersionSchema,
     ErrorSchema,
     MessageSchema,
     ReviewSchema,
@@ -43,6 +41,7 @@ from src.apps.documents.schemas import (
 )
 from src.apps.certificates import selectors as cert_selectors
 from src.common.exceptions import NotFoundError
+from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import (
     Permission,
     require_document_owner,
@@ -169,25 +168,40 @@ def _get_doc_or_404(doc_id: UUID, org_id: UUID):
 
 @router.get(
     f"{_P}",
-    response=list[DocListItemSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="Liste des documents DID (portée par rôle)",
 )
-def list_documents(request: HttpRequest, org_id: UUID):
+def list_documents(
+    request: HttpRequest,
+    org_id: UUID,
+    page: int = 1,
+    page_size: int = 25,
+):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
 
     if _can_view_all(membership):
-        docs = doc_selectors.get_org_documents(
+        qs = doc_selectors.get_org_documents(
             organization_id=org_id,
             user_id=request.auth.id,
         )
     else:
-        docs = doc_selectors.get_user_documents(
+        qs = doc_selectors.get_user_documents(
             organization_id=org_id,
             user_id=request.auth.id,
         )
 
-    return [_doc_list_item(d) for d in docs]
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+
+    return {
+        "count": total,
+        "results": [_doc_list_item(d) for d in sliced_qs],
+    }
 
 
 @router.post(
@@ -220,14 +234,28 @@ def create_document(request: HttpRequest, org_id: UUID, payload: CreateDocumentS
 
 @router.get(
     f"{_P}/pending-review",
-    response=list[DocListItemSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="Liste des documents en attente d'examen (ORG_ADMIN uniquement)",
 )
-def list_pending_review(request: HttpRequest, org_id: UUID):
+def list_pending_review(
+    request: HttpRequest,
+    org_id: UUID,
+    page: int = 1,
+    page_size: int = 25,
+):
     require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
-    docs = doc_selectors.get_pending_review_documents(organization_id=org_id)
-    return [_doc_list_item(d) for d in docs]
+    qs = doc_selectors.get_pending_review_documents(organization_id=org_id)
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+    return {
+        "count": total,
+        "results": [_doc_list_item(d) for d in sliced_qs],
+    }
 
 
 @router.get(
@@ -477,19 +505,34 @@ def deactivate_document(
 
 @router.get(
     f"{_P}/{{doc_id}}/versions",
-    response=list[DocVersionSchema],
+    response=PaginatedResponse,
     auth=JWTAuth(),
     summary="Liste des versions publiées d'un document",
 )
-def list_versions(request: HttpRequest, org_id: UUID, doc_id: UUID):
+def list_versions(
+    request: HttpRequest,
+    org_id: UUID,
+    doc_id: UUID,
+    page: int = 1,
+    page_size: int = 25,
+):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
 
     if not _can_view_all(membership) and doc.owner_id != request.auth.id:
         raise NotFoundError("Document not found.")
 
-    versions = doc_selectors.get_document_versions(document_id=doc_id)
-    return [_version_response(v) for v in versions]
+    qs = doc_selectors.get_document_versions(document_id=doc_id)
+    sliced_qs, total = paginate_queryset(
+        queryset=qs,
+        page=page,
+        page_size=page_size,
+        max_page_size=100,
+    )
+    return {
+        "count": total,
+        "results": [_version_response(v) for v in sliced_qs],
+    }
 
 
 # Try
