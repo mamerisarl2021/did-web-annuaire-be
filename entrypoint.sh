@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ─────────────────────────────────────────────────────────────────────
+#  Root phase – fix volume permissions, then re‑exec as appuser
+# ─────────────────────────────────────────────────────────────────────
+if [ "$(id -u)" = "0" ]; then
+    echo "→ Fixing permissions on media and dids volumes..."
+    # mkdir -p /app/mediafiles/uploads /app/data/dids
+    chown -R appuser:appuser /app/mediafiles /app/data/dids
+
+    # Re‑execute this script as the appuser
+    exec gosu appuser "$0" "$@"
+fi
+
+# ─────────────────────────────────────────────────────────────────────
+#  From here on, we are running as appuser
+# ─────────────────────────────────────────────────────────────────────
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONBUFFERED=1
 
@@ -11,64 +26,21 @@ echo "════════════════════════�
 
 cd /app
 
-# ── Wait for database ───────────────────────────────────────────────────
-
-echo "→ Waiting for database..."
-python -c "
-import time, sys
-sys.path.insert(0, '.')
-from src.config.env import env
-import psycopg2
-
-for i in range(30):
-    try:
-        conn = psycopg2.connect(
-            dbname=env.POSTGRES_DB, user=env.POSTGRES_USER,
-            password=env.POSTGRES_PASSWORD, host=env.POSTGRES_HOST,
-            port=env.POSTGRES_PORT
-        )
-        conn.close()
-        print('  ✓ Database ready')
-        sys.exit(0)
-    except psycopg2.OperationalError:
-        time.sleep(1)
-print('  ✗ Database not ready after 30s')
-sys.exit(1)
-"
-
-# ── Wait for Redis ──────────────────────────────────────────────────────
-
-echo "→ Waiting for Redis..."
-python -c "
-import time, sys
-sys.path.insert(0, '.')
-from src.config.env import env
-import redis
-
-for i in range(15):
-    try:
-        r = redis.Redis(host=env.REDIS_HOST, port=env.REDIS_PORT, password=env.REDIS_PASSWORD)
-        r.ping()
-        print('  ✓ Redis ready')
-        sys.exit(0)
-    except (redis.ConnectionError, redis.exceptions.AuthenticationError):
-        time.sleep(1)
-print('  ✗ Redis not ready after 15s')
-sys.exit(1)
-"
-
-# ── Migrations ──────────────────────────────────────────────────────────
-
+# ── Migrations ─────────────────────────────────────────────────────
 echo "→ Running migrations..."
 python -m src.manage migrate --noinput
 
-# ── Collect static files ────────────────────────────────────────────────
-
+# ── Collect static files ────────────────────────────────────────────
 echo "→ Collecting static files..."
 python -m src.manage collectstatic --noinput --clear 2>/dev/null || true
 
-# ── Java check ──────────────────────────────────────────────────────────
+echo "→ Creating superadmin..."
+python -m src.manage createsuperadmin --no-input
 
+echo "→ Bootstrapping platform did..."
+python -m src.manage bootstrap_platform_did --force
+
+# ── Java check ─────────────────────────────────────────────────────
 echo "→ Verifying Java runtime..."
 java -version 2>&1 | head -1
 
@@ -78,8 +50,7 @@ else
     echo "  ⚠ Certificate extractor JAR not found at /app/bin/ecdsa-extractor.jar"
 fi
 
-# ── Start Gunicorn ──────────────────────────────────────────────────────
-
+# ── Start Gunicorn ─────────────────────────────────────────────────
 echo ""
 echo "→ Starting Gunicorn..."
 exec gunicorn src.wsgi:application -c src/gunicorn.conf.py

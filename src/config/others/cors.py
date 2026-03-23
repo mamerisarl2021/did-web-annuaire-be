@@ -1,14 +1,14 @@
 """
-CORS configuration.
+Configuration CORS.
 
-Uses django-cors-headers.
+Utilise django-cors-headers.
 """
 
 from src.config.env import env
 
 CORS_ALLOWED_ORIGINS = env.CORS_ALLOWED_ORIGINS
 
-CORS_ALLOW_CREDENTIALS = True  # Required for httpOnly cookie auth
+CORS_ALLOW_CREDENTIALS = True  # Requis pour l'authentification par cookie httpOnly
 
 CORS_ALLOW_HEADERS = [
     "accept",

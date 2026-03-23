@@ -1,13 +1,14 @@
 """
-ASGI config for project.
+Configuration ASGI pour le projet.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
+Il expose l'appelable ASGI en tant que variable de niveau module nommée ``application``.
 """
+
 import os
 
-from src.config.env import env
-
 from django.core.asgi import get_asgi_application
+
+from src.config.env import env
 
 _settings_map = {
     "production": "src.config.django.prod",

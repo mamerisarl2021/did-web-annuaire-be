@@ -1,0 +1,46 @@
+name: Skylos Analysis
+
+"on":
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  skylos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install Skylos
+        run: pip install skylos
+
+      - name: Run Skylos Analysis
+        run: skylos . --danger --quality --secrets --json -o skylos-results.json
+
+      - name: Quality Gate
+        if: always()
+        run: skylos cicd gate --input skylos-results.json --summary
+
+      - name: GitHub Annotations
+        if: always()
+        run: skylos cicd annotate --input skylos-results.json
+
+      - name: PR Review Comments
+        if: github.event_name == 'pull_request' && always()
+        run: skylos cicd review --input skylos-results.json --diff-base origin/${{ github.base_ref || 'main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}

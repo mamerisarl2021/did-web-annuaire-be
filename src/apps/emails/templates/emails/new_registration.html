@@ -1,0 +1,37 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2 style="margin:0 0 16px;font-size:20px;color:#333;">New Organization Registration</h2>
+
+<p style="margin:0 0 12px;font-size:15px;color:#555;line-height:1.6;">
+  A new organization has registered and is awaiting your review:
+</p>
+
+<div style="margin:16px 0;padding:16px;background:#f8f9fa;border-radius:6px;border:1px solid #eee;">
+  <table cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+      <td style="padding:4px 0;font-size:13px;color:#999;width:120px;">Organization:</td>
+      <td style="padding:4px 0;font-size:14px;color:#333;font-weight:600;">{{ org_name }}</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 0;font-size:13px;color:#999;">Slug:</td>
+      <td style="padding:4px 0;font-size:14px;color:#333;font-family:monospace;">{{ org_slug }}</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 0;font-size:13px;color:#999;">Admin:</td>
+      <td style="padding:4px 0;font-size:14px;color:#333;">{{ admin_email }}</td>
+    </tr>
+  </table>
+</div>
+
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td align="center" style="padding:8px 0;">
+      <a href="{{ review_url }}"
+         style="display:inline-block;padding:14px 32px;background:#5D866C;color:#F5F5F0;font-size:15px;font-weight:600;text-decoration:none;border-radius:6px;">
+        Review Now
+      </a>
+    </td>
+  </tr>
+</table>
+{% endblock %}

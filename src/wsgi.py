@@ -6,9 +6,9 @@ It exposes the WSGI callable as a module-level variable named ``application``.
 
 import os
 
-from src.config.env import env
-
 from django.core.wsgi import get_wsgi_application
+
+from src.config.env import env
 
 _settings_map = {
     "production": "src.config.django.prod",

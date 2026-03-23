@@ -16,10 +16,10 @@ Environment switching:
 """
 
 from pathlib import Path
+from urllib.parse import quote
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # project root (above src/)
 
@@ -67,7 +67,8 @@ class AppSettings(BaseSettings):
 
     @property
     def REDIS_URL(self) -> str:
-        return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}"
+        password = quote(self.REDIS_PASSWORD)
+        return f"redis://:{password}@{self.REDIS_HOST}:{self.REDIS_PORT}"
 
     @property
     def CELERY_BROKER_URL(self) -> str:
@@ -75,36 +76,52 @@ class AppSettings(BaseSettings):
 
     @property
     def CELERY_RESULT_BACKEND(self) -> str:
-        return f"{self.REDIS_URL}/1"
+        return "django-db"
+        # return f"{self.REDIS_URL}/1"
 
     @property
     def CACHE_REDIS_URL(self) -> str:
         return f"{self.REDIS_URL}/2"
 
-    @property
-    def SESSION_REDIS_URL(self) -> str:
-        return f"{self.REDIS_URL}/3"
+    # @property
+    # def SESSION_REDIS_URL(self) -> str:
+    #    return f"{self.REDIS_URL}/3"
 
     # ── Session / Cookies ───────────────────────────────────────────────
-    SESSION_COOKIE_NAME: str = "annuaire_session"
-    SESSION_COOKIE_AGE: int = 86400  # 24h
-    SESSION_COOKIE_SECURE: bool = False
-    SESSION_COOKIE_DOMAIN: str = ""
+    # SESSION_COOKIE_NAME: str = "annuaire_session"
+    # SESSION_COOKIE_AGE: int = 86400  # 24h
+    # SESSION_COOKIE_SECURE: bool = False
+    # SESSION_COOKIE_DOMAIN: str = ""
     CSRF_COOKIE_SECURE: bool = False
+    CSRF_TRUSTED_ORIGINS: list[str] = [""]
+
+    # ── JWT ─────────────────────────────────────────────────────────────
+
+    JWT_ACCESS_TOKEN_LIFETIME_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_LIFETIME_DAYS: int = 7
+    JWT_SIGNING_KEY: str = ""
+
+    @property
+    def jwt_signing_key(self) -> str:
+        return self.JWT_SIGNING_KEY or self.SECRET_KEY
 
     # ── External services ───────────────────────────────────────────────
-    UNIVERSAL_REGISTRAR_URL: str = "http://uni-registrar-web:9080"
-    SIGNSERVER_URL: str = "http://signserver-node:8080/signserver/process"
-    SIGNSERVER_WORKER_NAME: str = "DIDDocumentSigner"
-    CERT_SERVICE_JAR_PATH: str = "/app/bin/ecdsa-extractor.jar"
-    CERT_SERVICE_TIMEOUT: int = 10
+    UNIVERSAL_REGISTRAR_URL: str = ""
+    UNIVERSAL_RESOLVER_URL: str = ""
+    SIGNSERVER_URL: str = ""
+    SIGNSERVER_WORKER_NAME: str = ""
+    JWK_EXTRACTOR_JAR: str = "path/to/ecdsa-extractor.jar"
 
     # ── Platform ────────────────────────────────────────────────────────
-    PLATFORM_DOMAIN: str = "annuairedid-be.qcdigitalhub.com"
+    PLATFORM_DOMAIN: str = "http://localhost:8000"
+    PLATFORM_DOMAIN_WITHOUT_SCHEME: str = "localhost"
+    SUPERADMIN_EMAIL: str = ""
+    SUPERADMIN_PASSWORD: str = ""
+    SUPERADMIN_FULL_NAME: str = ""
 
     @property
     def PLATFORM_DID(self) -> str:
-        return f"did:web:{self.PLATFORM_DOMAIN}"
+        return f"did:web:{self.PLATFORM_DOMAIN_WITHOUT_SCHEME}"
 
     # ── Email ───────────────────────────────────────────────────────────
     EMAIL_BACKEND: str = "django.core.mail.backends.console.EmailBackend"

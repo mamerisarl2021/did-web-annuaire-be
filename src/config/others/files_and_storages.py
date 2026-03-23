@@ -7,7 +7,11 @@ from src.config.env import BASE_DIR
 # ── Static files ────────────────────────────────────────────────────────
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "static_root"
+
+STATICFILES_DIRS = [
+    BASE_DIR / "staticfiles"
+]  # Auto-discovers app static/ dirs if empty list
 
 # ── Media files ─────────────────────────────────────────────────────────
 
@@ -19,3 +23,15 @@ MEDIA_ROOT = BASE_DIR / "mediafiles"
 # The Universal Registrar's driver-did-web also writes here.
 
 DID_DOCUMENTS_ROOT = BASE_DIR / "data" / "dids"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Prevent manifest errors from crashing the app
+WHITENOISE_MANIFEST_STRICT = False

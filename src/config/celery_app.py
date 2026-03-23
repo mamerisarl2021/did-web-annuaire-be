@@ -29,8 +29,16 @@ app = Celery("annuaire_did")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 
 # Auto-discover tasks.py in each app
-app.autodiscover_tasks(["src.apps.authentication", "src.apps.organizations",
-                        "src.apps.certificates", "src.apps.documents", "src.apps.audits"])
+app.autodiscover_tasks()
+
+from celery.schedules import crontab  # noqa: E402
+
+app.conf.beat_schedule = {
+    "clear-blacklisted-tokens-daily": {
+        "task": "src.apps.authentication.tasks.clear_blacklisted_tokens",
+        "schedule": crontab(hour=0, minute=0),
+    },
+}
 
 
 @setup_logging.connect

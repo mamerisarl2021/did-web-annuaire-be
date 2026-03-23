@@ -1,0 +1,242 @@
+{% extends "base_orgadmin.html" %}
+
+{% block content %}
+<style>
+    #audits-tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    #audits-tbody tr:hover {
+        background-color: #f7fafc;
+    }
+    .audit-data-pre {
+        background: #f1f5f9;
+        padding: 0.75rem;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.8125rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        border: 1px solid #e2e8f0;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+</style>
+
+<div class="oa-header">
+    <div class="oa-header-text">
+        <h1 class="oa-header-title">Audit Logs</h1>
+        <p class="oa-header-subtitle">Immutable record of platform activities</p>
+    </div>
+</div>
+
+<div class="oa-card">
+    <div class="oa-table-container">
+        <table class="oa-table" id="audits-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Action</th>
+                    <th>Actor</th>
+                    <th>IP Address</th>
+                    <th>Resource Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody id="audits-tbody">
+                <tr><td colspan="6" style="text-align: center; color: #a0aec0;">Loading audits...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="oa-pagination" id="audits-pagination" style="display: none; justify-content: space-between; align-items: center; margin-top: 1rem;">
+        <div id="audits-page-info" style="font-size: 0.875rem; color: #718096;"></div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="oa-btn oa-btn-secondary" id="btn-prev-page" onclick="loadAuditsPage(currentPage - 1)" disabled>Previous</button>
+            <button class="oa-btn oa-btn-secondary" id="btn-next-page" onclick="loadAuditsPage(currentPage + 1)" disabled>Next</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Audit Detail Modal ────────────────────────────────────────── -->
+<div class="oa-modal-overlay hidden" id="audit-overlay" onclick="closeAuditModal(event)">
+    <div class="oa-modal" onclick="event.stopPropagation()">
+        <h3>Audit Log Details</h3>
+        <p class="desc" id="audit-desc">Detailed record of this specific activity.</p>
+        
+        <div class="oa-form-group">
+            <label>Actor Email</label>
+            <input id="audit-actor" class="oa-input" readonly>
+        </div>
+        <div class="oa-form-group">
+            <label>Action & Resource</label>
+            <input id="audit-action-resource" class="oa-input" readonly>
+        </div>
+        <div class="oa-form-group">
+            <label>Resource ID</label>
+            <input id="audit-resource-id" class="oa-input" readonly>
+        </div>
+        <div class="oa-form-group">
+            <label>Timestamp</label>
+            <input id="audit-timestamp" class="oa-input" readonly>
+        </div>
+        <div class="oa-form-group">
+            <label>IP Address</label>
+            <input id="audit-ip" class="oa-input" readonly>
+        </div>
+        <div class="oa-form-group">
+            <label>Metadata</label>
+            <pre class="audit-data-pre" id="audit-metadata"></pre>
+        </div>
+        
+        <div class="oa-modal-actions" style="margin-top: 1.5rem;">
+            <button class="oa-btn oa-btn-ghost"
+                    onclick="document.getElementById('audit-overlay').classList.add('hidden')">Close
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentPage = 1;
+    const itemsPerPage = 25;
+    let totalItems = 0;
+    let currentAudits = [];
+    let currentUserEmail = null;
+
+    async function loadAuditsPage(page) {
+        if (page < 1) return;
+        
+        const org = getCurrentOrg();
+        if (!org || !org.id) return;
+        const orgId = org.id;
+
+        const tbody = document.getElementById("audits-tbody");
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #a0aec0;">Loading audits...</td></tr>';
+        
+        try {
+            const [data, me] = await Promise.all([
+                OA.listAudits(orgId, page),
+                currentUserEmail ? Promise.resolve({ email: currentUserEmail }) : Auth.me()
+            ]);
+            currentUserEmail = me.email;
+            currentAudits = data.results;
+            renderAudits(currentAudits);
+            
+            totalItems = data.count;
+            currentPage = page;
+            updatePaginationControls();
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e53e3e;">Failed to load audits: ${err.detail || "Unknown error"}</td></tr>`;
+        }
+    }
+
+    function renderAudits(audits) {
+        const tbody = document.getElementById("audits-tbody");
+        tbody.innerHTML = "";
+
+        if (audits.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #a0aec0;">No audit logs found.</td></tr>';
+            return;
+        }
+
+        audits.forEach(val => {
+            const date = new Date(val.created_at).toLocaleString();
+            
+            const actorDisplay = val.actor_email === currentUserEmail 
+                ? `<span style="display:inline-block;padding:0.25rem 0.5rem;font-size:0.75rem;color:var(--oa-text-light);background:var(--oa-surface);border-radius:4px;">You</span>`
+                : escapeHtml(val.actor_email);
+            
+            const tr = document.createElement("tr");
+            tr.onclick = () => openAuditModal(val.id);
+            tr.innerHTML = `
+                <td style="white-space: nowrap;">${date}</td>
+                <td><span class="oa-status oa-status-approved" style="font-size: 0.75rem;">${escapeHtml(val.action)}</span></td>
+                <td>${actorDisplay}</td>
+                <td>${escapeHtml(val.ip_address) || "—"}</td>
+                <td>${escapeHtml(val.resource_type)}</td>
+                <td>${escapeHtml(val.description)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updatePaginationControls() {
+        const pagination = document.getElementById("audits-pagination");
+        const pageInfo = document.getElementById("audits-page-info");
+        const btnPrev = document.getElementById("btn-prev-page");
+        const btnNext = document.getElementById("btn-next-page");
+
+        if (totalItems === 0) {
+            pagination.style.display = "none";
+            return;
+        }
+
+        pagination.style.display = "flex";
+        
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const startItem = ((currentPage - 1) * itemsPerPage) + 1;
+        const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+        
+        pageInfo.textContent = `Showing ${startItem} to ${endItem} of ${totalItems} entries`;
+        
+        btnPrev.disabled = currentPage === 1;
+        btnNext.disabled = currentPage >= totalPages;
+    }
+
+    function escapeHtml(unsafe) {
+        if (!unsafe) return "";
+        return unsafe
+             .toString()
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    function openAuditModal(id) {
+        const audit = currentAudits.find(a => a.id === id);
+        if (!audit) return;
+
+        document.getElementById("audit-desc").textContent = audit.description || "Detailed record of this specific activity.";
+        document.getElementById("audit-actor").value = audit.actor_email === currentUserEmail ? `${audit.actor_email} (You)` : audit.actor_email || "";
+        document.getElementById("audit-action-resource").value = `${audit.action} on ${audit.resource_type}`;
+        document.getElementById("audit-resource-id").value = audit.resource_id || "";
+        document.getElementById("audit-timestamp").value = new Date(audit.created_at).toLocaleString();
+        document.getElementById("audit-ip").value = audit.ip_address || "—";
+        
+        const metadataPre = document.getElementById("audit-metadata");
+        if (audit.metadata && Object.keys(audit.metadata).length > 0) {
+            metadataPre.textContent = JSON.stringify(audit.metadata, null, 2);
+            metadataPre.style.display = "block";
+        } else {
+            metadataPre.textContent = "No additional metadata.";
+            metadataPre.style.color = "#a0aec0";
+            metadataPre.style.fontStyle = "italic";
+        }
+
+        document.getElementById("audit-overlay").classList.remove("hidden");
+    }
+
+    function closeAuditModal(e) {
+        if (e.target === e.currentTarget) {
+            document.getElementById("audit-overlay").classList.add("hidden");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Wait a slight delay to ensure org is loaded by base.js
+        setTimeout(() => {
+            // Guard: if current user is not allowed to view audits
+            if (window.currentOrgRole === "ORG_MEMBER" && !document.getElementById("nav-audits-item").style.display.includes("block")) {
+                 document.querySelector(".oa-main").innerHTML = '<div class="oa-card"><h2 style="color: #e53e3e;">Access Denied</h2><p>You do not have permission to view audit logs.</p></div>';
+                 return;
+            }
+            loadAuditsPage(1);
+        }, 500);
+    });
+</script>
+{% endblock %}

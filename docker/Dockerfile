@@ -48,6 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     wget \
     gnupg \
+    gosu \
     && wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb bookworm main" | tee /etc/apt/sources.list.d/adoptium.list \
     && apt-get update \
@@ -59,7 +60,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN java -version
 
 RUN useradd -m -r appuser && \
-    mkdir -p /app/staticfiles /app/mediafiles /app/data/dids /app/bin && \
+    mkdir -p /app/staticfiles /app/static_root /app/mediafiles /app/data/dids /app/bin && \
     chown -R appuser:appuser /app
 
 COPY --from=builder /opt/venv /opt/venv
@@ -71,13 +72,14 @@ WORKDIR /app
 COPY --from=builder /app/pyproject.toml /app/uv.lock ./
 
 COPY --chown=appuser:appuser src /app/src
+COPY --chown=appuser:appuser staticfiles /app/staticfiles
 
 COPY --chown=appuser:appuser entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 COPY --chown=appuser:appuser artifacts/ecdsa-extractor.jar /app/bin/
 
-USER appuser
+# USER appuser
 
 EXPOSE 8899
 

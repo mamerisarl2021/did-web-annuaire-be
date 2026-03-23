@@ -1,0 +1,178 @@
+{% extends "base_superadmin.html" %}
+{% block title %}Users{% endblock %}
+
+{% block content %}
+    <div class="sa-page-header">
+        <div>
+            <h2>Users</h2>
+            <p>Manage all platform users, roles, and invitations.</p>
+        </div>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <!-- Toolbar -->
+    <div class="sa-toolbar"
+         style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center; justify-content: space-between;">
+        <input type="text" id="user-search" placeholder="Search users by name or email..." class="sa-input"
+               oninput="handleSearch(this.value)"
+               style="max-width: 300px; padding: 0.5rem; border: 1px solid var(--sa-border); border-radius: 4px;">
+    </div>
+
+    <div id="users-table">
+        <div class="sa-empty"><p>Loading...</p></div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        let allUsers = [];
+        let searchQuery = "";
+        let sortKey = "created_at";
+        let sortOrder = -1;
+
+        async function loadUsers() {
+            try {
+                allUsers = await SA.listUsers();
+                renderTable();
+            } catch (err) {
+                saShowAlert("alert-box", err.detail || "Failed to load users.", "error");
+            }
+        }
+
+        function handleSearch(query) {
+            searchQuery = query.toLowerCase();
+            renderTable();
+        }
+
+        function setSort(key) {
+            if (sortKey === key) {
+                sortOrder = sortOrder * -1;
+            } else {
+                sortKey = key;
+                sortOrder = 1;
+            }
+            renderTable();
+        }
+
+        function renderTable() {
+            let filtered = allUsers;
+
+            if (searchQuery) {
+                filtered = filtered.filter(u =>
+                    (u.full_name || "").toLowerCase().includes(searchQuery) ||
+                    (u.email || "").toLowerCase().includes(searchQuery)
+                );
+            }
+
+            filtered.sort((a, b) => {
+                let valA = a[sortKey] || "";
+                let valB = b[sortKey] || "";
+                if (typeof valA === "string") valA = valA.toLowerCase();
+                if (typeof valB === "string") valB = valB.toLowerCase();
+
+                if (valA < valB) return -1 * sortOrder;
+                if (valA > valB) return 1 * sortOrder;
+                return 0;
+            });
+
+            if (filtered.length === 0) {
+                document.getElementById("users-table").innerHTML = `
+      <div class="sa-empty">
+        <div class="icon">👤</div>
+        <p>No users found</p>
+      </div>`;
+                return;
+            }
+
+            const rows = filtered.map(u => {
+                let actions = "";
+
+                let isOrgAdmin = (u.memberships || []).some(m => m.role === "ORG_ADMIN");
+
+                if (!u.is_superadmin && !isOrgAdmin) {
+                    actions += `<button class="sa-btn sa-btn-sm" style="margin-right:0.25rem; font-size: 0.75rem;" onclick="promptAddToOrg('${u.id}')">Add to Org</button>`;
+                }
+
+                let invites = (u.memberships || []).filter(m => m.status === "INVITED");
+                if (invites.length > 0) {
+                    invites.forEach(inv => {
+                        if (u.is_superadmin || inv.role === "ORG_ADMIN") return;
+                        actions += `<button class="sa-btn sa-btn-sm sa-btn-outline" style="margin-right:0.25rem; font-size: 0.75rem;" onclick="cancelInvite('${u.id}', '${inv.org_id}')">Cancel Invite to ${inv.org_name}</button>`;
+                    });
+                }
+
+                actions += `<button class="sa-btn sa-btn-sm sa-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="deleteUser('${u.id}')">Delete</button>`;
+
+                let activeBadges = (u.memberships || []).map(m => `<span class="sa-badge" style="font-size:0.6rem;">${m.org_name} (${m.role}) - ${m.status}</span>`).join(" ");
+
+                return `
+      <tr>
+        <td>
+          <div class="org-name">${u.full_name || "—"}</div>
+          <div class="org-slug">${u.email}</div>
+        </td>
+        <td>${u.is_active ? "<span style='color:var(--sa-green);'>Active</span>" : "<span style='color:var(--sa-red);'>Inactive</span>"}</td>
+        <td>${activeBadges || "—"}</td>
+        <td>${formatDate(u.created_at)}</td>
+        <td>${actions}</td>
+      </tr>
+    `
+            }).join("");
+
+            document.getElementById("users-table").innerHTML = `
+    <div class="sa-table-wrap">
+      <table class="sa-table">
+        <thead><tr>
+          <th style="cursor:pointer" onclick="setSort('full_name')">User ${sortKey === 'full_name' ? (sortOrder === 1 ? '▲' : '▼') : ''}</th>
+          <th style="cursor:pointer" onclick="setSort('is_active')">Status ${sortKey === 'is_active' ? (sortOrder === 1 ? '▲' : '▼') : ''}</th>
+          <th>Memberships</th>
+          <th style="cursor:pointer" onclick="setSort('created_at')">Joined ${sortKey === 'created_at' ? (sortOrder === 1 ? '▲' : '▼') : ''}</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+        }
+
+        async function promptAddToOrg(userId) {
+            const orgId = prompt("Enter the Organization ID (UUID) to add this user to:");
+            if (!orgId) return;
+            const role = prompt("Enter the role (e.g. ORG_MEMBER, ORG_ADMIN):", "ORG_MEMBER");
+            if (!role) return;
+
+            try {
+                await SA.addUserToOrg(userId, orgId, role);
+                saShowAlert("alert-box", "User added to organization.", "success");
+                loadUsers();
+            } catch (err) {
+                saShowAlert("alert-box", err.detail || "Error adding user to org", "error");
+            }
+        }
+
+        async function cancelInvite(userId, orgId) {
+            if (!confirm("Cancel this invitation?")) return;
+            try {
+                await SA.cancelInvite(userId, orgId);
+                saShowAlert("alert-box", "Invitation canceled.", "success");
+                loadUsers();
+            } catch (err) {
+                saShowAlert("alert-box", err.detail || "Error canceling invite", "error");
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm("WARNING: This will permanently delete the user! Are you sure?")) return;
+            try {
+                await SA.deleteUser(userId);
+                saShowAlert("alert-box", "User deleted.", "success");
+                loadUsers();
+            } catch (err) {
+                saShowAlert("alert-box", err.detail || "Error deleting user", "error");
+            }
+        }
+
+        loadUsers();
+    </script>
+{% endblock %}
