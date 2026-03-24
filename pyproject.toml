@@ -35,3 +35,33 @@ dev = [
     "rav>=0.4.3",
     "ruff>=0.15.5",
 ]
+
+[tool.skylos]
+complexity = 10
+nesting = 3
+max_args = 5
+max_lines = 50
+duplicate_strings = 3
+model = "gpt-4.1"
+exclude = []
+ignore = ["ninja_extra", "ninja_jwt", "src", "ninja"]
+
+[tool.skylos.masking]
+names = []
+decorators = []
+bases = []
+
+[tool.skylos.whitelist]
+names = []
+
+[tool.skylos.whitelist.documented]
+
+[tool.skylos.whitelist.temporary]
+
+[tool.skylos.gate]
+fail_on_critical = true
+max_critical = 0 
+max_high = 5
+max_security = 0
+max_quality = 10
+strict = false

@@ -24,6 +24,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # project root (above src/)
 
 
+# skylos: ignore-start
 class AppSettings(BaseSettings):
     """
     All environment variables in one place.
@@ -164,6 +165,7 @@ class AppSettings(BaseSettings):
         return self.DJANGO_ENV == "test"
 
 
+# skylos: ignore-end
 # ── Singleton ───────────────────────────────────────────────────────────
 # Instantiated once at import time. All Django settings files use this.
 env = AppSettings()
