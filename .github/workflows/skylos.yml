@@ -26,7 +26,7 @@ jobs:
           python-version: '3.13'
 
       - name: Install Skylos
-        run: pip install skylos
+        run: pip install skylos==4.1.3
 
       - name: Run Skylos Analysis
         run: skylos . --danger --quality --secrets --json -o skylos-results.json
