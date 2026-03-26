@@ -5,10 +5,6 @@ Configuration racine des URL.
 - /api/v2/org/          → API Admin Org (limitée aux organisations de l'utilisateur)
 - /api/v2/public/       → API publique (aucune authentification requise)
 - /superadmin/api/v2/   → API Superadmin
-- /superadmin/          → Interface Superadmin (modèles Django)
-- /workspace/           → Interface Admin Org (modèles Django)
-- /resolve/, /search/   → Pages publiques (sans auth)
-- /login/, /register/   → Interface publique (modèles Django)
 - /admin/               → Administration Django
 """
 
@@ -74,10 +70,4 @@ urlpatterns = [
     path("superadmin/api/v2/", superadmin_api.urls),
     # Administration Django
     path("admin/", admin.site.urls),
-    # Frontend Superadmin (modèles)
-    path("superadmin/", include("src.apps.superadmin.urls")),
-    # Frontend Admin Org (modèles)
-    path("workspace/", include("src.apps.orgadmin.urls")),
-    # Frontend public (modèles) — doit être en dernier (chemins fourre-tout)
-    path("", include("src.apps.frontend.urls")),
 ]
