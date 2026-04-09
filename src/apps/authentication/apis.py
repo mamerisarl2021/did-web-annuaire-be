@@ -195,7 +195,7 @@ def update_me(request: HttpRequest, payload: UpdateProfileSchema):
         full_name=payload.full_name,
         phone=payload.phone,
         email=payload.email,
-        # functions intentionnellement exclus
+        functions=payload.functions,
     )
     return 200, user
 
