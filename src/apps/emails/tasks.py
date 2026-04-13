@@ -192,7 +192,7 @@ def send_member_invitation_email(
         parsed = urlparse(platform_domain)
         host = parsed.netloc or parsed.path  # gère les cas sans schéma
         scheme = "https" if "localhost" not in host else "http"
-        activation_url = f"{scheme}://{host}/activate/{invitation_token}/"
+        activation_url = f"{scheme}://{host}/auth/activate/{invitation_token}/"
 
         role_display = {
             "ORG_MEMBER": "Member — can manage documents & certificates",
