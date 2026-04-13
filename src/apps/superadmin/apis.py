@@ -608,6 +608,7 @@ def list_certificates(
             "created_at": c.created_at.isoformat(),
             "key_type": c.current_version.key_type if c.current_version else None,
             "not_valid_after": c.current_version.not_valid_after.isoformat() if c.current_version and c.current_version.not_valid_after else None,
+            "current_version": c.current_version,
         }
         for c in sliced_qs
     ]
