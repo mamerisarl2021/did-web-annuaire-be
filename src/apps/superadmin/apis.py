@@ -608,7 +608,22 @@ def list_certificates(
             "created_at": c.created_at.isoformat(),
             "key_type": c.current_version.key_type if c.current_version else None,
             "not_valid_after": c.current_version.not_valid_after.isoformat() if c.current_version and c.current_version.not_valid_after else None,
-            "current_version": c.current_version,
+            # "current_version": {
+            #     "id": c.current_version.id,
+            #     "version_number": c.current_version.version_number,
+            #     "key_type": c.current_version.key_type,
+            #     "key_curve": c.current_version.key_curve,
+            #     "key_size": c.current_version.key_size,
+            #     "subject_dn": c.current_version.subject_dn,
+            #     "issuer_dn": c.current_version.issuer_dn,
+            #     "serial_number": c.current_version.serial_number,
+            #     "not_valid_before": c.current_version.not_valid_before.isoformat() if c.current_version.not_valid_before else None,
+            #     "not_valid_after": c.current_version.not_valid_after.isoformat() if c.current_version.not_valid_after else None,
+            #     "fingerprint_sha256": c.current_version.fingerprint_sha256,
+            #     "is_current": c.current_version.is_current,
+            #     "created_at": c.current_version.created_at.isoformat(),
+            # } if c.current_version else None,
+            "current_version": c.current_version.version_number,
         }
         for c in sliced_qs
     ]
