@@ -167,6 +167,44 @@ def send_superadmin_new_registration_email(
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_registrant_confirmation_email(
+    self, user_id: str, org_name: str, org_slug: str
+):
+    """Envoyer un e-mail de confirmation à la personne qui inscrit une organisation."""
+    from src.apps.users.selectors import get_user_by_id
+
+    try:
+        user = get_user_by_id(user_id=user_id)
+        if user is None:
+            logger.warning("registrant_confirmation_user_not_found", user_id=user_id)
+            return
+
+        platform_domain = settings.PLATFORM_DOMAIN
+
+        html = render_to_string(
+            "emails/org_admin_notify_after_registration.html",
+            {
+                "user_name": user.full_name or user.email,
+                "org_name": org_name,
+                "org_slug": org_slug,
+                "site_url": f'{platform_domain}/auth/login',
+            },
+        )
+
+        email_send(
+            to=[user.email],
+            subject=f"AnnuaireDID — Registration submitted: {org_name}",
+            html=html,
+        )
+
+        logger.info("registrant_confirmation_sent", user_id=user_id, org_name=org_name)
+
+    except Exception as exc:
+        logger.error("registrant_confirmation_failed", user_id=user_id, error=str(exc))
+        raise self.retry(exc=exc) from exc
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_member_invitation_email(
     self,
     user_id: str,
