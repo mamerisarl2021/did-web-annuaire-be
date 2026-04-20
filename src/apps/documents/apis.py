@@ -173,10 +173,10 @@ def _get_doc_or_404(doc_id: UUID, org_id: UUID):
     summary="Liste des documents DID (portée par rôle)",
 )
 def list_documents(
-    request: HttpRequest,
-    org_id: UUID,
-    page: int = 1,
-    page_size: int = 25,
+        request: HttpRequest,
+        org_id: UUID,
+        page: int = 1,
+        page_size: int = 25,
 ):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
 
@@ -239,10 +239,10 @@ def create_document(request: HttpRequest, org_id: UUID, payload: CreateDocumentS
     summary="Liste des documents en attente d'examen (ORG_ADMIN uniquement)",
 )
 def list_pending_review(
-    request: HttpRequest,
-    org_id: UUID,
-    page: int = 1,
-    page_size: int = 25,
+        request: HttpRequest,
+        org_id: UUID,
+        page: int = 1,
+        page_size: int = 25,
 ):
     require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
     qs = doc_selectors.get_pending_review_documents(organization_id=org_id)
@@ -281,10 +281,10 @@ def get_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     summary="Mettre à jour le brouillon du document (DRAFT, REJECTED ou PUBLISHED)",
 )
 def update_draft(
-    request: HttpRequest,
-    org_id: UUID,
-    doc_id: UUID,
-    payload: UpdateDraftSchema,
+        request: HttpRequest,
+        org_id: UUID,
+        doc_id: UUID,
+        payload: UpdateDraftSchema,
 ):
     """
     Mettre à jour le contenu brouillon d'un document DID.
@@ -320,6 +320,7 @@ def update_draft(
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
     return _doc_detail(doc)
 
+
 @router.post(
     f"{_P}/{{doc_id}}/verification-methods",
     response={
@@ -332,10 +333,10 @@ def update_draft(
     summary="Ajouter une méthode de vérification à un document",
 )
 def add_verification_method(
-    request: HttpRequest,
-    org_id: UUID,
-    doc_id: UUID,
-    payload: AddVerificationMethodSchema,
+        request: HttpRequest,
+        org_id: UUID,
+        doc_id: UUID,
+        payload: AddVerificationMethodSchema,
 ):
     require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
@@ -361,10 +362,10 @@ def add_verification_method(
     summary="Supprimer une méthode de vérification d'un document",
 )
 def remove_verification_method(
-    request: HttpRequest,
-    org_id: UUID,
-    doc_id: UUID,
-    vm_id: UUID,
+        request: HttpRequest,
+        org_id: UUID,
+        doc_id: UUID,
+        vm_id: UUID,
 ):
     require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
@@ -421,10 +422,10 @@ def unsubmit_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     summary="Approuver le document (PENDING_REVIEW → APPROVED)",
 )
 def approve_document(
-    request: HttpRequest,
-    org_id: UUID,
-    doc_id: UUID,
-    payload: ReviewSchema,
+        request: HttpRequest,
+        org_id: UUID,
+        doc_id: UUID,
+        payload: ReviewSchema,
 ):
     require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
     doc = _get_doc_or_404(doc_id, org_id)
@@ -447,10 +448,10 @@ def approve_document(
     summary="Rejeter le document (PENDING_REVIEW → REJECTED)",
 )
 def reject_document(
-    request: HttpRequest,
-    org_id: UUID,
-    doc_id: UUID,
-    payload: ReviewSchema,
+        request: HttpRequest,
+        org_id: UUID,
+        doc_id: UUID,
+        payload: ReviewSchema,
 ):
     require_permission(request.auth, org_id, Permission.MANAGE_MEMBERS)
     doc = _get_doc_or_404(doc_id, org_id)
@@ -504,10 +505,10 @@ def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     summary="Désactiver un document publié",
 )
 def deactivate_document(
-    request: HttpRequest,
-    org_id: UUID,
-    doc_id: UUID,
-    payload: DeactivateSchema,
+        request: HttpRequest,
+        org_id: UUID,
+        doc_id: UUID,
+        payload: DeactivateSchema,
 ):
     require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
@@ -521,7 +522,6 @@ def deactivate_document(
     return {"message": f"Document '{doc.label}' has been deactivated."}
 
 
-
 @router.get(
     f"{_P}/{{doc_id}}/versions",
     response=PaginatedResponse,
@@ -529,11 +529,11 @@ def deactivate_document(
     summary="Liste des versions publiées d'un document",
 )
 def list_versions(
-    request: HttpRequest,
-    org_id: UUID,
-    doc_id: UUID,
-    page: int = 1,
-    page_size: int = 25,
+        request: HttpRequest,
+        org_id: UUID,
+        doc_id: UUID,
+        page: int = 1,
+        page_size: int = 25,
 ):
     membership = require_permission(request.auth, org_id, Permission.VIEW_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
@@ -572,3 +572,19 @@ def get_verifiable_credential(request: HttpRequest, org_id: UUID, doc_id: UUID):
             "Verifiable Credential not available. Document must be published."
         )
     return vc
+
+
+@router.post(
+    f"{_P}/{{doc_id}}/remind",
+    response={200: MessageSchema, 400: ErrorSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Relancer les administrateurs pour l'examen d'un document (PENDING_REVIEW)",
+)
+def remind_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
+    require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
+    doc = _get_doc_or_404(doc_id, org_id)
+
+    # Seul le propriétaire (ou un admin s'il en a besoin) peut relancer
+    require_document_owner_or_admin(request.auth, org_id, doc, action="send a reminder for")
+    doc_services.remind_document_review(document=doc, reminded_by=request.auth)
+    return {"message": "Une relance a été envoyée aux administrateurs de l'organisation."}

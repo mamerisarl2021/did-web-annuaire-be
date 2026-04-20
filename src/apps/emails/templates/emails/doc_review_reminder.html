@@ -1,0 +1,22 @@
+{% extends "emails/base_email.html" %}
+{% block content %}
+    <h2 style="margin:0 0 16px;font-size:20px;color:#333;">Rappel d'examen : {{ doc_label }}</h2>
+    <p style="margin:0 0 12px;font-size:15px;color:#555;line-height:1.6;">
+        Bonjour,
+    </p>
+    <p style="margin:0 0 12px;font-size:15px;color:#555;line-height:1.6;">
+        Ceci est un rappel amical de la part de <strong>{{ user_name }}</strong>.
+        Le document DID <strong>{{ doc_label }}</strong> dans l'organisation <strong>{{ org_name }}</strong>
+        est toujours en attente de votre examen.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center" style="padding:16px 0;">
+                <a href="{{ site_url }}"
+                   style="display:inline-block;padding:14px 32px;background:#355872;color:#F5F5F0;font-size:15px;font-weight:600;text-decoration:none;border-radius:6px;">
+                    Examiner le Document
+                </a>
+            </td>
+        </tr>
+    </table>
+{% endblock %}

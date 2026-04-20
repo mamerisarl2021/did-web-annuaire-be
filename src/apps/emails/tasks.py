@@ -124,7 +124,7 @@ def send_password_reset_email(self, user_id: str, reset_token: str):
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_superadmin_new_registration_email(
-    self, org_name: str, org_slug: str, admin_email: str
+        self, org_name: str, org_slug: str, admin_email: str
 ):
     """Informer les superadmins d'une nouvelle inscr d'organisation."""
     from src.apps.users.models import User
@@ -168,7 +168,7 @@ def send_superadmin_new_registration_email(
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_registrant_confirmation_email(
-    self, user_id: str, org_name: str, org_slug: str
+        self, user_id: str, org_name: str, org_slug: str
 ):
     """Envoyer un e-mail de confirmation à la personne qui inscrit une organisation."""
     from src.apps.users.selectors import get_user_by_id
@@ -206,12 +206,12 @@ def send_registrant_confirmation_email(
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_member_invitation_email(
-    self,
-    user_id: str,
-    invitation_token: str,
-    org_name: str,
-    role: str,
-    invited_by_name: str,
+        self,
+        user_id: str,
+        invitation_token: str,
+        org_name: str,
+        role: str,
+        invited_by_name: str,
 ):
     """
     Env. un e-mail d'invit. à un membre de l'org nouvellement invité.
@@ -319,7 +319,7 @@ def send_document_submitted_email(self, doc_id: str, org_id: str, submitter_id: 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_document_reviewed_email(
-    self, doc_id: str, org_id: str, reviewer_id: str, action: str, reason: str = ""
+        self, doc_id: str, org_id: str, reviewer_id: str, action: str, reason: str = ""
 ):
     from src.apps.documents.selectors import get_document_by_id
     from src.apps.organizations.selectors import get_organization_by_id
@@ -417,3 +417,51 @@ def send_organization_reactivated_email(self, user_id: str, org_name: str):
     except Exception as exc:
         logger.error("reactivation_email_failed", user_id=user_id, error=str(exc))
         raise self.retry(exc=exc) from exc
+
+
+@shared_task(
+    bind=True,
+    max_retries=3,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+)
+def send_document_reminder_email(self, doc_id: UUID, user_name: str):
+    """
+    Envoyer un rappel aux administrateurs de l'org pour un document en attente.
+    """
+    from src.apps.documents.models import DIDDocument
+    from src.apps.organizations.models import OrganizationMembership
+    from src.common.types import Role
+    try:
+        doc = DIDDocument.objects.select_related("organization").get(id=doc_id)
+    except DIDDocument.DoesNotExist:
+        return
+    admins = OrganizationMembership.objects.filter(
+        organization=doc.organization,
+        role=Role.ORG_ADMIN,
+        user__is_active=True,
+    ).select_related("user")
+    if not admins.exists():
+        logger.warning(
+            "no_org_admins_for_reminder",
+            org_id=str(doc.organization.id),
+            doc_id=str(doc_id),
+        )
+        return
+    admin_emails = [admin.user.email for admin in admins]
+
+    # You can change this to a specific URL if you have a deep link for the review page
+    site_url = settings.FRONTEND_URL
+    context = {
+        "org_name": doc.organization.name,
+        "doc_label": doc.label,
+        "user_name": user_name,
+        "site_url": site_url,
+    }
+    html_message = render_to_string("emails/doc_review_reminder.html", context)
+
+    email_send(
+        subject=f"Rappel : Document '{doc.label}' en attente d'examen",
+        recipients=admin_emails,
+        html_message=html_message,
+    )
