@@ -271,6 +271,8 @@ def _create_version(
         key_curve=metadata.get("key_curve", ""),
         key_size=metadata.get("key_size"),
         fingerprint_sha256=metadata.get("fingerprint_sha256", ""),
+        key_usage=metadata.get("key_usage"),
+        extended_key_usage=metadata.get("extended_key_usage"),
         is_current=is_current,
         uploaded_by=uploaded_by,
     )
