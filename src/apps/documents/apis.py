@@ -396,6 +396,25 @@ def submit_for_review(request: HttpRequest, org_id: UUID, doc_id: UUID):
 
 
 @router.post(
+    f"{_P}/{{doc_id}}/unsubmit",
+    response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Annuler la soumission d'un document (PENDING_REVIEW → DRAFT)",
+)
+def unsubmit_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
+    require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
+    doc = _get_doc_or_404(doc_id, org_id)
+
+    # We use require_document_owner_or_admin so that the owner OR an org admin can unsubmit it
+    require_document_owner_or_admin(request.auth, org_id, doc, action="unsubmit")
+
+    doc = doc_services.unsubmit_document(document=doc, unsubmitted_by=request.auth)
+
+    doc = doc_selectors.get_document_by_id(doc_id=doc.id)
+    return _doc_detail(doc)
+
+
+@router.post(
     f"{_P}/{{doc_id}}/approve",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),

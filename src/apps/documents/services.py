@@ -291,6 +291,27 @@ def submit_for_review(*, document: DIDDocument, submitted_by: User) -> DIDDocume
     logger.info("document_submitted", doc_id=str(document.id))
     return document
 
+@transaction.atomic
+def unsubmit_document(*, document: DIDDocument, unsubmitted_by: User) -> DIDDocument:
+    if document.status != DocumentStatus.PENDING_REVIEW:
+        raise ValidationError("Only PENDING_REVIEW documents can be unsubmitted.")
+
+    document.status = DocumentStatus.DRAFT
+    document.submitted_by = None
+    document.submitted_at = None
+    document.save(
+        update_fields=["status", "submitted_by", "submitted_at", "updated_at"]
+    )
+
+    _log(
+        "DOC_UNSUBMITTED",
+        unsubmitted_by,
+        document,
+        f"Document '{document.label}' unsubmitted and returned to draft.",
+    )
+
+    logger.info("document_unsubmitted", doc_id=str(document.id))
+    return document
 
 # ── Approuver / rejeter ─────────────────────────────────────────────────
 
