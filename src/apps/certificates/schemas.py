@@ -29,6 +29,8 @@ class CertVersionSummarySchema(Schema):
     fingerprint_sha256: str
     is_current: bool
     created_at: str
+    key_usage: list[str] | None = None
+    extended_key_usage: list[str] | None = None
 
 
 class CertVersionDetailSchema(CertVersionSummarySchema):

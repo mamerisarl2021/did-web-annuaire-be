@@ -34,6 +34,8 @@ from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import Permission, require_permission
 from src.common.types import Role
 
+from .maps import  _map_key_usage, _map_eku
+
 router = Router(tags=["Certificates"])
 
 _P = "/organizations/{org_id}/certificates"
@@ -107,8 +109,8 @@ def _version_summary(v: CertificateVersion) -> dict:
         else None,
         "not_valid_after": v.not_valid_after.isoformat() if v.not_valid_after else None,
         "fingerprint_sha256": v.fingerprint_sha256,
-        "key_usage": v.key_usage,
-        "extended_key_usage": v.extended_key_usage,
+        "key_usage": _map_key_usage(v.key_usage),
+        "extended_key_usage": _map_eku(v.extended_key_usage),
         "is_current": v.is_current,
         "created_at": v.created_at.isoformat(),
     }
