@@ -425,18 +425,18 @@ def send_organization_reactivated_email(self, user_id: str, org_name: str):
     autoretry_for=(Exception,),
     retry_backoff=True,
 )
-def send_document_reminder_email(self, doc_id: UUID, user_name: str):
+def send_document_reminder_email(self, doc_id: str, user_name: str):
     """
     Envoyer un rappel aux administrateurs de l'org pour un document en attente.
     """
     from src.apps.documents.models import DIDDocument
-    from src.apps.organizations.models import OrganizationMembership
+    from src.apps.organizations.models import Membership
     from src.common.types import Role
     try:
         doc = DIDDocument.objects.select_related("organization").get(id=doc_id)
     except DIDDocument.DoesNotExist:
         return
-    admins = OrganizationMembership.objects.filter(
+    admins = Membership.objects.filter(
         organization=doc.organization,
         role=Role.ORG_ADMIN,
         user__is_active=True,
