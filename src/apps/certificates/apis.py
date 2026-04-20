@@ -134,6 +134,8 @@ def _version_detail(v: CertificateVersion) -> dict:
 def _cert_detail(cert) -> dict:
     linked = cert_selectors.count_linked_documents_for_cert(cert_id=cert.id)
 
+    linked_list = cert_selectors.get_linked_documents_for_cert(cert_id=cert.id)
+
     return {
         "id": cert.id,
         "label": cert.label,
@@ -146,6 +148,7 @@ def _cert_detail(cert) -> dict:
         else None,
         "version_count": cert.versions.count(),
         "linked_documents": linked,
+        "linked_documents_list": linked_list,
     }
 
 
