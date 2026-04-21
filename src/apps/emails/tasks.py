@@ -451,12 +451,13 @@ def send_document_reminder_email(self, doc_id: str, user_name: str):
     admin_emails = [admin.user.email for admin in admins]
 
     # You can change this to a specific URL if you have a deep link for the review page
-    site_url = settings.FRONTEND_URL
+    platform_domain = settings.PLATFORM_DOMAIN
+
     context = {
         "org_name": doc.organization.name,
         "doc_label": doc.label,
         "user_name": user_name,
-        "site_url": site_url,
+        "site_url": f'{platform_domain}/documents/pending'
     }
     html_message = render_to_string("emails/doc_review_reminder.html", context)
 
