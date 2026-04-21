@@ -52,6 +52,8 @@ class CertListItemSchema(Schema):
     created_by_email: str = ""
     created_at: str
     version_count: int = 1
+    key_usage: list[str] | None = None
+    extended_key_usage: list[str] | None = None
 
 class LinkedDocumentSchema(Schema):
     id: UUID

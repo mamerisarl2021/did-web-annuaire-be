@@ -92,6 +92,8 @@ def _cert_list_item(cert) -> dict:
         "created_by_email": cert.created_by.email if cert.created_by else "",
         "created_at": cert.created_at.isoformat(),
         "version_count": cert.versions.count(),
+        "key_usage": _map_key_usage(cv.key_usage) if cv else None,
+        "extended_key_usage": _map_eku(cv.extended_key_usage) if cv else None,
     }
 
 
