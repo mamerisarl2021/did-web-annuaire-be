@@ -28,16 +28,18 @@ ALLOWED_CERTIFICATE_TYPES = {
     # PEM / DER / X.509
     "application/x-pem-file",
     "application/x-x509-ca-cert",
+    "application/x-x509-user-cert",   # ← ADD: end-entity/leaf certs
     "application/pkix-cert",
-    "text/plain",  # PEM files sometimes detected as text
+    "text/plain",
+    "text/x-pem-file",                # ← ADD: rare PEM variant
     # PKCS#12 (.p12, .pfx)
-    "application/x-pkcs12",  # standard PKCS#12 MIME
-    "application/pkcs12",  # alternative without x- prefix
-    # PKCS#7 (.p7b, .p7c)
+    "application/x-pkcs12",
+    "application/pkcs12",
+    # PKCS#7 (.p7b, .p7c, .p7m)
     "application/x-pkcs7-certificates",
-    # Fallback — some browsers/OS send generic binary
+    "application/pkcs7-mime",          # ← ADD: S/MIME cert chains
+    # Fallbacks
     "application/octet-stream",
-    # Fallback — domains used as filenames (e.g., gitlab.com) are seen as MS-DOS executables
     "application/x-msdos-program",
 }
 
