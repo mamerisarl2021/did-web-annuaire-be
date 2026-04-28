@@ -69,7 +69,6 @@ LOCAL_APPS = [
     "src.apps.users",
     "src.apps.files",
     "src.apps.emails",
-    "src.apps.frontend",
     "src.apps.superadmin",
     "src.apps.orgadmin",
     "src.apps.certificates",

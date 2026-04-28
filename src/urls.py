@@ -13,7 +13,7 @@ Configuration racine des URL.
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import path
 from ninja_extra import NinjaExtraAPI
 from ninja_jwt.controller import NinjaJWTDefaultController
 
@@ -52,10 +52,10 @@ api.add_router("/org", cert_router)
 # Documents : /api/v2/org/organizations/{org_id}/documents/...
 api.add_router("/org", doc_router)
 
-api.add_router("/apiclients", apiclients_router)
-
 # Recherche publique (sans auth) : /api/v2/public/search/...
 api.add_router("/public", public_search_router)
+
+api.add_router("/apiclients", apiclients_router)
 
 # ── API Superadmin ──────────────────────────────────────────────────────
 
@@ -77,10 +77,4 @@ urlpatterns = [
     path("superadmin/api/v2/", superadmin_api.urls),
     # Administration Django
     path("admin/", admin.site.urls),
-    # Frontend Superadmin (modèles)
-    path("superadmin/", include("src.apps.superadmin.urls")),
-    # Frontend Admin Org (modèles)
-    path("workspace/", include("src.apps.orgadmin.urls")),
-    # Frontend public (modèles) — doit être en dernier (chemins fourre-tout)
-    path("", include("src.apps.frontend.urls")),
 ]
