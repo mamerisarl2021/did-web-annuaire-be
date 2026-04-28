@@ -10,9 +10,6 @@ from src.apps.apiclients.models import MachineClient
 from src.apps.apiclients.schemas import MachineTokenRequestSchema, MachineTokenResponseSchema
 from src.apps.apiclients.auth import MachineJWTAuth
 
-# Import the issuance schemas and services we built earlier
-from src.apps.documents.schemas import IssueCredentialSchema, CredentialResponseSchema, ErrorSchema
-from src.apps.documents.services import issue_generic_credential
 
 router = Router(tags=["API Clients (M2M)"])
 
@@ -49,36 +46,3 @@ def get_machine_token(request: HttpRequest, payload: MachineTokenRequestSchema):
         "expires_in": expires_in,
         "token_type": "Bearer"
     }
-
-
-# ── 2. Credential Issuance ───────────────────────────────────────────────────
-
-@router.post(
-    "_/issue",
-    response={200: CredentialResponseSchema, 400: ErrorSchema, 403: ErrorSchema, 404: ErrorSchema},
-    auth=MachineJWTAuth(),
-    throttle=AuthRateThrottle("100/m"),
-    summary="Issue a generic verifiable credential in multiple formats",
-)
-def issue_credential(request: HttpRequest, payload: IssueCredentialSchema):
-
-
-    try:
-        # Bundle the payload to pass to the service
-        cred_data = {
-            "credential_type": payload.credential_type,
-            "subject_id": payload.subject_id,
-            "claims": payload.claims,
-        }
-
-        result = issue_generic_credential(
-            payload=cred_data,
-            output_format=payload.output_format
-        )
-
-        return 200, {
-            "format": payload.output_format,
-            "credential_data": result
-        }
-    except Exception as e:
-        return 400, {"detail": str(e)}
