@@ -119,3 +119,13 @@ class MessageSchema(Schema):
 
 class ErrorSchema(Schema):
     detail: str
+
+class IssueCredentialSchema(Schema):
+    credential_type: list[str] = ["VerifiableCredential"]
+    subject_id: str
+    claims: dict
+    output_format: str = "qr-cbor-base45" # Options: "qr-cbor-base45", "vc-jwt", "json-ld"
+
+class CredentialResponseSchema(Schema):
+    format: str
+    credential_data: Any  # Can be a string (JWT/Base45) or a dictionary (JSON-LD)

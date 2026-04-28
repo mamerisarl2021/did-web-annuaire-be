@@ -4,6 +4,9 @@ Services de Document DID (opérations d'écriture).
 
 import re
 
+import json
+import base64
+import zlib
 import structlog
 from django.db import transaction
 from django.utils import timezone
@@ -667,6 +670,85 @@ def deactivate_document(
     logger.info("document_deactivated", doc_id=str(document.id))
     return document
 
+def issue_generic_credential(
+        *,
+        payload: dict,
+        output_format: str,
+) -> str | dict:
+    """
+    Issues a credential based on the requested output format.
+    All signing is deferred to SignServer (ECDSA P-256).
+    """
+    from src.integrations.signserver import sign_bytes
+    from src.common.did.assembler import _der_to_raw_ecdsa
+    if output_format == "qr-cbor-base45":
+        import cbor2
+        import base45
+        # 1. Convert claims to CBOR
+        cbor_payload = cbor2.dumps(payload)
+        # 2. Build COSE Sign1 Structure (Protected Header: Alg ES256)
+        protected_header = cbor2.dumps({1: -7})
+        unprotected_header = {}
+
+        # To Be Signed (TBS) bytes
+        sig_structure = ["Signature1", protected_header, b'', cbor_payload]
+        tbs_bytes = cbor2.dumps(sig_structure)
+
+        # 3. Hash and Sign via SignServer
+        import hashlib
+        hash_data = hashlib.sha256(tbs_bytes).digest()
+        der_signature = sign_bytes(hash_data)
+        raw_sig = _der_to_raw_ecdsa(der_signature, key_size=32)
+
+        # 4. Final COSE Sign1 array
+        cose_sign1 = [protected_header, unprotected_header, cbor_payload, raw_sig]
+        cose_bytes = cbor2.dumps(cose_sign1)
+
+        # 5. Compress & Encode
+        compressed = zlib.compress(cose_bytes)
+        b45_encoded = base45.b45encode(compressed).decode('utf-8')
+
+        return f"CRED1:{b45_encoded}"
+    elif output_format == "vc-jwt":
+        # 1. Build JWT Header and Payload
+        header = {"alg": "ES256", "typ": "JWT"}
+        b64_header = base64.urlsafe_b64encode(json.dumps(header).encode()).rstrip(b"=").decode()
+        b64_payload = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+
+        # 2. Construct Signing Input
+        signing_input = f"{b64_header}.{b64_payload}".encode()
+
+        # 3. Hash and Sign via SignServer
+        import hashlib
+        hash_data = hashlib.sha256(signing_input).digest()
+        der_signature = sign_bytes(hash_data)
+        raw_sig = _der_to_raw_ecdsa(der_signature, key_size=32)
+
+        # 4. Assemble standard JWT
+        b64_sig = base64.urlsafe_b64encode(raw_sig).rstrip(b"=").decode()
+        return f"{b64_header}.{b64_payload}.{b64_sig}"
+
+    elif output_format == "json-ld":
+        from src.common.did.assembler import create_proof, add_proof_to_document
+        from django.conf import settings
+
+        domain = getattr(settings, "PLATFORM_DOMAIN_WITHOUT_SCHEME", "localhost")
+
+        # 1. Build standard W3C VC
+        vc = {
+            "@context": ["https://www.w3.org/2018/credentials/v1"],
+            "type": payload.get("credential_type", ["VerifiableCredential"]),
+            "issuer": f"did:web:{domain.replace(':', '%3A')}",
+            "credentialSubject": {
+                "id": payload.get("subject_id"),
+                **payload.get("claims", {})
+            }
+        }
+
+        # 2. Sign via existing ecdsa-jcs-2019 implementation
+        proof = create_proof(vc, verification_method_id=f"did:web:{domain}#key-1")
+        return add_proof_to_document(vc, proof)
+    raise ValueError(f"Unsupported output format: {output_format}")
 
 # ═════════════════════════════════════════════════════════════════════════
 # Aides internes
