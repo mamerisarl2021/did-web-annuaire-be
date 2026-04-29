@@ -475,25 +475,25 @@ def sign_and_publish(
         raise ValidationError("No draft content to publish.")
 
     # ── Étape 2 : Signer (pure crypto — pas de changement d'état ext) ────────
-    signed_doc, proof_value = sign_and_attach_proof(content)
+    #signed_doc, proof_value = sign_and_attach_proof(content)
 
-    _log(
-        "DOC_SIGNED",
-        published_by,
-        document,
-        f"Document '{document.label}' signed (ecdsa-jcs-2019).",
-        {"cryptosuite": "ecdsa-jcs-2019"},
-    )
+    # _log(
+    #     "DOC_SIGNED",
+    #     published_by,
+    #     document,
+    #     f"Document '{document.label}' signed (ecdsa-jcs-2019).",
+    #     {"cryptosuite": "ecdsa-jcs-2019"},
+    # )
 
-    logger.info(
-        "document_signed",
-        doc_id=str(document.id),
-        cryptosuite="ecdsa-jcs-2019",
-    )
+    # logger.info(
+    #     "document_signed",
+    #     doc_id=str(document.id),
+    #     cryptosuite="ecdsa-jcs-2019",
+    # )
 
     # ── Étape 3 : Enregistrer en externe (hors transaction) ─────────
     is_first = document.current_version is None
-    registrar_resp = _call_registrar(signed_doc, is_create=is_first)
+    registrar_resp = _call_registrar(content, is_create=is_first)
 
     # ── Étape 4 : Persister dans la BD de manière atomique ──────────
     # Sur échec → Étape 5 : désactivation compensatoire pr annuler l'étape 3.
@@ -502,8 +502,8 @@ def sign_and_publish(
         document = _persist_publish(
             document=document,
             published_by=published_by,
-            signed_doc=signed_doc,
-            proof_value=proof_value,
+            signed_doc= content, # signed_doc,
+            proof_value= '', # proof_value,
             registrar_resp=registrar_resp,
         )
     except Exception as db_error:
