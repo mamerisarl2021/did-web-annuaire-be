@@ -108,7 +108,11 @@ class DIDDocument(BaseModel):
         related_name="created_documents",
         help_text="Identique au propriétaire à la création. Conservé pour la cohérence de BaseModel.",
     )
-
+    last_reminded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp de la dernière relance envoyée pour ce document.",
+    )
     class Meta:
         db_table = "did_documents"
         ordering = ["-created_at"]

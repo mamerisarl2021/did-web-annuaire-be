@@ -144,6 +144,17 @@ class CertificateVersion(BaseModel):
         related_name="+",
     )
 
+    key_usage = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Tableau de booléens (Key Usage) extrait du certificat X.509.",
+    )
+    extended_key_usage = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Liste des OIDs (Extended Key Usage) extraite du certificat X.509.",
+    )
+
     class Meta:
         db_table = "certificate_versions"
         ordering = ["-version_number"]

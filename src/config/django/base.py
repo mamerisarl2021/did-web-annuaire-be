@@ -75,6 +75,7 @@ LOCAL_APPS = [
     "src.apps.documents",
     "src.apps.audits",
     "src.bootstrap",
+    "src.apps.apiclients",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

@@ -28,12 +28,12 @@ import java.util.Enumeration;
  * Extracts a JWK (JSON Web Key) from an X.509 certificate.
  *
  * Supported input formats:
- *  - PEM (.pem, .crt, .cer) — single cert or chain (uses leaf/first cert)
- *  - DER (.der, .cer) — binary X.509
- *  - PKCS#12 (.p12, .pfx) — extracts the first certificate entry
+ *  - PEM (.pem, .crt, .cer) ? single cert or chain (uses leaf/first cert)
+ *  - DER (.der, .cer) ? binary X.509
+ *  - PKCS#12 (.p12, .pfx) ? extracts the first certificate entry
  *
  * Supported key types:
- *  - EC (P-256, P-384, P-521, secp256k1) — including named curve parameters
+ *  - EC (P-256, P-384, P-521, secp256k1) ? including named curve parameters
  *  - RSA (any key size)
  *  - Ed25519 / Ed448
  */
@@ -45,7 +45,7 @@ public class JWKExtractor {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    // ── Public API ──────────────────────────────────────────────────────
+    // ?? Public API ??????????????????????????????????????????????????????
 
     public static String extractJWK(String certPath, String p12Password) throws Exception {
         X509Certificate cert = loadCertificate(certPath, p12Password);
@@ -57,7 +57,7 @@ public class JWKExtractor {
         return buildMetadata(cert);
     }
 
-    // ── Certificate loading ─────────────────────────────────────────────
+    // ?? Certificate loading ?????????????????????????????????????????????
 
     private static X509Certificate loadCertificate(String certPath, String p12Password) throws Exception {
         byte[] fileBytes = Files.readAllBytes(Paths.get(certPath));
@@ -137,7 +137,7 @@ public class JWKExtractor {
                 throw new Exception("No certificate entries found in PKCS#12 keystore.");
             } catch (IOException e) {
                 lastError = e;
-                // Wrong password — try next
+                // Wrong password ? try next
             }
         }
 
@@ -148,7 +148,7 @@ public class JWKExtractor {
         throw new Exception(hint);
     }
 
-    // ── JWK builders ────────────────────────────────────────────────────
+    // ?? JWK builders ????????????????????????????????????????????????????
 
     private static String buildJWK(X509Certificate cert) throws Exception {
         var publicKey = cert.getPublicKey();
@@ -163,7 +163,7 @@ public class JWKExtractor {
         };
     }
 
-    // ── EC ───────────────────────────────────────────────────────────────
+    // ?? EC ???????????????????????????????????????????????????????????????
 
     private static String buildEcJwk(ECPublicKey publicKey) {
         BigInteger x = publicKey.getW().getAffineX();
@@ -247,7 +247,7 @@ public class JWKExtractor {
         };
     }
 
-    // ── RSA ──────────────────────────────────────────────────────────────
+    // ?? RSA ??????????????????????????????????????????????????????????????
 
     private static String buildRsaJwk(RSAPublicKey publicKey) {
         ObjectNode jwk = MAPPER.createObjectNode();
@@ -258,7 +258,7 @@ public class JWKExtractor {
         return jwk.toString();
     }
 
-    // ── EdDSA (Ed25519 / Ed448) ──────────────────────────────────────────
+    // ?? EdDSA (Ed25519 / Ed448) ??????????????????????????????????????????
 
     private static String buildEdJwk(X509Certificate cert) throws Exception {
         byte[] encoded = cert.getPublicKey().getEncoded();
@@ -299,21 +299,17 @@ public class JWKExtractor {
         }
     }
 
-    // ── Metadata extraction ──────────────────────────────────────────────
+    // ?? Metadata extraction ??????????????????????????????????????????????
 
     private static String buildMetadata(X509Certificate cert) throws Exception {
         ObjectNode meta = MAPPER.createObjectNode();
-
         meta.put("subject_dn", cert.getSubjectX500Principal().getName());
         meta.put("issuer_dn", cert.getIssuerX500Principal().getName());
         meta.put("serial_number", cert.getSerialNumber().toString(16));
-
         meta.put("not_valid_before", cert.getNotBefore().toInstant().toString());
         meta.put("not_valid_after", cert.getNotAfter().toInstant().toString());
-
         var publicKey = cert.getPublicKey();
         String algo = publicKey.getAlgorithm();
-
         switch (algo) {
             case "EC", "ECDSA" -> {
                 ECPublicKey ecKey = (ECPublicKey) publicKey;
@@ -335,18 +331,33 @@ public class JWKExtractor {
             }
             default -> meta.put("key_type", algo);
         }
-
         java.security.MessageDigest sha256 = java.security.MessageDigest.getInstance("SHA-256");
         byte[] digest = sha256.digest(cert.getEncoded());
         meta.put("fingerprint_sha256", bytesToHex(digest));
-
+        // --- NEW: Key Usage ---
+        boolean[] keyUsage = cert.getKeyUsage();
+        if (keyUsage != null) {
+            tools.jackson.databind.node.ArrayNode kuNode = MAPPER.createArrayNode();
+            for (boolean b : keyUsage) {
+                kuNode.add(b);
+            }
+            meta.set("key_usage", kuNode);
+        }
+        // --- NEW: Extended Key Usage ---
+        java.util.List<String> extKeyUsage = cert.getExtendedKeyUsage();
+        if (extKeyUsage != null) {
+            tools.jackson.databind.node.ArrayNode ekuNode = MAPPER.createArrayNode();
+            for (String oid : extKeyUsage) {
+                ekuNode.add(oid);
+            }
+            meta.set("extended_key_usage", ekuNode);
+        }
         String jwkStr = buildJWK(cert);
         meta.set("public_key_jwk", MAPPER.readTree(jwkStr));
-
         return meta.toString();
     }
 
-    // ── Encoding helpers ────────────────────────────────────────────────
+    // ?? Encoding helpers ????????????????????????????????????????????????
 
     private static String base64UrlEncode(BigInteger value) {
         byte[] bytes = value.toByteArray();

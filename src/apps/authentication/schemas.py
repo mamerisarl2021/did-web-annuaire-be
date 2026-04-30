@@ -84,6 +84,7 @@ class UpdateProfileSchema(Schema):
     full_name: str | None = None
     phone: str | None = None
     email: str | None = None
+    functions: str | None = None
 
 
 # ── Schémas de réponse ────────────────────────────────────────────────────
@@ -97,9 +98,46 @@ class UserResponseSchema(Schema):
     functions: str
     is_active: bool
     is_superadmin: bool
+    role: str | None = None
+    can_view_audits: bool = False
     activation_method: str
     account_activated_at: str | None = None
     created_at: str
+
+    @staticmethod
+    def resolve_can_view_audits(obj) -> bool:
+        if obj.is_superadmin:
+            return True
+            
+        from src.apps.organizations.models import Membership
+        from src.common.types import MembershipStatus
+        
+        # Determine from the user's active memberships
+        membership = Membership.objects.filter(
+            user=obj, 
+            status=MembershipStatus.ACTIVE
+        ).first()
+        
+        if membership:
+            return membership.can_view_audits
+        return False
+
+    @staticmethod
+    def resolve_role(obj) -> str | None:
+        if obj.is_superadmin:
+            return "SUPERADMIN"
+            
+        from src.apps.organizations.models import Membership
+        from src.common.types import MembershipStatus
+        
+        membership = Membership.objects.filter(
+            user=obj, 
+            status=MembershipStatus.ACTIVE
+        ).first()
+        
+        if membership:
+            return membership.role
+        return None
 
     @staticmethod
     def resolve_account_activated_at(obj) -> str | None:

@@ -29,6 +29,8 @@ class CertVersionSummarySchema(Schema):
     fingerprint_sha256: str
     is_current: bool
     created_at: str
+    key_usage: list[str] | None = None
+    extended_key_usage: list[str] | None = None
 
 
 class CertVersionDetailSchema(CertVersionSummarySchema):
@@ -50,7 +52,14 @@ class CertListItemSchema(Schema):
     created_by_email: str = ""
     created_at: str
     version_count: int = 1
+    key_usage: list[str] | None = None
+    extended_key_usage: list[str] | None = None
 
+class LinkedDocumentSchema(Schema):
+    id: UUID
+    label: str
+    did_uri_suffix: str
+    status: str
 
 class CertDetailSchema(Schema):
     id: UUID
@@ -62,6 +71,7 @@ class CertDetailSchema(Schema):
     current_version: CertVersionDetailSchema | None = None
     version_count: int = 0
     linked_documents: int = 0
+    linked_documents_list: list[LinkedDocumentSchema] = []
 
 
 class MessageSchema(Schema):

@@ -127,3 +127,27 @@ def get_verification_method_with_cert(*, vm_id: UUID):
         ).get(id=vm_id)
     except DocumentVerificationMethod.DoesNotExist:
         return None
+
+
+def get_linked_documents_for_cert(*, cert_id: UUID) -> list[dict]:
+    """
+    Récupère la liste des documents DID uniques qui utilisent ce certificat.
+    """
+    from src.apps.documents.models import DocumentVerificationMethod
+
+    vms = DocumentVerificationMethod.objects.filter(
+        certificate_id=cert_id
+    ).select_related("document", "document__organization", "document__owner")
+
+    docs_dict = {}
+    for vm in vms:
+        doc = vm.document
+        if doc.id not in docs_dict:
+            docs_dict[doc.id] = {
+                "id": doc.id,
+                "label": doc.label,
+                "did_uri_suffix": doc.did_uri_suffix,
+                "status": doc.status,
+            }
+
+    return list(docs_dict.values())

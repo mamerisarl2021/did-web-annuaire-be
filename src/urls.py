@@ -9,10 +9,11 @@ Configuration racine des URL.
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import path
 from ninja_extra import NinjaExtraAPI
 from ninja_jwt.controller import NinjaJWTDefaultController
 
+from src.apps.apiclients.apis import router as apiclients_router
 from src.apps.authentication.apis import router as auth_router
 from src.apps.certificates.apis import router as cert_router
 from src.apps.documents.apis import router as doc_router
@@ -49,6 +50,8 @@ api.add_router("/org", doc_router)
 
 # Recherche publique (sans auth) : /api/v2/public/search/...
 api.add_router("/public", public_search_router)
+
+api.add_router("/apiclients", apiclients_router)
 
 # ── API Superadmin ──────────────────────────────────────────────────────
 

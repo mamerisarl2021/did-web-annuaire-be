@@ -14,7 +14,7 @@ Upload et rotate utilisent des données multipart form (fichier + métadonnées)
 
 from uuid import UUID
 
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from ninja import File, Form, Router
 from ninja import UploadedFile as NinjaFile
 from ninja_jwt.authentication import JWTAuth
@@ -33,6 +33,8 @@ from src.common.exceptions import NotFoundError, PermissionDeniedError
 from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import Permission, require_permission
 from src.common.types import Role
+
+from .maps import  _map_key_usage, _map_eku
 
 router = Router(tags=["Certificates"])
 
@@ -90,6 +92,8 @@ def _cert_list_item(cert) -> dict:
         "created_by_email": cert.created_by.email if cert.created_by else "",
         "created_at": cert.created_at.isoformat(),
         "version_count": cert.versions.count(),
+        "key_usage": _map_key_usage(cv.key_usage) if cv else None,
+        "extended_key_usage": _map_eku(cv.extended_key_usage) if cv else None,
     }
 
 
@@ -107,6 +111,8 @@ def _version_summary(v: CertificateVersion) -> dict:
         else None,
         "not_valid_after": v.not_valid_after.isoformat() if v.not_valid_after else None,
         "fingerprint_sha256": v.fingerprint_sha256,
+        "key_usage": _map_key_usage(v.key_usage),
+        "extended_key_usage": _map_eku(v.extended_key_usage),
         "is_current": v.is_current,
         "created_at": v.created_at.isoformat(),
     }
@@ -130,6 +136,8 @@ def _version_detail(v: CertificateVersion) -> dict:
 def _cert_detail(cert) -> dict:
     linked = cert_selectors.count_linked_documents_for_cert(cert_id=cert.id)
 
+    linked_list = cert_selectors.get_linked_documents_for_cert(cert_id=cert.id)
+
     return {
         "id": cert.id,
         "label": cert.label,
@@ -142,6 +150,7 @@ def _cert_detail(cert) -> dict:
         else None,
         "version_count": cert.versions.count(),
         "linked_documents": linked,
+        "linked_documents_list": linked_list,
     }
 
 
@@ -375,3 +384,23 @@ def get_version(request: HttpRequest, org_id: UUID, cert_id: UUID, version_id: U
         raise NotFoundError("Version not found.") from None
 
     return _version_detail(version)
+
+@router.get(
+    f"{_P}/{{cert_id}}/download",
+    auth=JWTAuth(),
+    summary="Télécharger le fichier PEM du certificat",
+)
+def download_certificate(request: HttpRequest, org_id: UUID, cert_id: UUID):
+    membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
+    cert = cert_selectors.get_certificate_by_id(cert_id=cert_id)
+    if cert is None or str(cert.organization_id) != str(org_id):
+        raise NotFoundError("Certificate not found.")
+    _require_cert_access(cert, request.auth, membership, action="download")
+    if not cert.current_version or not cert.current_version.certificate_file:
+        raise NotFoundError("Certificate file not found.")
+    file_instance = cert.current_version.certificate_file
+    file_instance.file.seek(0)
+    file_data = file_instance.file.read()
+    response = HttpResponse(file_data, content_type="application/x-x509-ca-cert")
+    response["Content-Disposition"] = f'attachment; filename="{file_instance.original_file_name}"'
+    return response

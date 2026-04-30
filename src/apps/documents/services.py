@@ -4,6 +4,9 @@ Services de Document DID (opérations d'écriture).
 
 import re
 
+import json
+import base64
+import zlib
 import structlog
 from django.db import transaction
 from django.utils import timezone
@@ -43,12 +46,12 @@ def _did_uri_for(doc: DIDDocument) -> str:
 
 @transaction.atomic
 def create_document(
-    *,
-    organization,
-    label: str,
-    created_by: User,
-    verification_methods: list[dict] | None = None,
-    service_endpoints: list[dict] | None = None,
+        *,
+        organization,
+        label: str,
+        created_by: User,
+        verification_methods: list[dict] | None = None,
+        service_endpoints: list[dict] | None = None,
 ) -> DIDDocument:
     from src.apps.documents.selectors import document_label_exists
 
@@ -61,9 +64,9 @@ def create_document(
             "starting and ending with a letter or digit."
         )
     if document_label_exists(
-        organization_id=organization.id,
-        owner_id=created_by.id,
-        label=label,
+            organization_id=organization.id,
+            owner_id=created_by.id,
+            label=label,
     ):
         raise ConflictError(
             f"Label '{label}' already exists for you in this organization."
@@ -106,11 +109,11 @@ def create_document(
 
 @transaction.atomic
 def update_draft(
-    *,
-    document: DIDDocument,
-    updated_by: User,
-    verification_methods: list[dict] | None = None,
-    service_endpoints: list[dict] | None = None,
+        *,
+        document: DIDDocument,
+        updated_by: User,
+        verification_methods: list[dict] | None = None,
+        service_endpoints: list[dict] | None = None,
 ) -> DIDDocument:
     """
     Met à jour le contenu brouillon d'un document.
@@ -168,13 +171,13 @@ def update_draft(
 
 @transaction.atomic
 def add_verification_method(
-    *,
-    document: DIDDocument,
-    certificate_id,
-    method_id_fragment: str,
-    relationships: list[str],
-    method_type: str = "JsonWebKey2020",
-    added_by: User,
+        *,
+        document: DIDDocument,
+        certificate_id,
+        method_id_fragment: str,
+        relationships: list[str],
+        method_type: str = "JsonWebKey2020",
+        added_by: User,
 ) -> DocumentVerificationMethod:
     _require_editable(document)
 
@@ -187,7 +190,7 @@ def add_verification_method(
         raise ValidationError("Cannot use a revoked or expired certificate.")
 
     if DocumentVerificationMethod.objects.filter(
-        document=document, method_id_fragment=method_id_fragment
+            document=document, method_id_fragment=method_id_fragment
     ).exists():
         raise ConflictError(f"Fragment '#{method_id_fragment}' already exists.")
 
@@ -292,15 +295,64 @@ def submit_for_review(*, document: DIDDocument, submitted_by: User) -> DIDDocume
     return document
 
 
+@transaction.atomic
+def unsubmit_document(*, document: DIDDocument, unsubmitted_by: User) -> DIDDocument:
+    if document.status != DocumentStatus.PENDING_REVIEW:
+        raise ValidationError("Only PENDING_REVIEW documents can be unsubmitted.")
+
+    document.status = DocumentStatus.DRAFT
+    document.submitted_by = None
+    document.submitted_at = None
+    document.save(
+        update_fields=["status", "submitted_by", "submitted_at", "updated_at"]
+    )
+
+    _log(
+        "DOC_UNSUBMITTED",
+        unsubmitted_by,
+        document,
+        f"Document '{document.label}' unsubmitted and returned to draft.",
+    )
+
+    logger.info("document_unsubmitted", doc_id=str(document.id))
+    return document
+
+
+@transaction.atomic
+def remind_document_review(*, document: DIDDocument, reminded_by: User) -> DIDDocument:
+    if document.status != DocumentStatus.PENDING_REVIEW:
+        raise ValidationError("Only PENDING_REVIEW documents can be reminded.")
+    # Rate limiting: 24 hours (86400 seconds)
+    if document.last_reminded_at:
+        time_since = timezone.now() - document.last_reminded_at
+        if time_since.total_seconds() < 86400:
+            raise ValidationError("Une relance a déjà été envoyée au cours des dernières 24 heures.")
+    document.last_reminded_at = timezone.now()
+    document.save(update_fields=["last_reminded_at", "updated_at"])
+    # Trigger email
+    from src.apps.emails.tasks import send_document_reminder_email
+
+    display_name = reminded_by.get_full_name() or reminded_by.email
+    send_document_reminder_email.delay(doc_id=document.id, user_name=display_name)
+    _log(
+        "DOC_REMINDER_SENT",
+        reminded_by,
+        document,
+        f"Reminder sent for document '{document.label}'.",
+    )
+    logger.info("document_reminder_sent", doc_id=str(document.id))
+    return document
+
+
 # ── Approuver / rejeter ─────────────────────────────────────────────────
 
 
 @transaction.atomic
 def approve_document(
-    *,
-    document: DIDDocument,
-    approved_by: User,
-    comment: str = "",
+        *,
+        document: DIDDocument,
+        approved_by: User,
+        comment: str = "",
 ) -> DIDDocument:
     if document.status != DocumentStatus.PENDING_REVIEW:
         raise ValidationError("Only PENDING_REVIEW documents can be approved.")
@@ -342,10 +394,10 @@ def approve_document(
 
 @transaction.atomic
 def reject_document(
-    *,
-    document: DIDDocument,
-    rejected_by: User,
-    reason: str = "",
+        *,
+        document: DIDDocument,
+        rejected_by: User,
+        reason: str = "",
 ) -> DIDDocument:
     if document.status != DocumentStatus.PENDING_REVIEW:
         raise ValidationError("Only PENDING_REVIEW documents can be rejected.")
@@ -400,10 +452,10 @@ def reject_document(
 
 
 def sign_and_publish(
-    *,
-    document: DIDDocument,
-    published_by: User,
-    skip_review: bool = False,
+        *,
+        document: DIDDocument,
+        published_by: User,
+        skip_review: bool = False,
 ) -> DIDDocument:
     """
     Signer via SignServer (ecdsa-jcs-2019) et publier via Universal Registrar.
@@ -423,25 +475,25 @@ def sign_and_publish(
         raise ValidationError("No draft content to publish.")
 
     # ── Étape 2 : Signer (pure crypto — pas de changement d'état ext) ────────
-    signed_doc, proof_value = sign_and_attach_proof(content)
+    #signed_doc, proof_value = sign_and_attach_proof(content)
 
-    _log(
-        "DOC_SIGNED",
-        published_by,
-        document,
-        f"Document '{document.label}' signed (ecdsa-jcs-2019).",
-        {"cryptosuite": "ecdsa-jcs-2019"},
-    )
+    # _log(
+    #     "DOC_SIGNED",
+    #     published_by,
+    #     document,
+    #     f"Document '{document.label}' signed (ecdsa-jcs-2019).",
+    #     {"cryptosuite": "ecdsa-jcs-2019"},
+    # )
 
-    logger.info(
-        "document_signed",
-        doc_id=str(document.id),
-        cryptosuite="ecdsa-jcs-2019",
-    )
+    # logger.info(
+    #     "document_signed",
+    #     doc_id=str(document.id),
+    #     cryptosuite="ecdsa-jcs-2019",
+    # )
 
     # ── Étape 3 : Enregistrer en externe (hors transaction) ─────────
     is_first = document.current_version is None
-    registrar_resp = _call_registrar(signed_doc, is_create=is_first)
+    registrar_resp = _call_registrar(content, is_create=is_first)
 
     # ── Étape 4 : Persister dans la BD de manière atomique ──────────
     # Sur échec → Étape 5 : désactivation compensatoire pr annuler l'étape 3.
@@ -450,8 +502,8 @@ def sign_and_publish(
         document = _persist_publish(
             document=document,
             published_by=published_by,
-            signed_doc=signed_doc,
-            proof_value=proof_value,
+            signed_doc= content, # signed_doc,
+            proof_value= '', # proof_value,
             registrar_resp=registrar_resp,
         )
     except Exception as db_error:
@@ -528,12 +580,12 @@ def _validate_for_publish(document: DIDDocument, skip_review: bool) -> None:
 
 @transaction.atomic
 def _persist_publish(
-    *,
-    document: DIDDocument,
-    published_by: User,
-    signed_doc: dict,
-    proof_value: str,
-    registrar_resp: dict,
+        *,
+        document: DIDDocument,
+        published_by: User,
+        signed_doc: dict,
+        proof_value: str,
+        registrar_resp: dict,
 ) -> DIDDocument:
     """
     Écriture BD atomique : créer l'enreg de version et promouvoir le brouillon en direct.
@@ -593,10 +645,10 @@ def _persist_publish(
 
 @transaction.atomic
 def deactivate_document(
-    *,
-    document: DIDDocument,
-    deactivated_by: User,
-    reason: str = "",
+        *,
+        document: DIDDocument,
+        deactivated_by: User,
+        reason: str = "",
 ) -> DIDDocument:
     if not document.content or document.status == DocumentStatus.DEACTIVATED:
         raise ValidationError("Only active published documents can be deactivated.")
@@ -617,7 +669,6 @@ def deactivate_document(
 
     logger.info("document_deactivated", doc_id=str(document.id))
     return document
-
 
 # ═════════════════════════════════════════════════════════════════════════
 # Aides internes

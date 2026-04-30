@@ -95,12 +95,20 @@ def register_user_and_org(
     )
 
     logger.info("registration_complete", user_id=str(user.id), org_slug=org.slug)
-    from src.apps.emails.tasks import send_superadmin_new_registration_email
+    from src.apps.emails.tasks import (
+        send_registrant_confirmation_email,
+        send_superadmin_new_registration_email,
+    )
 
     send_superadmin_new_registration_email.delay(
         org_name=org_name,
         org_slug=org.slug,
         admin_email=email,
+    )
+    send_registrant_confirmation_email.delay(
+        user_id=str(user.id),
+        org_name=org_name,
+        org_slug=org.slug,
     )
     return user
 
