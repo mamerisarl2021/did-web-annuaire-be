@@ -141,4 +141,30 @@ def resolve_did_proxy(
     """
     from src.integrations.resolver import resolve_did
 
-    return resolve_did(did)
+    result = resolve_did(did)
+
+    # Log resolution for analytics (fire-and-forget, never block the response)
+    try:
+        from src.apps.audits.services import log_action
+        from src.apps.organizations.selectors import get_organization_by_slug
+
+        # Parse org slug from DID URI: did:web:domain:ORG_SLUG:user:label
+        parts = did.split(":")
+        org = None
+        if len(parts) >= 4:
+            org = get_organization_by_slug(slug=parts[3])
+
+        log_action(
+            actor=None,
+            action="DID_RESOLVED",
+            resource_type="DID_DOCUMENT",
+            resource_id=org.id if org else None,
+            organization=org,
+            description=f"DID resolved: {did}",
+            metadata={"did": did},
+        )
+    except Exception:
+        pass  # L'audit ne doit jamais interrompre la résolution
+
+    return result
+

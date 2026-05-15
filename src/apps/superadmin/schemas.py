@@ -149,3 +149,4 @@ class DashboardStatsSchema(Schema):
     active_users: int
     total_did_documents: int
     total_certificates: int
+    resolutions_today: int = 0
