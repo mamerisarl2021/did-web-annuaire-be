@@ -291,6 +291,9 @@ def submit_for_review(*, document: DIDDocument, submitted_by: User) -> DIDDocume
         f"Document '{document.label}' submitted for review.",
     )
 
+    from src.apps.organizations.selectors import invalidate_org_stats
+    invalidate_org_stats(organization_id=document.organization_id, user_id=document.owner_id)
+
     logger.info("document_submitted", doc_id=str(document.id))
     return document
 
@@ -388,6 +391,9 @@ def approve_document(
         f"Document '{document.label}' approved.{f' Comment: {comment}' if comment else ''}",
     )
 
+    from src.apps.organizations.selectors import invalidate_org_stats
+    invalidate_org_stats(organization_id=document.organization_id, user_id=document.owner_id)
+
     logger.info("document_approved", doc_id=str(document.id))
     return document
 
@@ -432,6 +438,9 @@ def reject_document(
         document,
         f"Document '{document.label}' rejected.{f' Reason: {reason}' if reason else ''}",
     )
+
+    from src.apps.organizations.selectors import invalidate_org_stats
+    invalidate_org_stats(organization_id=document.organization_id, user_id=document.owner_id)
 
     logger.info("document_rejected", doc_id=str(document.id))
     return document
@@ -630,6 +639,9 @@ def _persist_publish(
             "cryptosuite": "ecdsa-jcs-2019",
         },
     )
+
+    from src.apps.organizations.selectors import invalidate_org_stats
+    invalidate_org_stats(organization_id=document.organization_id, user_id=document.owner_id)
 
     logger.info(
         "document_published",

@@ -76,7 +76,7 @@ def search_documents(
                 "organization_name": doc.organization.name if doc.organization else "",
                 "organization_slug": org_slug,
                 "owner_name": doc.owner.full_name if doc.owner else "",
-                "version_count": doc.versions.count(),
+                "version_count": getattr(doc, "version_count", 0),
                 "created_at": doc.created_at.isoformat() if doc.created_at else None,
                 "updated_at": doc.updated_at.isoformat() if doc.updated_at else None,
             }
