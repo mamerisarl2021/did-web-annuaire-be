@@ -133,14 +133,11 @@ class DIDDocument(BaseModel):
     def owner_identifier(self) -> str:
         """
         Le segment <user> pour l'URI DID.
-        Utilise la partie locale de l'e-mail du propriétaire (avant @), slugifié.
+        Utilise l'identifiant unique (UUID) du propriétaire pour garantir
+        la stabilité de l'URI indépendamment de l'adresse e-mail.
         """
         if self.owner:
-            local_part = self.owner.email.split("@")[0]
-            # Remplace les points et les caractères spéciaux par des tirets pour la sécurité des URI
-            import re
-
-            return re.sub(r"[^a-zA-Z0-9-]", "-", local_part).strip("-").lower()
+            return str(self.owner.id)
         return "unknown"
 
     @property
