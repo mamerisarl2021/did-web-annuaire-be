@@ -53,6 +53,10 @@ def _ensure_superadmin(request):
 def dashboard_stats(request: HttpRequest):
     _ensure_superadmin(request)
 
+    from django.utils import timezone
+
+    today = timezone.now().date()
+
     return {
         "pending_count": Organization.objects.filter(
             status=OrgStatus.PENDING_REVIEW
@@ -70,6 +74,10 @@ def dashboard_stats(request: HttpRequest):
         "active_users": User.objects.filter(is_active=True).count(),
         "total_did_documents": DIDDocument.objects.count(),
         "total_certificates": Certificate.objects.count(),
+        "resolutions_today": AuditLog.objects.filter(
+            action="DID_RESOLVED",
+            created_at__date=today,
+        ).count(),
     }
 
 

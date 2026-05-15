@@ -85,10 +85,13 @@ def get_organization_stats(*, organization_id, user_id=None) -> dict:
     Retourne les statistiques de l'organisation.
     Si `user_id` est fourni, filtre les docs/certs par utilisateur (scope "me").
     """
+    from src.apps.audits.models import AuditLog
     from src.apps.certificates.models import Certificate
     from src.apps.documents.models import DIDDocument, DocumentStatus
+    from django.utils import timezone
 
     members = Membership.objects.filter(organization_id=organization_id)
+    today = timezone.now().date()
 
     if user_id:
         my_docs = DIDDocument.objects.filter(organization_id=organization_id, owner_id=user_id)
@@ -105,6 +108,11 @@ def get_organization_stats(*, organization_id, user_id=None) -> dict:
             "total_certificates": Certificate.objects.filter(
                 organization_id=organization_id, created_by_id=user_id
             ).count(),
+            "resolutions_today": AuditLog.objects.filter(
+                action="DID_RESOLVED",
+                organization_id=organization_id,
+                created_at__date=today,
+            ).count(),
         }
 
     org_docs = DIDDocument.objects.filter(organization_id=organization_id)
@@ -120,5 +128,10 @@ def get_organization_stats(*, organization_id, user_id=None) -> dict:
         "published_documents": org_docs.filter(status=DocumentStatus.PUBLISHED).count(),
         "total_certificates": Certificate.objects.filter(
             organization_id=organization_id
+        ).count(),
+        "resolutions_today": AuditLog.objects.filter(
+            action="DID_RESOLVED",
+            organization_id=organization_id,
+            created_at__date=today,
         ).count(),
     }

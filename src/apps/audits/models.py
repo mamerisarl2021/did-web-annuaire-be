@@ -102,6 +102,8 @@ class AuditLog(models.Model):
         choices=ResourceType.choices,
     )
     resource_id = models.UUIDField(
+        null=True,
+        blank=True,
         help_text="PK de la ressource concernée.",
     )
     description = models.TextField(
