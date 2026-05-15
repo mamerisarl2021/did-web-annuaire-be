@@ -9,7 +9,6 @@ from typing import Any
 
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
-from django.db import transaction
 from django.utils.html import strip_tags
 
 
@@ -18,7 +17,6 @@ def _fallback_plain_text(html: str) -> str:
     return re.sub(r"\s+\n", "\n", re.sub(r"[ \t]+", " ", text)).strip()
 
 
-@transaction.atomic
 def email_send(
     *,
     to: list[str],
@@ -36,6 +34,11 @@ def email_send(
     Envoyer un e-mail en utilisant le backend d'e-mail de Django.
 
     Renvoie True en cas d'envoi réussi.
+
+    Note: pas de @transaction.atomic — cette fonction n'effectue aucune
+    opération sur la base de données. L'encapsuler dans une transaction
+    maintiendrait une connexion DB ouverte pendant toute la durée de
+    la connexion SMTP, ce qui dégraderait inutilement les performances.
     """
     connection = get_connection(**(connection_kwargs or {}))
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@didannuaire.com")
