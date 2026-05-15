@@ -294,7 +294,7 @@ def send_document_submitted_email(self, doc_id: str, org_id: str, submitter_id: 
         parsed = urlparse(platform_domain)
         host = parsed.netloc or parsed.path  # gère les cas sans schéma
         scheme = "https" if "localhost" not in host else "http"
-        review_url = f"{scheme}://{host}/workspace/documents/"
+        review_url = f"{scheme}://{host}/documents/pending"
 
         html = render_to_string(
             "emails/document_submitted.html",
@@ -337,7 +337,7 @@ def send_document_reviewed_email(
         parsed = urlparse(platform_domain)
         host = parsed.netloc or parsed.path  # gère les cas sans schéma
         scheme = "https" if "localhost" not in host else "http"
-        doc_url = f"{scheme}://{host}/workspace/documents/{doc.id}"
+        doc_url = f"{scheme}://{host}/documents/{action.lower()}/"
 
         submitter = doc.submitted_by
 
