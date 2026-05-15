@@ -232,6 +232,7 @@ def _audit_dict(a) -> dict:
         "description": a.description,
         "metadata": a.metadata,
         "actor_email": a.actor_email,
+        "organization_name": a.organization_name,
         "created_at": a.created_at.isoformat(),
         "ip_address": a.ip_address,
     }
