@@ -522,6 +522,34 @@ def list_audits(
     return {"count": total, "results": results}
 
 
+@router.get(
+    "/audits/{audit_id}",
+    response={200: dict, 404: dict},
+    auth=JWTAuth(),
+    summary="Get a single audit log entry",
+)
+def get_audit(request: HttpRequest, audit_id: UUID):
+    _ensure_superadmin(request)
+
+    entry = AuditLog.objects.select_related("organization").filter(id=audit_id).first()
+    if entry is None:
+        raise NotFoundError("Audit log entry not found.")
+
+    return {
+        "id": entry.id,
+        "actor_email": entry.actor_email,
+        "action": entry.action,
+        "resource_type": entry.resource_type,
+        "resource_id": entry.resource_id,
+        "description": entry.description,
+        "created_at": entry.created_at.isoformat(),
+        "organization_name": entry.organization.name if entry.organization else None,
+        "ip_address": entry.ip_address,
+        "user_agent": entry.metadata.get("user_agent") if isinstance(entry.metadata, dict) else None,
+        "metadata": entry.metadata,
+    }
+
+
 # ── DID Documents ──────────────────────────────────────────────────────
 
 @router.get(
