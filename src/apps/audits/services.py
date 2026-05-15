@@ -48,6 +48,7 @@ def log_action(
         actor=actor,
         actor_email=getattr(actor, "email", "system"),
         organization=organization,
+        organization_name=getattr(organization, "name", "") if organization else "",
         action=action,
         resource_type=resource_type,
         resource_id=resource_id,

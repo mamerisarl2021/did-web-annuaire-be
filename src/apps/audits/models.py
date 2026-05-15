@@ -86,6 +86,12 @@ class AuditLog(models.Model):
         blank=True,
         related_name="audit_logs",
     )
+    organization_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Dénormalisé — survit à la suppression de l'organisation.",
+    )
 
     action = models.CharField(
         max_length=30,
