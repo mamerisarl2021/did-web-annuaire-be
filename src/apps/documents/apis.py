@@ -102,7 +102,7 @@ def _doc_list_item(doc) -> dict:
         "owner_email": doc.owner.email if doc.owner else "",
         "owner_identifier": doc.owner_identifier,
         "created_by_email": doc.created_by.email if doc.created_by else "",
-        "vm_count": doc.verification_methods.filter(is_active=True).count(),
+        "vm_count": getattr(doc, "active_vms", doc.verification_methods.filter(is_active=True).count() if not hasattr(doc, "active_vms") else 0),
         "current_version_number": (
             doc.current_version.version_number if doc.current_version else None
         ),

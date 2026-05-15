@@ -80,11 +80,33 @@ def get_pending_organizations() -> QuerySet[Organization]:
     )
 
 
+def invalidate_org_stats(*, organization_id, user_id=None):
+    """
+    Invalide le cache des statistiques d'une organisation.
+    """
+    from django.core.cache import cache
+    
+    # Invalidate global org stats
+    cache.delete(f"org_stats_{organization_id}_global")
+    
+    # If a specific user is provided, invalidate their scoped stats too
+    if user_id:
+        cache.delete(f"org_stats_{organization_id}_{user_id}")
+
+
 def get_organization_stats(*, organization_id, user_id=None) -> dict:
     """
-    Retourne les statistiques de l'organisation.
+    Retourne les statistiques de l'organisation avec mise en cache (TTL: 5 min).
     Si `user_id` est fourni, filtre les docs/certs par utilisateur (scope "me").
     """
+    from django.core.cache import cache
+    
+    cache_key = f"org_stats_{organization_id}_{user_id}" if user_id else f"org_stats_{organization_id}_global"
+    cached_stats = cache.get(cache_key)
+    
+    if cached_stats is not None:
+        return cached_stats
+
     from src.apps.audits.models import AuditLog
     from src.apps.certificates.models import Certificate
     from src.apps.documents.models import DIDDocument, DocumentStatus
@@ -95,7 +117,7 @@ def get_organization_stats(*, organization_id, user_id=None) -> dict:
 
     if user_id:
         my_docs = DIDDocument.objects.filter(organization_id=organization_id, owner_id=user_id)
-        return {
+        stats = {
             "total_members": 0,
             "active_members": 0,
             "invited_members": 0,
@@ -114,24 +136,29 @@ def get_organization_stats(*, organization_id, user_id=None) -> dict:
                 created_at__date=today,
             ).count(),
         }
+    else:
+        org_docs = DIDDocument.objects.filter(organization_id=organization_id)
+        stats = {
+            "total_members": members.exclude(status=MembershipStatus.DEACTIVATED).count(),
+            "active_members": members.filter(status=MembershipStatus.ACTIVE).count(),
+            "invited_members": members.filter(status=MembershipStatus.INVITED).count(),
+            "total_documents": org_docs.count(),
+            "draft_documents": org_docs.filter(status=DocumentStatus.DRAFT).count(),
+            "signed_documents": org_docs.filter(
+                status__in=[DocumentStatus.SIGNED, DocumentStatus.PUBLISHED]
+            ).count(),
+            "published_documents": org_docs.filter(status=DocumentStatus.PUBLISHED).count(),
+            "total_certificates": Certificate.objects.filter(
+                organization_id=organization_id
+            ).count(),
+            "resolutions_today": AuditLog.objects.filter(
+                action="DID_RESOLVED",
+                organization_id=organization_id,
+                created_at__date=today,
+            ).count(),
+        }
 
-    org_docs = DIDDocument.objects.filter(organization_id=organization_id)
-    return {
-        "total_members": members.exclude(status=MembershipStatus.DEACTIVATED).count(),
-        "active_members": members.filter(status=MembershipStatus.ACTIVE).count(),
-        "invited_members": members.filter(status=MembershipStatus.INVITED).count(),
-        "total_documents": org_docs.count(),
-        "draft_documents": org_docs.filter(status=DocumentStatus.DRAFT).count(),
-        "signed_documents": org_docs.filter(
-            status__in=[DocumentStatus.SIGNED, DocumentStatus.PUBLISHED]
-        ).count(),
-        "published_documents": org_docs.filter(status=DocumentStatus.PUBLISHED).count(),
-        "total_certificates": Certificate.objects.filter(
-            organization_id=organization_id
-        ).count(),
-        "resolutions_today": AuditLog.objects.filter(
-            action="DID_RESOLVED",
-            organization_id=organization_id,
-            created_at__date=today,
-        ).count(),
-    }
+    # Cache for 5 minutes (300 seconds)
+    cache.set(cache_key, stats, timeout=300)
+    
+    return stats

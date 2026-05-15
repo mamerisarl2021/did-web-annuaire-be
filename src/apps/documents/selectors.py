@@ -35,7 +35,7 @@ def get_document_by_id(*, doc_id: UUID) -> DIDDocument | None:
 
 def get_org_documents(*, organization_id: UUID, user_id: UUID) -> QuerySet[DIDDocument]:
     """Tous les documents pour une organisation (pour ORG_ADMIN / AUDITOR)."""
-    from django.db.models import Q
+    from django.db.models import Count, Q
 
     return (
         DIDDocument.objects.filter(
@@ -43,6 +43,10 @@ def get_org_documents(*, organization_id: UUID, user_id: UUID) -> QuerySet[DIDDo
             & (Q(submitted_at__isnull=False) | Q(owner_id=user_id))
         )
         .select_related("owner", "created_by", "current_version")
+        .annotate(
+            version_count=Count("versions", distinct=True),
+            active_vms=Count("verification_methods", filter=Q(verification_methods__is_active=True), distinct=True),
+        )
         .order_by("-updated_at")
     )
 
@@ -51,21 +55,28 @@ def get_user_documents(
     *, organization_id: UUID, user_id: UUID
 ) -> QuerySet[DIDDocument]:
     """Documents appartenant à un utilisateur spécifique dans une organisation."""
+    from django.db.models import Count, Q
     return (
         DIDDocument.objects.filter(organization_id=organization_id, owner_id=user_id)
         .select_related("owner", "created_by", "current_version")
+        .annotate(
+            version_count=Count("versions", distinct=True),
+            active_vms=Count("verification_methods", filter=Q(verification_methods__is_active=True), distinct=True),
+        )
         .order_by("-updated_at")
     )
 
 
 def get_pending_review_documents(*, organization_id: UUID) -> QuerySet[DIDDocument]:
     """Documents en attente d'examen (pour le tableau de bord ORG_ADMIN)."""
+    from django.db.models import Count
     return (
         DIDDocument.objects.filter(
             organization_id=organization_id,
             status=DocumentStatus.PENDING_REVIEW,
         )
         .select_related("owner", "created_by", "submitted_by")
+        .annotate(version_count=Count("versions", distinct=True))
         .order_by("submitted_at")
     )
 
@@ -155,7 +166,7 @@ def search_published_documents(
 
     qs = DIDDocument.objects.filter(status=DocumentStatus.PUBLISHED).select_related(
         "organization", "owner", "current_version"
-    )
+    ).annotate(version_count=Count("versions", distinct=True))
 
     if q:
         qs = qs.filter(
