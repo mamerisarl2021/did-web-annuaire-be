@@ -44,7 +44,6 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.VIEW_DOCUMENTS,
         Permission.MUTATE_DOCUMENTS,
         Permission.VIEW_CERTIFICATES,
-        Permission.MUTATE_CERTIFICATES,
     },
     # Compatibilité : rôle AUDITOR = lecture seule + accès à l'audit
     Role.AUDITOR: {
