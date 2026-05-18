@@ -92,7 +92,7 @@ class DIDDocument(BaseModel):
         help_text="Commentaire d'approbation ou de rejet de l'administrateur de l'organisation.",
     )
     
-    current_  = models.OneToOneField(
+    current  = models.OneToOneField(
         "documents.DIDDocumentVersion",
         on_delete=models.SET_NULL,
         null=True,
