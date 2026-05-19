@@ -64,8 +64,7 @@ def search_documents(
     results = []
     for doc in docs:
         org_slug = doc.organization.slug if doc.organization else ""
-        owner_slug = doc.owner.email.split("@")[0] if doc.owner else ""
-        did_uri = f"did:web:{domain}:{org_slug}:{owner_slug}:{doc.label}"
+        did_uri = f"did:web:{domain}:{org_slug}:{doc.owner_identifier}:{doc.label}"
 
         results.append(
             {
