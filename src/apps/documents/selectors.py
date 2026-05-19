@@ -164,6 +164,8 @@ def search_published_documents(
     """
     allowed_sorts = {"-updated_at", "-created_at", "created_at", "updated_at", "label", "-label"}
 
+    from django.db.models import Count
+
     qs = DIDDocument.objects.filter(status=DocumentStatus.PUBLISHED).select_related(
         "organization", "owner", "current_version"
     ).annotate(version_count=Count("versions", distinct=True))
