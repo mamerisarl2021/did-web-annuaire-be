@@ -93,6 +93,7 @@ class OrgStatsSchema(Schema):
     signed_documents: int
     published_documents: int
     total_certificates: int
+    resolutions_today: int = 0
     my_role: str = ""
     can_view_audits: bool = False
 

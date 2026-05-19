@@ -45,3 +45,7 @@ EMAIL_BACKEND = env.EMAIL_BACKEND
 # ── Autres ──────────────────────────────────────────────────────────────
 JWK_EXTRACTOR_JAR = "/app/bin/ecdsa-extractor.jar"
 JWK_EXTRACTOR_JAVA = "java"
+
+# DID_RESOLVER_CACHE_TTL=7200
+
+EMAIL_TIMEOUT=10

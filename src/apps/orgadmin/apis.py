@@ -232,6 +232,7 @@ def _audit_dict(a) -> dict:
         "description": a.description,
         "metadata": a.metadata,
         "actor_email": a.actor_email,
+        "organization_name": a.organization_name,
         "created_at": a.created_at.isoformat(),
         "ip_address": a.ip_address,
     }
@@ -269,6 +270,25 @@ def list_audits(
         "count": total,
         "results": [_audit_dict(a) for a in sliced_qs],
     }
+
+
+@router.get(
+    "/organizations/{org_id}/audits/{audit_id}",
+    response={200: dict, 404: dict},
+    auth=JWTAuth(),
+    summary="Get a single audit log entry",
+)
+def get_audit(request, org_id: UUID, audit_id: UUID):
+    """Get a single audit log entry by ID. Requires VIEW_AUDITS permission."""
+    require_permission(request.auth, org_id, Permission.VIEW_AUDITS)
+
+    from src.apps.audits.models import AuditLog
+
+    entry = AuditLog.objects.filter(id=audit_id, organization_id=org_id).first()
+    if entry is None:
+        raise NotFoundError("Audit log entry not found.")
+
+    return _audit_dict(entry)
 
 
 # ── Members list ─────────────────────────────────────────────────────────
