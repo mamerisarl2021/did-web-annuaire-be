@@ -10,15 +10,15 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging-prime' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache
-
-      - name: Docker prune
-        run: docker system prune -af
+#      - name: Free disk space
+#        run: |
+#          sudo rm -rf /usr/share/dotnet
+#          sudo rm -rf /usr/local/lib/android
+#          sudo rm -rf /opt/ghc
+#          sudo rm -rf /opt/hostedtoolcache
+#
+#      - name: Docker prune
+#        run: docker system prune -af
 
       - name: SSH deploy
         uses: appleboy/ssh-action@v1.2.0
