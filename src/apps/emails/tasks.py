@@ -99,7 +99,7 @@ def send_password_reset_email(self, user_id: str, reset_token: str):
             return
 
         platform_domain = settings.PLATFORM_DOMAIN
-        reset_url = f"{platform_domain}/auth/reset-password/{reset_token}/"
+        reset_url = f"{platform_domain}/auth/reset-password/?token={reset_token}"
 
         html = render_to_string(
             "emails/password_reset.html",
