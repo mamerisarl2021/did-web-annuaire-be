@@ -78,6 +78,7 @@ def assemble_did_document(
     did_uri: str,
     verification_methods: list,
     service_endpoints: list[dict] | None = None,
+    controller: str | list[str] | None = None,
 ) -> dict:
     """
     Assemble a complete DID document from verification method records.
@@ -91,17 +92,23 @@ def assemble_did_document(
         verification_methods: QuerySet or list of
             ``DocumentVerificationMethod`` instances.
         service_endpoints: Optional service endpoint dicts.
+        controller: Optional controller DID(s). If None, defaults to
+            self-controlled (controller = did_uri). Can be a single DID
+            string or a list of DID strings for multi-party control.
 
     Returns:
         W3C DID Core v1.0 compliant JSON dict (unsigned).
     """
+    # Resolve controller: None → self-controlled
+    effective_controller = controller if controller is not None else did_uri
+
     doc: dict = {
         "@context": [
             DID_CORE_CONTEXT,
             JWS_2020_CONTEXT,
         ],
         "id": did_uri,
-        "controller": did_uri,
+        "controller": effective_controller,
     }
 
     # Build verificationMethod array

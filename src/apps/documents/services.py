@@ -44,6 +44,38 @@ def _did_uri_for(doc: DIDDocument) -> str:
 # ── Créer ───────────────────────────────────────────────────────────────
 
 
+def _validate_controller(controller: str | list[str] | None) -> None:
+    """
+    Validate the controller field for a DID document.
+
+    Rules per W3C DID Core spec:
+      - None → self-controlled (valid, handled downstream)
+      - str  → must be a valid DID URI (starts with "did:")
+      - list → every item must be a valid DID URI, list must not be empty
+    """
+    if controller is None:
+        return
+
+    if isinstance(controller, str):
+        if not controller.startswith("did:"):
+            raise ValidationError(
+                f"Controller must be a valid DID URI (starting with 'did:'). Got: '{controller}'"
+            )
+        return
+
+    if isinstance(controller, list):
+        if not controller:
+            raise ValidationError("Controller list must not be empty.")
+        for i, did in enumerate(controller):
+            if not isinstance(did, str) or not did.startswith("did:"):
+                raise ValidationError(
+                    f"Controller[{i}] must be a valid DID URI (starting with 'did:'). Got: '{did}'"
+                )
+        return
+
+    raise ValidationError("Controller must be a DID string, a list of DID strings, or null.")
+
+
 @transaction.atomic
 def create_document(
         *,
@@ -52,6 +84,7 @@ def create_document(
         created_by: User,
         verification_methods: list[dict] | None = None,
         service_endpoints: list[dict] | None = None,
+        controller: str | list[str] | None = None,
 ) -> DIDDocument:
     from src.apps.documents.selectors import document_label_exists
 
@@ -72,6 +105,8 @@ def create_document(
             f"Label '{label}' already exists for you in this organization."
         )
 
+    _validate_controller(controller)
+
     doc = DIDDocument.objects.create(
         organization=organization,
         label=label,
@@ -89,7 +124,7 @@ def create_document(
         )
 
     did_uri = _did_uri_for(doc)
-    did_json = _assemble_from_db(doc, did_uri, service_endpoints)
+    did_json = _assemble_from_db(doc, did_uri, service_endpoints, controller=controller)
     doc.draft_content = did_json
     doc.save(update_fields=["draft_content", "updated_at"])
 
@@ -114,6 +149,7 @@ def update_draft(
         updated_by: User,
         verification_methods: list[dict] | None = None,
         service_endpoints: list[dict] | None = None,
+        controller: str | list[str] | None = None,
 ) -> DIDDocument:
     """
     Met à jour le contenu brouillon d'un document.
@@ -147,8 +183,10 @@ def update_draft(
             user=updated_by,
         )
 
+    _validate_controller(controller)
+
     did_uri = _did_uri_for(document)
-    did_json = _assemble_from_db(document, did_uri, service_endpoints)
+    did_json = _assemble_from_db(document, did_uri, service_endpoints, controller=controller)
     document.draft_content = did_json
 
     document.save(update_fields=update_fields)
@@ -741,7 +779,7 @@ def _create_verification_methods(*, document, organization, vm_specs, user):
         )
 
 
-def _assemble_from_db(document, did_uri, service_endpoints=None):
+def _assemble_from_db(document, did_uri, service_endpoints=None, controller=None):
     from src.apps.documents.selectors import get_active_verification_methods
 
     vms = list(get_active_verification_methods(document_id=document.id))
@@ -749,6 +787,7 @@ def _assemble_from_db(document, did_uri, service_endpoints=None):
         did_uri=did_uri,
         verification_methods=vms,
         service_endpoints=service_endpoints,
+        controller=controller,
     )
 
 
