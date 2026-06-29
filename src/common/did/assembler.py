@@ -101,6 +101,7 @@ def assemble_did_document(
             JWS_2020_CONTEXT,
         ],
         "id": did_uri,
+        "controller": did_uri,
     }
 
     # Build verificationMethod array
