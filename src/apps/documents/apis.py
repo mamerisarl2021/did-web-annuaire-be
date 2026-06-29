@@ -226,6 +226,7 @@ def create_document(request: HttpRequest, org_id: UUID, payload: CreateDocumentS
         created_by=request.auth,
         verification_methods=vm_specs if vm_specs else None,
         service_endpoints=svc_specs,
+        controller=payload.controller,
     )
 
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
@@ -315,6 +316,7 @@ def update_draft(
         updated_by=request.auth,
         verification_methods=vm_specs,
         service_endpoints=svc_specs,
+        controller=payload.controller,
     )
 
     doc = doc_selectors.get_document_by_id(doc_id=doc.id)
