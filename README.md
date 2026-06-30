@@ -21,3 +21,4 @@ rav run quickstart
 ```
 
 - Remember to Adjust environment variables
+- Check the docs directory for more resources

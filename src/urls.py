@@ -5,10 +5,6 @@ Configuration racine des URL.
 - /api/v2/org/          → API Admin Org (limitée aux organisations de l'utilisateur)
 - /api/v2/public/       → API publique (aucune authentification requise)
 - /superadmin/api/v2/   → API Superadmin
-- /superadmin/          → Interface Superadmin (modèles Django)
-- /workspace/           → Interface Admin Org (modèles Django)
-- /resolve/, /search/   → Pages publiques (sans auth)
-- /login/, /register/   → Interface publique (modèles Django)
 - /admin/               → Administration Django
 """
 

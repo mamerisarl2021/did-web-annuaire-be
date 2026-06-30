@@ -22,5 +22,8 @@ scripts:
   reset_db:
     python -m src.manage reset_db --no-input
 
+  check:
+    python -m src.manage check
+
   quickstart:
     python -m src.manage makemigrations && python -m src.manage migrate && python -m src.manage createsuperadmin --no-input && python -m src.manage runserver

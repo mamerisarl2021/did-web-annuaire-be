@@ -9,3 +9,6 @@ https://github.com/decentralized-identity/universal-resolver
 
 https://github.com/decentralized-identity/universal-registrar
 ```
+
+- [X] **Code architecture Style Guide**
+- https://github.com/HackSoftware/Django-Styleguide
