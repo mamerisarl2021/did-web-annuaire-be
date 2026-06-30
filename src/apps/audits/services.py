@@ -48,19 +48,23 @@ def log_action(
     org_name = getattr(organization, "name", "") if organization else ""
 
     from src.apps.audits.tasks import async_log_action
+    from django.db import transaction
 
-    async_log_action.delay(
-        actor_id=str(actor_id) if actor_id else None,
-        actor_email=actor_email,
-        organization_id=str(org_id) if org_id else None,
-        organization_name=org_name,
-        action=action,
-        resource_type=resource_type,
-        resource_id=str(resource_id) if resource_id else None,
-        description=description,
-        metadata=metadata or {},
-        ip_address=ip_address,
-    )
+    def _dispatch_task():
+        async_log_action.delay(
+            actor_id=str(actor_id) if actor_id else None,
+            actor_email=actor_email,
+            organization_id=str(org_id) if org_id else None,
+            organization_name=org_name,
+            action=action,
+            resource_type=resource_type,
+            resource_id=str(resource_id) if resource_id else None,
+            description=description,
+            metadata=metadata or {},
+            ip_address=ip_address,
+        )
+
+    transaction.on_commit(_dispatch_task)
     
     return None
 

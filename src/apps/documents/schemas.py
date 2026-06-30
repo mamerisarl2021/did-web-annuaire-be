@@ -25,11 +25,13 @@ class ServiceEndpointSpec(Schema):
 
 class CreateDocumentSchema(Schema):
     label: str
+    controller: str | list[str] | None = None
     verification_methods: list[VerificationMethodSpec] = []
     service_endpoints: list[ServiceEndpointSpec] = []
 
 
 class UpdateDraftSchema(Schema):
+    controller: str | list[str] | None = None
     verification_methods: list[VerificationMethodSpec] | None = None
     service_endpoints: list[ServiceEndpointSpec] | None = None
 
