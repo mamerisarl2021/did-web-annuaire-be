@@ -793,7 +793,14 @@ def _assemble_from_db(document, did_uri, service_endpoints=None, controller=None
 
 def _reassemble_draft(document):
     did_uri = _did_uri_for(document)
-    did_json = _assemble_from_db(document, did_uri)
+    
+    # Conserve le contrôleur actuel lors du réassemblage du brouillon
+    # (par ex. quand on ajoute/supprime une méthode de vérification)
+    existing_controller = None
+    if document.draft_content and "controller" in document.draft_content:
+        existing_controller = document.draft_content["controller"]
+        
+    did_json = _assemble_from_db(document, did_uri, controller=existing_controller)
     document.draft_content = did_json
     document.save(update_fields=["draft_content", "updated_at"])
 
