@@ -77,6 +77,7 @@ COPY --from=builder /app/pyproject.toml /app/uv.lock ./
 
 COPY --chown=appuser:appuser src /app/src
 COPY --chown=appuser:appuser staticfiles /app/staticfiles
+
  # Générer les fichiers statiques directement dans l'image
  # RUN DJANGO_SETTINGS_MODULE=src.config.django.prod \
  #     DJANGO_ENV=production \
