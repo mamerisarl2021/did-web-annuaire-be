@@ -4,8 +4,8 @@ Endpoints de l'API Certificat.
 Monté sur : /api/v2/org/organizations/{org_id}/certificates/
 
 Portée :
-  - ORG_ADMIN :  voit TOUS les certifs. de l'org, peut faire tourner/révoquer n'importe lequel
-  - ORG_MEMBER : voit UNIQUEMENT ses propres certifs (created_by = self), peut faire tourner les siens
+  - ORG_ADMIN :  voit TOUS les certifs. de l'org, peut uploader/faire tourner/révoquer n'importe lequel
+  - ORG_MEMBER : voit TOUS les certifs. de l'org (lecture seule), ne peut pas uploader
   - AUDITOR :    voit TOUT (lecture seule)
 
 Tous les endpoints nécessitent une authentification JWT et l'appartenance à l'org cible.
@@ -45,14 +45,13 @@ _P = "/organizations/{org_id}/certificates"
 
 
 def _can_view_all(membership) -> bool:
-    """ORG_ADMIN et AUDITOR voient tous les certificats de l'org."""
-    return membership.role in (Role.ORG_ADMIN, Role.AUDITOR)
+    """Tout membre de l'org peut voir tous les certificats (lecture seule)."""
+    return membership.role in (Role.ORG_ADMIN, Role.AUDITOR, Role.ORG_MEMBER)
 
 
 def _require_cert_access(cert, user, membership, action="access"):
     """
-    Appliquer la portée de propriété : ORG_MEMBER ne peut accéder qu'à ses propres certifs.
-    ORG_ADMIN et AUDITOR peuvent accéder à n'importe quel certif. dans l'org.
+    Lecture : tout membre de l'org peut consulter n'importe quel certificat.
     """
     if _can_view_all(membership):
         return
@@ -170,8 +169,7 @@ def list_certificates(
     page_size: int = 25,
 ):
     """
-    ORG_ADMIN / AUDITOR : tous les certificats de l'organisation.
-    ORG_MEMBER : uniquement les certificats téléchargés par l'ut. demandeur.
+    Tous les rôles avec VIEW_CERTIFICATES voient tous les certificats de l'organisation.
     """
     membership = require_permission(request.auth, org_id, Permission.VIEW_CERTIFICATES)
 
