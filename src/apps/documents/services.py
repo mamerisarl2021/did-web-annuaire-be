@@ -23,7 +23,9 @@ from src.apps.users.models import User
 from src.common.did.assembler import (
     assemble_did_document,
     build_did_uri,
+    normalize_did_document,
     sign_and_attach_proof,
+    write_did_json_to_disk,
 )
 from src.common.exceptions import ConflictError, NotFoundError, ValidationError
 
@@ -517,7 +519,7 @@ def sign_and_publish(
     # ── Étape 1 : Valider (pur — aucune écriture) ───────────────────
     _validate_for_publish(document, skip_review)
 
-    content = document.draft_content
+    content = normalize_did_document(document.draft_content)
     if not content:
         raise ValidationError("No draft content to publish.")
 
@@ -540,11 +542,12 @@ def sign_and_publish(
 
     # ── Étape 3 : Enregistrer en externe (hors transaction) ─────────
     is_first = document.current_version is None
+    did_uri = _did_uri_for(document)
     registrar_resp = _call_registrar(content, is_create=is_first)
+    write_did_json_to_disk(did_uri, content)
 
     # ── Étape 4 : Persister dans la BD de manière atomique ──────────
     # Sur échec → Étape 5 : désactivation compensatoire pr annuler l'étape 3.
-    did_uri = _did_uri_for(document)
     try:
         document = _persist_publish(
             document=document,
@@ -791,16 +794,48 @@ def _assemble_from_db(document, did_uri, service_endpoints=None, controller=None
     )
 
 
+def _service_specs_from_draft(draft_content: dict | None) -> list[dict] | None:
+    """Extract service endpoint specs from an assembled draft for reassembly."""
+    if not draft_content:
+        return None
+    services = draft_content.get("service")
+    if not services:
+        return None
+
+    specs = []
+    for entry in services:
+        if not isinstance(entry, dict):
+            continue
+        full_id = entry.get("id", "")
+        fragment = full_id.rsplit("#", 1)[-1] if full_id else ""
+        endpoint = entry.get("serviceEndpoint", entry.get("endpoint", ""))
+        specs.append(
+            {
+                "id": fragment or entry.get("id", ""),
+                "type": entry.get("type", "LinkedDomains"),
+                "endpoint": endpoint,
+            }
+        )
+    return specs or None
+
+
 def _reassemble_draft(document):
     did_uri = _did_uri_for(document)
-    
-    # Conserve le contrôleur actuel lors du réassemblage du brouillon
-    # (par ex. quand on ajoute/supprime une méthode de vérification)
+
+    # Conserve le contrôleur et les services lors du réassemblage du brouillon
     existing_controller = None
-    if document.draft_content and "controller" in document.draft_content:
-        existing_controller = document.draft_content["controller"]
-        
-    did_json = _assemble_from_db(document, did_uri, controller=existing_controller)
+    service_endpoints = None
+    if document.draft_content:
+        if "controller" in document.draft_content:
+            existing_controller = document.draft_content["controller"]
+        service_endpoints = _service_specs_from_draft(document.draft_content)
+
+    did_json = _assemble_from_db(
+        document,
+        did_uri,
+        service_endpoints=service_endpoints,
+        controller=existing_controller,
+    )
     document.draft_content = did_json
     document.save(update_fields=["draft_content", "updated_at"])
 
