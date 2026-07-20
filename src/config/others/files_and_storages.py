@@ -53,10 +53,6 @@ elif STORAGE_STRATEGY == StorageEnum.S3:
         "querystring_auth": True,
         "querystring_expire": 3600,
         "region_name": "us-east-1",
-        "client_config": {
-            "request_checksum_calculation": "when_required",
-            "response_checksum_validation": "when_required",
-        },
     }
 
     STORAGES = {
