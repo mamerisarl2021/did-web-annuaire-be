@@ -79,10 +79,10 @@ COPY --chown=appuser:appuser src /app/src
 # COPY --chown=appuser:appuser staticfiles /app/staticfiles
 
 #  Générer les fichiers statiques directement dans l'image
- RUN DJANGO_SETTINGS_MODULE=src.config.django.prod \
-     DJANGO_ENV=production \
-     python -m src.manage collectstatic --noinput --clear && \
-     chown -R appuser:appuser /app/staticfiles /app/static_root
+# RUN DJANGO_SETTINGS_MODULE=src.config.django.prod \
+#     DJANGO_ENV=production \
+#     python -m src.manage collectstatic --noinput --clear && \
+#     chown -R appuser:appuser /app/static_root
 
 COPY --chown=appuser:appuser entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh

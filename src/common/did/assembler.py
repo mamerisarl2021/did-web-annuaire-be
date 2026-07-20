@@ -152,12 +152,86 @@ def assemble_did_document(
     if service_endpoints:
         doc["service"] = _build_service_endpoints(did_uri, service_endpoints)
 
-    return doc
+    return normalize_did_document(doc)
 
 
-# ═════════════════════════════════════════════════════════════════════════
-#  ecdsa-jcs-2019  —  Data Integrity Proof Creation
-# ═════════════════════════════════════════════════════════════════════════
+def normalize_did_document(doc: dict) -> dict:
+    """
+    Produce a W3C-friendly DID document dict.
+
+    - Removes top-level keys whose value is ``null``
+    - Omits empty ``service`` arrays (optional property absent when unused)
+    - Puts ``@context`` first, then core properties in a stable order
+    """
+    if not doc:
+        return doc
+
+    cleaned = {k: v for k, v in doc.items() if v is not None}
+    if cleaned.get("service") == []:
+        cleaned.pop("service", None)
+
+    ordered: dict = {}
+
+    if "@context" in cleaned:
+        ordered["@context"] = cleaned["@context"]
+
+    for key in ("id", "controller", "alsoKnownAs"):
+        if key in cleaned:
+            ordered[key] = cleaned[key]
+
+    if "verificationMethod" in cleaned:
+        ordered["verificationMethod"] = cleaned["verificationMethod"]
+
+    for rel_type in RELATIONSHIP_TYPES:
+        if rel_type in cleaned:
+            ordered[rel_type] = cleaned[rel_type]
+
+    if "service" in cleaned:
+        ordered["service"] = cleaned["service"]
+
+    if "proof" in cleaned:
+        ordered["proof"] = cleaned["proof"]
+
+    for key, value in cleaned.items():
+        if key not in ordered:
+            ordered[key] = value
+
+    return ordered
+
+
+def did_web_uri_to_disk_path(did_uri: str, root) :
+    """
+    Map a did:web URI to the on-disk path used by driver-did-web / nginx.
+
+    did:web:host:org_slug:owner_id:label → {root}/org_slug/owner_id/label/did.json
+    """
+    from pathlib import Path
+
+    prefix = "did:web:"
+    if not did_uri.startswith(prefix):
+        raise ValueError(f"Not a did:web URI: {did_uri}")
+
+    parts = did_uri[len(prefix) :].split(":")
+    if len(parts) < 4:
+        raise ValueError(f"Invalid did:web URI: {did_uri}")
+
+    org_slug, owner_id = parts[1], parts[2]
+    label = parts[3] if len(parts) == 4 else ":".join(parts[3:])
+    return Path(root) / org_slug / owner_id / label / "did.json"
+
+
+def write_did_json_to_disk(did_uri: str, content: dict) -> None:
+    """Write a normalized DID document to the shared dids volume."""
+    from django.conf import settings
+
+    path = did_web_uri_to_disk_path(did_uri, settings.DID_DOCUMENTS_ROOT)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    normalized = normalize_did_document(content)
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(normalized, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    logger.info("did_json_written", path=str(path), did=did_uri)
+
 
 
 def create_proof(
