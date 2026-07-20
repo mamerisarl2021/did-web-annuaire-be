@@ -164,6 +164,12 @@ class AppSettings(BaseSettings):
     def is_test(self) -> bool:
         return self.DJANGO_ENV == "test"
 
+    S3_ACCESS_KEY: str = "UKvrW9gbctk8cF4cmBot"
+    S3_SECRET_KEY: str = "loZYewmTqcCt9kC9AIIJrbF23m49QkOsoJygF82v"
+    STORAGE: str = "local"
+    S3_ENDPOINT_URL: str = "http://127.0.0.1:9000"
+    S3_BUCKET_NAME: str = "annuairedid"
+
 
 # skylos: ignore-end
 # ── Singleton ───────────────────────────────────────────────────────────
