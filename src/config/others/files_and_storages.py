@@ -39,9 +39,9 @@ if STORAGE_STRATEGY == StorageEnum.LOCAL:
 
 elif STORAGE_STRATEGY == StorageEnum.S3:
     STATIC_URL = (
-        f"{env.S3_ENDPOINT_URL}/{env.S3_BUCKET_NAME}/:static/"
+        f"{env.S3_ENDPOINT_URL}/{env.S3_BUCKET_NAME}/static/"
     )
-    MEDIA_URL = f"{env.S3_ENDPOINT_URL}/{env.S3_BUCKET_NAME}/:media/"
+    MEDIA_URL = f"{env.S3_ENDPOINT_URL}/{env.S3_BUCKET_NAME}/media/"
 
     _S3_BASE_OPTIONS = {
         "access_key": env.S3_ACCESS_KEY,
@@ -52,6 +52,7 @@ elif STORAGE_STRATEGY == StorageEnum.S3:
         "addressing_style": "path",
         "querystring_auth": True,
         "querystring_expire": 3600,
+        "region_name": "us-east-1",
     }
 
     STORAGES = {
