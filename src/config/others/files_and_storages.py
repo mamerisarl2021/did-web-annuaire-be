@@ -60,14 +60,14 @@ elif STORAGE_STRATEGY == StorageEnum.S3:
             "BACKEND": "storages.backends.s3.S3Storage",
             "OPTIONS": {
                 **copy.deepcopy(_S3_BASE_OPTIONS),
-                "location": ":media_files",
+                "location": "media_files",
             },
         },
         "staticfiles": {
             "BACKEND": "storages.backends.s3.S3Storage",
             "OPTIONS": {
                 **copy.deepcopy(_S3_BASE_OPTIONS),
-                "location": f":static_root",
+                "location": "static_root",
             },
         },
     }
