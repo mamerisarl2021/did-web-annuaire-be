@@ -32,9 +32,13 @@ class File(BaseModel):
 
     @property
     def url(self) -> str:
-        if self.file:
-            return self.file.url
-        return ""
+        if not self.file:
+            return ""
+        # Absolute backend URL — relative /media/ paths resolve on the SPA origin otherwise.
+        relative = self.file.url
+        if relative.startswith(("http://", "https://")):
+            return relative
+        return f"{settings.PLATFORM_DOMAIN.rstrip('/')}{relative}"
 
     class Meta:
         db_table = "files"

@@ -32,7 +32,7 @@ python -m src.manage migrate --noinput
 
 # ── Collect static files ────────────────────────────────────────────
 echo "→ Collecting static files..."
-python -m src.manage collectstatic --noinput --clear 2>/dev/null || true
+python -m src.manage collectstatic --noinput --clear
 
 echo "→ Creating superadmin..."
 python -m src.manage createsuperadmin --no-input

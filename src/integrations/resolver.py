@@ -50,6 +50,13 @@ def resolve_did(did_uri: str) -> dict:
     cached_result = cache.get(cache_key)
     if cached_result:
         logger.debug("resolver_cache_hit", did=did_uri)
+        if cached_result.get("didDocument"):
+            from src.common.did.assembler import normalize_did_document
+
+            cached_result = {
+                **cached_result,
+                "didDocument": normalize_did_document(cached_result["didDocument"]),
+            }
         return cached_result
 
     url = _get_resolver_url()
@@ -62,6 +69,11 @@ def resolve_did(did_uri: str) -> dict:
     endpoint = f"{url}/1.0/identifiers/{encoded}"
 
     result = _get(endpoint, did_uri=did_uri)
+
+    if result.get("didDocument"):
+        from src.common.did.assembler import normalize_did_document
+
+        result["didDocument"] = normalize_did_document(result["didDocument"])
 
     # Cache the result
     ttl = getattr(settings, "DID_RESOLVER_CACHE_TTL", 3600)  # 1 hour default
