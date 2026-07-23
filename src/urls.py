@@ -15,16 +15,17 @@ Configuration racine des URL.
 from django.contrib import admin
 from django.urls import path
 from ninja_extra import NinjaExtraAPI
-from ninja_jwt.controller import NinjaJWTDefaultController
 
 from src.apps.apiclients.apis import router as apiclients_router
 from src.apps.authentication.apis import router as auth_router
+from src.apps.authentication.jwt_controller import ThrottledNinjaJWTController
 from src.apps.certificates.apis import router as cert_router
 from src.apps.documents.apis import router as doc_router
 from src.apps.documents.public_apis import router as public_search_router
 from src.apps.orgadmin.apis import router as orgadmin_router
 from src.apps.superadmin.apis import router as superadmin_router
 from src.common.exceptions import configure_exception_handlers
+from src.common.throttling import anon_baseline, auth_baseline
 
 # ── API Principale ──────────────────────────────────────────────────────
 
@@ -33,12 +34,13 @@ api = NinjaExtraAPI(
     version="1.0.1",
     description="DID Directory — decentralized identity management",
     urls_namespace="api",
+    throttle=[anon_baseline, auth_baseline],
 )
 
 configure_exception_handlers(api)
 
 # ninja_jwt: /api/v2/token/pair, /api/v2/token/refresh, /api/v2/token/verify
-api.register_controllers(NinjaJWTDefaultController)
+api.register_controllers(ThrottledNinjaJWTController)
 
 # Auth personnalisée : /api/v2/auth/...
 api.add_router("/auth", auth_router)
@@ -64,6 +66,7 @@ superadmin_api = NinjaExtraAPI(
     version="1.0.1",
     urls_namespace="superadmin_api",
     docs_url="/docs",
+    throttle=[anon_baseline, auth_baseline],
 )
 
 configure_exception_handlers(superadmin_api)

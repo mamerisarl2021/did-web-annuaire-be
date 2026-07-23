@@ -1,14 +1,13 @@
 from django.http import HttpRequest
 from ninja import Router
-from ninja.throttling import AuthRateThrottle
 import jwt
 from datetime import datetime, timedelta, UTC
 from django.conf import settings
 
-from src.common.exceptions import ValidationError
 from src.apps.apiclients.models import MachineClient
 from src.apps.apiclients.schemas import MachineTokenRequestSchema, MachineTokenResponseSchema
-from src.apps.apiclients.auth import MachineJWTAuth
+from src.common.exceptions import ValidationError
+from src.common.throttling import m2m_token_throttle
 
 
 router = Router(tags=["API Clients (M2M)"])
@@ -20,7 +19,8 @@ router = Router(tags=["API Clients (M2M)"])
     "/token",
     response=MachineTokenResponseSchema,
     summary="Get M2M Access Token",
-    auth=None
+    auth=None,
+    throttle=m2m_token_throttle,
 )
 def get_machine_token(request: HttpRequest, payload: MachineTokenRequestSchema):
     try:

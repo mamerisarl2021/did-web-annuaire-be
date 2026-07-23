@@ -30,6 +30,15 @@ from src.apps.authentication.schemas import (
 from src.apps.organizations.selectors import get_membership_by_invitation_token
 from src.apps.users.services import update_user_profile
 from src.common.exceptions import NotFoundError
+from src.common.throttling import (
+    activation_setup_throttle,
+    activation_verify_throttle,
+    auth_baseline,
+    password_change_throttle,
+    password_reset_confirm_throttle,
+    password_reset_request_throttle,
+    register_throttle,
+)
 
 router = Router(tags=["Authentication"])
 
@@ -45,6 +54,7 @@ router = Router(tags=["Authentication"])
         409: ErrorResponseSchema,
     },
     summary="Register a new user and organization (multipart)",
+    throttle=register_throttle,
 )
 def register(
     request: HttpRequest,
@@ -101,6 +111,7 @@ def register(
     "/activate/{invitation_token}",
     response={200: ActivateSetupResponseSchema, 404: ErrorResponseSchema},
     summary="Get OTP setup (secret + QR code)",
+    throttle=activation_setup_throttle,
 )
 def activate_setup(request: HttpRequest, invitation_token: UUID):
     membership = get_membership_by_invitation_token(token=invitation_token)
@@ -127,6 +138,7 @@ def activate_setup(request: HttpRequest, invitation_token: UUID):
         404: ErrorResponseSchema,
     },
     summary="Verify OTP code and activate account",
+    throttle=activation_verify_throttle,
 )
 def activate_verify(
     request: HttpRequest,
@@ -160,6 +172,7 @@ def activate_verify(
     response={200: LogoutResponseSchema, 400: ErrorResponseSchema},
     auth=JWTAuth(),
     summary="Logout — blacklist the refresh token",
+    throttle=auth_baseline,
 )
 def logout(request: HttpRequest, payload: LogoutRequestSchema):
     auth_services.logout_user(refresh_token=payload.refresh)
@@ -207,6 +220,7 @@ def update_me(request: HttpRequest, payload: UpdateProfileSchema):
     "/password-reset",
     response={200: MessageResponseSchema},
     summary="Request password reset email",
+    throttle=password_reset_request_throttle,
 )
 def password_reset_request(request: HttpRequest, payload: PasswordResetRequestSchema):
     auth_services.request_password_reset(email=payload.email)
@@ -219,6 +233,7 @@ def password_reset_request(request: HttpRequest, payload: PasswordResetRequestSc
     "/password-reset/confirm",
     response={200: MessageResponseSchema, 400: ErrorResponseSchema},
     summary="Confirm password reset with token",
+    throttle=password_reset_confirm_throttle,
 )
 def password_reset_confirm(request: HttpRequest, payload: PasswordResetConfirmSchema):
     auth_services.confirm_password_reset(
@@ -235,6 +250,7 @@ def password_reset_confirm(request: HttpRequest, payload: PasswordResetConfirmSc
     response={200: MessageResponseSchema, 400: ErrorResponseSchema},
     auth=JWTAuth(),
     summary="Change password (requires current password)",
+    throttle=password_change_throttle,
 )
 def password_change(request: HttpRequest, payload: PasswordChangeSchema):
     auth_services.change_password(

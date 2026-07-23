@@ -4,14 +4,12 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.http import HttpRequest
 from ninja import Query, Router
-from ninja.throttling import AnonRateThrottle
 
 from src.apps.documents.models import DocumentStatus
 from src.apps.documents.selectors import search_published_documents
 from src.apps.organizations.models import Organization
+from src.common.throttling import public_api_throttle
 from src.common.types import OrgStatus
-
-public_throttle = AnonRateThrottle("60/m")
 
 router = Router(tags=["Public Search"])
 
@@ -34,7 +32,7 @@ class PublicDocResult(dict):
     f"{_P}/documents",
     response=dict,
     summary="Search published DID documents (public, no auth)",
-    throttle=public_throttle,
+    throttle=public_api_throttle,
 )
 def search_documents(
         request: HttpRequest,
@@ -95,7 +93,7 @@ def search_documents(
     f"{_P}/organizations",
     response=list,
     summary="List approved organizations (public, no auth)",
-    throttle=public_throttle,
+    throttle=public_api_throttle,
 )
 def list_organizations(request: HttpRequest):
     """
@@ -122,7 +120,7 @@ def list_organizations(request: HttpRequest):
     "/resolve",
     response=dict,
     summary="Resolve a DID via the Universal Resolver (public, no auth)",
-    throttle=public_throttle,
+    throttle=public_api_throttle,
 )
 def resolve_did_proxy(
         request: HttpRequest,
