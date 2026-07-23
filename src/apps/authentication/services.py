@@ -262,7 +262,7 @@ def request_password_reset(*, email: str) -> None:
     from src.apps.emails.tasks import send_password_reset_email
 
     send_password_reset_email.delay(user_id=str(user.id), reset_token=token)
-    logger.info("password_reset_token_generated", user_id=str(user.id), token=token)
+    logger.info("password_reset_token_generated", user_id=str(user.id))
 
 
 @transaction.atomic
