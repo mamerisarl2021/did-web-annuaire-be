@@ -100,6 +100,7 @@ class DocDetailSchema(Schema):
     review_comment: str
     current_version_number: int | None
     has_pending_draft: bool = False
+    publish_last_error: str = ""
     verification_methods: list[VerificationMethodResponse]
     verifiable_credential: Any | None
     created_at: str

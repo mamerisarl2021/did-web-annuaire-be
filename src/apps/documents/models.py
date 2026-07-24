@@ -16,6 +16,8 @@ class DocumentStatus(models.TextChoices):
     APPROVED = "APPROVED", "Approved"
     REJECTED = "REJECTED", "Rejected"
     SIGNED = "SIGNED", "Signed"
+    PUBLISHING = "PUBLISHING", "Publishing"
+    PUBLISH_FAILED = "PUBLISH_FAILED", "Publish Failed"
     PUBLISHED = "PUBLISHED", "Published"
     DEACTIVATED = "DEACTIVATED", "Deactivated"
 
@@ -113,6 +115,20 @@ class DIDDocument(BaseModel):
         blank=True,
         help_text="Timestamp de la dernière relance envoyée pour ce document.",
     )
+    publish_last_error = models.TextField(
+        blank=True,
+        default="",
+        help_text="Dernière erreur de publication externe (Registrar ou disque).",
+    )
+    pending_version = models.ForeignKey(
+        "documents.DIDDocumentVersion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text="Version en cours de publication, non encore promue.",
+    )
+
     class Meta:
         db_table = "did_documents"
         ordering = ["-created_at"]
@@ -158,7 +174,8 @@ class DIDDocument(BaseModel):
             return False
         return self.status in (
             DocumentStatus.DRAFT,
-            DocumentStatus.REJECTED,  # Le propriétaire peut réviser après rejet
+            DocumentStatus.REJECTED,
+            DocumentStatus.PUBLISH_FAILED,
         )
 
     def can_submit_for_review(self, user) -> bool:

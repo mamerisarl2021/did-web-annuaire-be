@@ -92,6 +92,7 @@ class OrgStatsSchema(Schema):
     draft_documents: int
     signed_documents: int
     published_documents: int
+    publish_failed_documents: int = 0
     total_certificates: int
     resolutions_today: int = 0
     my_role: str = ""

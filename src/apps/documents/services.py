@@ -161,7 +161,12 @@ def update_draft(
       - PUBLISHED : l'édition crée un nouveau brouillon pour la prochaine version.
         Le contenu en direct reste dans `content` ; les modifs vont dans `draft_content`.
     """
-    editable = {DocumentStatus.DRAFT, DocumentStatus.REJECTED, DocumentStatus.PUBLISHED}
+    editable = {
+        DocumentStatus.DRAFT,
+        DocumentStatus.REJECTED,
+        DocumentStatus.PUBLISHED,
+        DocumentStatus.PUBLISH_FAILED,
+    }
     if document.status not in editable:
         raise ValidationError(f"Cannot edit a {document.status} document.")
 
@@ -486,18 +491,12 @@ def reject_document(
     return document
 
 
-# ── Signer + Publier (Modèle SAGA) ──────────────────────────────────────
+# ── Publication DID (DB d'abord, synchrone) ─────────────────────────────
 #
-# Étapes :
-#   1. _validate_for_publish() — vérifications en lecture seule, aucune écriture
-#   2. sign_and_attach_proof()  — pure crypto, pas d'état externe
-#   3. _call_registrar()        — changement d'état externe (hors atomicité)
-#   4. _persist_publish()       — écriture DB dans atomic()
-#   5. Sur échec étape 4         — _call_registrar_deactivate() pour annuler l'étape 3
-#
-# Le statut intermédiaire SIGNED est supprimé. Nous passons directement du
-# statut source à PUBLISHED dans une seule écriture DB atomique.
-# L'entrée d'audit DOC_SIGNED est conservée pour enregistrer l'événement de signature.
+#   1. _prepare_publish()     — transaction : version pendante + PUBLISHING
+#   2. _publish_externally()  — Registrar + did.json (hors transaction)
+#   3. _finalize_publish()    — transaction : promouvoir version → PUBLISHED
+#   Sur échec externe         — _mark_publish_failed() : PUBLISH_FAILED
 
 
 def sign_and_publish(
@@ -507,101 +506,224 @@ def sign_and_publish(
         skip_review: bool = False,
 ) -> DIDDocument:
     """
-    Signer via SignServer (ecdsa-jcs-2019) et publier via Universal Registrar.
+    Publier un document DID via Universal Registrar.
 
     Statuts sources autorisés :
-      - APPROVED   : flux normal après examen
-      - DRAFT      : publication directe ORG_ADMIN (skip_review=True)
-      - PUBLISHED  : re-publier avec draft_content mis à jour (nouvelle version)
-
-    Pour la republi. depuis PUBLISHED, draft_content doit différer de content.
+      - APPROVED, PUBLISH_FAILED : flux normal après examen
+      - DRAFT : publication directe ORG_ADMIN (skip_review=True)
+      - PUBLISHED : re-publier avec draft_content mis à jour
     """
-    # ── Étape 1 : Valider (pur — aucune écriture) ───────────────────
     _validate_for_publish(document, skip_review)
 
-    content = normalize_did_document(document.draft_content)
+    source_content = document.draft_content
+    if (
+        not source_content
+        and document.status == DocumentStatus.PUBLISH_FAILED
+        and document.pending_version_id
+    ):
+        source_content = document.pending_version.content
+
+    content = normalize_did_document(source_content)
     if not content:
         raise ValidationError("No draft content to publish.")
 
-    # ── Étape 2 : Signer (pure crypto — pas de changement d'état ext) ────────
-    #signed_doc, proof_value = sign_and_attach_proof(content)
+    document, version = _prepare_publish(
+        document=document,
+        published_by=published_by,
+        normalized_content=content,
+    )
 
-    # _log(
-    #     "DOC_SIGNED",
-    #     published_by,
-    #     document,
-    #     f"Document '{document.label}' signed (ecdsa-jcs-2019).",
-    #     {"cryptosuite": "ecdsa-jcs-2019"},
-    # )
-
-    # logger.info(
-    #     "document_signed",
-    #     doc_id=str(document.id),
-    #     cryptosuite="ecdsa-jcs-2019",
-    # )
-
-    # ── Étape 3 : Enregistrer en externe (hors transaction) ─────────
-    is_first = document.current_version is None
     did_uri = _did_uri_for(document)
-    registrar_resp = _call_registrar(content, is_create=is_first)
-    write_did_json_to_disk(did_uri, content)
+    is_first = document.current_version is None
 
-    # ── Étape 4 : Persister dans la BD de manière atomique ──────────
-    # Sur échec → Étape 5 : désactivation compensatoire pr annuler l'étape 3.
     try:
-        document = _persist_publish(
-            document=document,
-            published_by=published_by,
-            signed_doc= content, # signed_doc,
-            proof_value= '', # proof_value,
-            registrar_resp=registrar_resp,
-        )
-    except Exception as db_error:
+        registrar_resp = _publish_externally(content, is_create=is_first)
+        write_did_json_to_disk(did_uri, content)
+    except Exception as exc:
+        _mark_publish_failed(document=document, error_message=str(exc))
         logger.error(
-            "publish_db_failed_compensating",
+            "publish_external_failed",
             doc_id=str(document.id),
-            error=str(db_error),
+            error=str(exc),
         )
-        try:
-            _call_registrar_deactivate(did_uri)
-            logger.warning(
-                "registrar_compensated",
-                doc_id=str(document.id),
-                did_uri=did_uri,
-            )
-        except Exception as comp_error:
-            # Compensation also failed — log prominently, requires manual intervention
-            logger.critical(
-                "registrar_compensation_failed",
-                doc_id=str(document.id),
-                did_uri=did_uri,
-                db_error=str(db_error),
-                comp_error=str(comp_error),
-            )
-        raise
+        raise ValidationError(f"Publication failed: {exc}") from exc
 
+    return _finalize_publish(
+        document=document,
+        version=version,
+        published_by=published_by,
+        published_content=content,
+        registrar_resp=registrar_resp,
+    )
+
+
+def _publish_externally(content: dict, *, is_create: bool) -> dict:
+    return _call_registrar(content, is_create=is_create)
+
+
+@transaction.atomic
+def _prepare_publish(
+        *,
+        document: DIDDocument,
+        published_by: User,
+        normalized_content: dict,
+) -> tuple[DIDDocument, DIDDocumentVersion]:
+    if document.status == DocumentStatus.PUBLISHING:
+        raise ValidationError("Publication already in progress.")
+
+    if (
+        document.status == DocumentStatus.PUBLISH_FAILED
+        and document.pending_version_id
+    ):
+        version = document.pending_version
+        version.content = normalized_content
+        version.published_by = published_by
+        version.save(update_fields=["content", "published_by", "updated_at"])
+    else:
+        if document.pending_version_id:
+            document.pending_version.delete()
+
+        next_ver = 1
+        if document.current_version_id:
+            next_ver = document.current_version.version_number + 1
+
+        version = DIDDocumentVersion.objects.create(
+            document=document,
+            version_number=next_ver,
+            content=normalized_content,
+            signature="",
+            published_by=published_by,
+        )
+
+    document.status = DocumentStatus.PUBLISHING
+    document.pending_version = version
+    document.publish_last_error = ""
+    document.save(
+        update_fields=[
+            "status",
+            "pending_version",
+            "publish_last_error",
+            "updated_at",
+        ]
+    )
+
+    logger.info(
+        "publish_prepared",
+        doc_id=str(document.id),
+        version=version.version_number,
+    )
+    return document, version
+
+
+@transaction.atomic
+def _finalize_publish(
+        *,
+        document: DIDDocument,
+        version: DIDDocumentVersion,
+        published_by: User,
+        published_content: dict,
+        registrar_resp: dict,
+) -> DIDDocument:
+    version.published_at = timezone.now()
+    version.registrar_response = registrar_resp
+    version.save(
+        update_fields=["published_at", "registrar_response", "updated_at"]
+    )
+
+    document.content = published_content
+    document.draft_content = None
+    document.status = DocumentStatus.PUBLISHED
+    document.current_version = version
+    document.pending_version = None
+    document.publish_last_error = ""
+    document.save(
+        update_fields=[
+            "content",
+            "draft_content",
+            "status",
+            "current_version",
+            "pending_version",
+            "publish_last_error",
+            "updated_at",
+        ]
+    )
+
+    _log(
+        "DOC_PUBLISHED",
+        published_by,
+        document,
+        f"Document '{document.label}' published as v{version.version_number}.",
+        {
+            "version": version.version_number,
+            "is_update": version.version_number > 1,
+        },
+    )
+
+    from src.apps.organizations.selectors import invalidate_org_stats
+    invalidate_org_stats(
+        organization_id=document.organization_id,
+        user_id=document.owner_id,
+    )
+
+    logger.info(
+        "document_published",
+        doc_id=str(document.id),
+        version=version.version_number,
+        is_update=version.version_number > 1,
+    )
+    return document
+
+
+@transaction.atomic
+def _mark_publish_failed(*, document: DIDDocument, error_message: str) -> DIDDocument:
+    document.status = DocumentStatus.PUBLISH_FAILED
+    document.publish_last_error = error_message
+    document.save(update_fields=["status", "publish_last_error", "updated_at"])
+
+    from src.apps.organizations.selectors import invalidate_org_stats
+    invalidate_org_stats(
+        organization_id=document.organization_id,
+        user_id=document.owner_id,
+    )
+
+    logger.warning(
+        "publish_failed",
+        doc_id=str(document.id),
+        error=error_message,
+    )
     return document
 
 
 def _validate_for_publish(document: DIDDocument, skip_review: bool) -> None:
-    """Validation pure en lecture seule avant de signer/publier. Lève ValidationError."""
-    allowed = {DocumentStatus.APPROVED, DocumentStatus.PUBLISHED}
+    """Validation pure en lecture seule avant publication."""
+    if document.status == DocumentStatus.PUBLISHING:
+        raise ValidationError("Publication already in progress.")
+
+    allowed = {
+        DocumentStatus.APPROVED,
+        DocumentStatus.PUBLISHED,
+        DocumentStatus.PUBLISH_FAILED,
+    }
     if skip_review:
         allowed.add(DocumentStatus.DRAFT)
 
     if document.status not in allowed:
         if skip_review:
             raise ValidationError(
-                f"Only DRAFT, APPROVED, or PUBLISHED documents can be published. "
-                f"Status: {document.status}."
+                f"Only DRAFT, APPROVED, PUBLISHED, or PUBLISH_FAILED documents "
+                f"can be published. Status: {document.status}."
             )
         raise ValidationError(
-            f"Only APPROVED or PUBLISHED documents can be published. "
+            f"Only APPROVED, PUBLISHED, or PUBLISH_FAILED documents can be published. "
             f"Status: {document.status}."
         )
 
-    # For re-publish, require draft_content exists and differs from live content
-    if document.status == DocumentStatus.PUBLISHED:
+    if document.status == DocumentStatus.PUBLISH_FAILED:
+        if not document.draft_content and not document.pending_version_id:
+            raise ValidationError(
+                "No draft content available to retry publication."
+            )
+    elif document.status == DocumentStatus.PUBLISHED:
         if not document.draft_content:
             raise ValidationError(
                 "No pending changes to publish. Edit the document first."
@@ -612,7 +734,6 @@ def _validate_for_publish(document: DIDDocument, skip_review: bool) -> None:
                 "Make changes before re-publishing."
             )
 
-    # Validate VMs — no revoked certificates
     revoked = DocumentVerificationMethod.objects.filter(
         document=document, is_active=True, certificate__status=CertificateStatus.REVOKED
     ).count()
@@ -626,71 +747,6 @@ def _validate_for_publish(document: DIDDocument, skip_review: bool) -> None:
     ).count()
     if active_vms == 0:
         raise ValidationError("Add at least one verification method before publishing.")
-
-
-@transaction.atomic
-def _persist_publish(
-        *,
-        document: DIDDocument,
-        published_by: User,
-        signed_doc: dict,
-        proof_value: str,
-        registrar_resp: dict,
-) -> DIDDocument:
-    """
-    Écriture BD atomique : créer l'enreg de version et promouvoir le brouillon en direct.
-    Appelé après le succès externe de signature + enregistrement.
-    """
-    next_ver = 1
-    if document.current_version:
-        next_ver = document.current_version.version_number + 1
-
-    version = DIDDocumentVersion.objects.create(
-        document=document,
-        version_number=next_ver,
-        content=signed_doc,
-        signature=proof_value,
-        published_at=timezone.now(),
-        published_by=published_by,
-        registrar_response=registrar_resp,
-    )
-
-    document.content = signed_doc
-    document.draft_content = None
-    document.status = DocumentStatus.PUBLISHED
-    document.current_version = version
-    document.save(
-        update_fields=[
-            "content",
-            "draft_content",
-            "status",
-            "current_version",
-            "updated_at",
-        ]
-    )
-
-    _log(
-        "DOC_PUBLISHED",
-        published_by,
-        document,
-        f"Document '{document.label}' published as v{next_ver}.",
-        {
-            "version": next_ver,
-            "is_update": next_ver > 1,
-            "cryptosuite": "ecdsa-jcs-2019",
-        },
-    )
-
-    from src.apps.organizations.selectors import invalidate_org_stats
-    invalidate_org_stats(organization_id=document.organization_id, user_id=document.owner_id)
-
-    logger.info(
-        "document_published",
-        doc_id=str(document.id),
-        version=next_ver,
-        is_update=next_ver > 1,
-    )
-    return document
 
 
 # ── Désactiver ──────────────────────────────────────────────────────────
@@ -729,7 +785,12 @@ def deactivate_document(
 
 
 def _require_editable(document):
-    editable = {DocumentStatus.DRAFT, DocumentStatus.REJECTED, DocumentStatus.PUBLISHED}
+    editable = {
+        DocumentStatus.DRAFT,
+        DocumentStatus.REJECTED,
+        DocumentStatus.PUBLISHED,
+        DocumentStatus.PUBLISH_FAILED,
+    }
     if document.status not in editable:
         raise ValidationError(f"Cannot edit a {document.status} document.")
 

@@ -127,6 +127,9 @@ def get_organization_stats(*, organization_id, user_id=None) -> dict:
                 status__in=[DocumentStatus.SIGNED, DocumentStatus.PUBLISHED]
             ).count(),
             "published_documents": my_docs.filter(status=DocumentStatus.PUBLISHED).count(),
+            "publish_failed_documents": my_docs.filter(
+                status=DocumentStatus.PUBLISH_FAILED
+            ).count(),
             "total_certificates": Certificate.objects.filter(
                 organization_id=organization_id, created_by_id=user_id
             ).count(),
@@ -148,6 +151,9 @@ def get_organization_stats(*, organization_id, user_id=None) -> dict:
                 status__in=[DocumentStatus.SIGNED, DocumentStatus.PUBLISHED]
             ).count(),
             "published_documents": org_docs.filter(status=DocumentStatus.PUBLISHED).count(),
+            "publish_failed_documents": org_docs.filter(
+                status=DocumentStatus.PUBLISH_FAILED
+            ).count(),
             "total_certificates": Certificate.objects.filter(
                 organization_id=organization_id
             ).count(),
