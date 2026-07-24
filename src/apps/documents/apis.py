@@ -27,7 +27,7 @@ from ninja_jwt.authentication import JWTAuth
 from src.apps.certificates import selectors as cert_selectors
 from src.apps.documents import selectors as doc_selectors
 from src.apps.documents import services as doc_services
-from src.apps.documents.models import DocumentVerificationMethod
+from src.apps.documents.models import DocumentStatus, DocumentVerificationMethod
 from src.apps.documents.schemas import (
     AddVerificationMethodSchema,
     CreateDocumentSchema,
@@ -40,7 +40,7 @@ from src.apps.documents.schemas import (
     VerificationMethodResponse,
 )
 from src.common.did.assembler import build_did_uri
-from src.common.exceptions import NotFoundError
+from src.common.exceptions import NotFoundError, ValidationError
 from src.common.pagination import PaginatedResponse, paginate_queryset
 from src.common.permissions import (
     Permission,
@@ -137,6 +137,7 @@ def _doc_detail(doc) -> dict:
             doc.current_version.version_number if doc.current_version else None
         ),
         "has_pending_draft": doc.has_pending_draft,
+        "publish_last_error": doc.publish_last_error or "",
         "verification_methods": [_vm_response(vm) for vm in vms],
         "verifiable_credential": vc,
         "created_at": doc.created_at.isoformat(),
@@ -473,20 +474,47 @@ def reject_document(
     f"{_P}/{{doc_id}}/publish",
     response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
     auth=JWTAuth(),
-    summary="Signer et publier le document (ou re-publier avec nouvelle version)",
+    summary="Publier le document (ou re-publier avec nouvelle version)",
 )
 def publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
     """
-    Signer et publier un document DID.
+    Publier un document DID.
 
     Flux autorisés :
       - ORG_ADMIN sur DRAFT : publication directe (ignore l'examen)
       - Tout rôle sur APPROVED : publication après examen
-      - Propriétaire ou ORG_ADMIN sur PUBLISHED : re-publier (nouvelle version du draft_content)
+      - Propriétaire ou ORG_ADMIN sur PUBLISHED : re-publier (nouvelle version)
+      - PUBLISH_FAILED : reprise après échec Registrar/disque
     """
     membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
     doc = _get_doc_or_404(doc_id, org_id)
     require_document_owner_or_admin(request.auth, org_id, doc, action="publish")
+
+    skip_review = _is_admin(membership)
+
+    doc = doc_services.sign_and_publish(
+        document=doc,
+        published_by=request.auth,
+        skip_review=skip_review,
+    )
+
+    doc = doc_selectors.get_document_by_id(doc_id=doc.id)
+    return _doc_detail(doc)
+
+
+@router.post(
+    f"{_P}/{{doc_id}}/publish/retry",
+    response={200: DocDetailSchema, 400: ErrorSchema, 404: ErrorSchema},
+    auth=JWTAuth(),
+    summary="Reprendre une publication échouée",
+)
+def retry_publish_document(request: HttpRequest, org_id: UUID, doc_id: UUID):
+    membership = require_permission(request.auth, org_id, Permission.MUTATE_DOCUMENTS)
+    doc = _get_doc_or_404(doc_id, org_id)
+    require_document_owner_or_admin(request.auth, org_id, doc, action="publish")
+
+    if doc.status != DocumentStatus.PUBLISH_FAILED:
+        raise ValidationError("Only documents with PUBLISH_FAILED status can be retried.")
 
     skip_review = _is_admin(membership)
 
