@@ -95,20 +95,65 @@ def register_user_and_org(
     )
 
     logger.info("registration_complete", user_id=str(user.id), org_slug=org.slug)
+    from django.template.loader import render_to_string
+
+    from src.apps.emails.services import create_outbox_email
     from src.apps.emails.tasks import (
         send_registrant_confirmation_email,
         send_superadmin_new_registration_email,
     )
+    from src.apps.users.models import User
+    from src.config.env import env
+
+    platform_domain = env.PLATFORM_DOMAIN
+    registrant_html = render_to_string(
+        "emails/org_admin_notify_after_registration.html",
+        {
+            "user_name": user.full_name or user.email,
+            "org_name": org_name,
+            "org_slug": org.slug,
+            "site_url": f"{platform_domain}/auth/login",
+        },
+    )
+    registrant_outbox = create_outbox_email(
+        to=user.email,
+        subject=f"AnnuaireDID — Registration submitted: {org_name}",
+        html=registrant_html,
+        task_name="send_registrant_confirmation_email",
+        metadata={"user_id": str(user.id), "org_slug": org.slug},
+    )
+
+    superadmin_outbox_ids: list[str] = []
+    superadmin_html = render_to_string(
+        "emails/new_registration.html",
+        {
+            "org_name": org_name,
+            "org_slug": org.slug,
+            "admin_email": email,
+            "review_url": f"{platform_domain}/superadmin/organizations/",
+        },
+    )
+    for superadmin in User.objects.filter(is_superadmin=True, is_active=True):
+        outbox = create_outbox_email(
+            to=superadmin.email,
+            subject=f"AnnuaireDID — New organization registration: {org_name}",
+            html=superadmin_html,
+            task_name="send_superadmin_new_registration_email",
+            metadata={"org_slug": org.slug, "admin_email": email},
+        )
+        superadmin_outbox_ids.append(str(outbox.id))
 
     send_superadmin_new_registration_email.delay(
         org_name=org_name,
         org_slug=org.slug,
         admin_email=email,
+        outbox_ids=superadmin_outbox_ids,
     )
     send_registrant_confirmation_email.delay(
         user_id=str(user.id),
         org_name=org_name,
         org_slug=org.slug,
+        outbox_id=str(registrant_outbox.id),
     )
     return user
 

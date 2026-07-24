@@ -5,6 +5,7 @@ All endpoints require JWT auth and an active membership in the target org.
 """
 
 from typing import Optional
+from urllib.parse import urlparse
 from uuid import UUID
 
 from django.http import HttpRequest
@@ -353,7 +354,46 @@ def invite_member(request: HttpRequest, org_id: UUID, payload: InviteMemberSchem
     )
 
     # import circulaire avec emails.tasks — intentionnel
+    from django.template.loader import render_to_string
+
+    from src.apps.emails.services import create_outbox_email
     from src.apps.emails.tasks import send_member_invitation_email
+    from src.config.env import env
+
+    platform_domain = getattr(env, "PLATFORM_DOMAIN", "localhost:8899")
+    parsed = urlparse(platform_domain)
+    host = parsed.netloc or parsed.path
+    scheme = "https" if "localhost" not in host else "http"
+    activation_url = (
+        f"{scheme}://{host}/auth/activate/{new_membership.invitation_token}/"
+    )
+    role_display = {
+        "ORG_MEMBER": "Member — can manage documents & certificates",
+        "AUDITOR": "Auditor — read-only access",
+        "ORG_ADMIN": "Admin — full access",
+    }.get("ORG_MEMBER", "ORG_MEMBER")
+    invitation_html = render_to_string(
+        "emails/member_invitation.html",
+        {
+            "user_name": new_membership.user.full_name or None,
+            "org_name": org.name,
+            "role": "ORG_MEMBER",
+            "role_display": role_display,
+            "invited_by": request.auth.full_name or request.auth.email,
+            "activation_url": activation_url,
+        },
+    )
+    outbox = create_outbox_email(
+        to=new_membership.user.email,
+        subject=f"You've been invited to {org.name} on AnnuaireDID",
+        html=invitation_html,
+        task_name="send_member_invitation_email",
+        metadata={
+            "user_id": str(new_membership.user.id),
+            "org_id": str(org.id),
+            "membership_id": str(new_membership.id),
+        },
+    )
 
     send_member_invitation_email.delay(
         user_id=str(new_membership.user.id),
@@ -361,6 +401,7 @@ def invite_member(request: HttpRequest, org_id: UUID, payload: InviteMemberSchem
         org_name=org.name,
         role="ORG_MEMBER",
         invited_by_name=request.auth.full_name or request.auth.email,
+        outbox_id=str(outbox.id),
     )
 
     return 201, _member_dict(

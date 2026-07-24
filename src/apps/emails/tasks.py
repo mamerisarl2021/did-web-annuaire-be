@@ -12,23 +12,42 @@ from celery import shared_task
 from django.conf import settings
 from django.template.loader import render_to_string
 
-from src.apps.emails.services import email_send
+from src.apps.emails.services import (
+    email_send,
+    mark_outbox_failed,
+    mark_outbox_sent,
+    mark_outbox_sending,
+)
 
 logger = structlog.get_logger(__name__)
 
 
+def _finalize_outbox_failure(task, outbox_id: str | None, exc: Exception) -> None:
+    if outbox_id:
+        permanent = task.request.retries >= task.max_retries
+        mark_outbox_failed(outbox_id, str(exc), permanent=permanent)
+    raise task.retry(exc=exc) from exc
+
+
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_activation_email(self, user_id: str, invitation_token: str, org_name: str):
+def send_activation_email(
+    self, user_id: str, invitation_token: str, org_name: str, outbox_id: str | None = None
+):
     """
     Envoyer un e-mail d'activ. de cmpte après l'approbation de l'org.
     Contient le lien d'activation avec le invitation_token.
     """
     from src.apps.users.selectors import get_user_by_id
 
+    if outbox_id:
+        mark_outbox_sending(outbox_id)
+
     try:
         user = get_user_by_id(user_id=user_id)
         if user is None:
             logger.warning("activation_email_user_not_found", user_id=user_id)
+            if outbox_id:
+                mark_outbox_failed(outbox_id, "User not found", permanent=True)
             return
 
         platform_domain = settings.PLATFORM_DOMAIN
@@ -49,21 +68,34 @@ def send_activation_email(self, user_id: str, invitation_token: str, org_name: s
             html=html,
         )
 
+        if outbox_id:
+            mark_outbox_sent(outbox_id)
         logger.info("activation_email_sent", user_id=user_id, email=user.email)
 
     except Exception as exc:
         logger.error("activation_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc) from exc
+        _finalize_outbox_failure(self, outbox_id, exc)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_rejection_email(self, user_id: str, org_name: str, reason: str = ""):
+def send_rejection_email(
+    self,
+    user_id: str,
+    org_name: str,
+    reason: str = "",
+    outbox_id: str | None = None,
+):
     """Envoyer un e-mail de rejet d'organisation."""
     from src.apps.users.selectors import get_user_by_id
+
+    if outbox_id:
+        mark_outbox_sending(outbox_id)
 
     try:
         user = get_user_by_id(user_id=user_id)
         if user is None:
+            if outbox_id:
+                mark_outbox_failed(outbox_id, "User not found", permanent=True)
             return
 
         html = render_to_string(
@@ -81,11 +113,13 @@ def send_rejection_email(self, user_id: str, org_name: str, reason: str = ""):
             html=html,
         )
 
+        if outbox_id:
+            mark_outbox_sent(outbox_id)
         logger.info("rejection_email_sent", user_id=user_id)
 
     except Exception as exc:
         logger.error("rejection_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc) from exc
+        _finalize_outbox_failure(self, outbox_id, exc)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -124,10 +158,18 @@ def send_password_reset_email(self, user_id: str, reset_token: str):
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_superadmin_new_registration_email(
-        self, org_name: str, org_slug: str, admin_email: str
+    self,
+    org_name: str,
+    org_slug: str,
+    admin_email: str,
+    outbox_ids: list[str] | None = None,
 ):
     """Informer les superadmins d'une nouvelle inscr d'organisation."""
     from src.apps.users.models import User
+
+    outbox_ids = outbox_ids or []
+    for outbox_id in outbox_ids:
+        mark_outbox_sending(outbox_id)
 
     try:
         superadmin_emails = list(
@@ -138,6 +180,8 @@ def send_superadmin_new_registration_email(
 
         if not superadmin_emails:
             logger.warning("no_superadmins_to_notify")
+            for outbox_id in outbox_ids:
+                mark_outbox_failed(outbox_id, "No superadmins configured", permanent=True)
             return
 
         platform_domain = settings.PLATFORM_DOMAIN
@@ -159,24 +203,39 @@ def send_superadmin_new_registration_email(
             html=html,
         )
 
+        for outbox_id in outbox_ids:
+            mark_outbox_sent(outbox_id)
         logger.info("superadmin_notified", org_name=org_name)
 
     except Exception as exc:
         logger.error("superadmin_notification_failed", error=str(exc))
+        if outbox_ids:
+            permanent = self.request.retries >= self.max_retries
+            for outbox_id in outbox_ids:
+                mark_outbox_failed(outbox_id, str(exc), permanent=permanent)
         raise self.retry(exc=exc) from exc
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_registrant_confirmation_email(
-        self, user_id: str, org_name: str, org_slug: str
+    self,
+    user_id: str,
+    org_name: str,
+    org_slug: str,
+    outbox_id: str | None = None,
 ):
     """Envoyer un e-mail de confirmation à la personne qui inscrit une organisation."""
     from src.apps.users.selectors import get_user_by_id
+
+    if outbox_id:
+        mark_outbox_sending(outbox_id)
 
     try:
         user = get_user_by_id(user_id=user_id)
         if user is None:
             logger.warning("registrant_confirmation_user_not_found", user_id=user_id)
+            if outbox_id:
+                mark_outbox_failed(outbox_id, "User not found", permanent=True)
             return
 
         platform_domain = settings.PLATFORM_DOMAIN
@@ -187,7 +246,7 @@ def send_registrant_confirmation_email(
                 "user_name": user.full_name or user.email,
                 "org_name": org_name,
                 "org_slug": org_slug,
-                "site_url": f'{platform_domain}/auth/login',
+                "site_url": f"{platform_domain}/auth/login",
             },
         )
 
@@ -197,21 +256,24 @@ def send_registrant_confirmation_email(
             html=html,
         )
 
+        if outbox_id:
+            mark_outbox_sent(outbox_id)
         logger.info("registrant_confirmation_sent", user_id=user_id, org_name=org_name)
 
     except Exception as exc:
         logger.error("registrant_confirmation_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc) from exc
+        _finalize_outbox_failure(self, outbox_id, exc)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_member_invitation_email(
-        self,
-        user_id: str,
-        invitation_token: str,
-        org_name: str,
-        role: str,
-        invited_by_name: str,
+    self,
+    user_id: str,
+    invitation_token: str,
+    org_name: str,
+    role: str,
+    invited_by_name: str,
+    outbox_id: str | None = None,
 ):
     """
     Env. un e-mail d'invit. à un membre de l'org nouvellement invité.
@@ -220,10 +282,15 @@ def send_member_invitation_email(
     """
     from src.apps.users.selectors import get_user_by_id
 
+    if outbox_id:
+        mark_outbox_sending(outbox_id)
+
     try:
         user = get_user_by_id(user_id=user_id)
         if user is None:
             logger.warning("invitation_email_user_not_found", user_id=user_id)
+            if outbox_id:
+                mark_outbox_failed(outbox_id, "User not found", permanent=True)
             return
 
         platform_domain = getattr(settings, "PLATFORM_DOMAIN", "localhost:8899")
@@ -256,13 +323,15 @@ def send_member_invitation_email(
             html=html,
         )
 
+        if outbox_id:
+            mark_outbox_sent(outbox_id)
         logger.info(
             "invitation_email_sent", user_id=user_id, email=user.email, org=org_name
         )
 
     except Exception as exc:
         logger.error("invitation_email_failed", user_id=user_id, error=str(exc))
-        raise self.retry(exc=exc) from exc
+        _finalize_outbox_failure(self, outbox_id, exc)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)

@@ -1,0 +1,1 @@
+Limitation connue : un utilisateur déjà actif invité dans une 2e organisation ne peut toujours pas accepter via le parcours OTP actuel — cela nécessiterait un flux « acceptation d’invitation » séparé.

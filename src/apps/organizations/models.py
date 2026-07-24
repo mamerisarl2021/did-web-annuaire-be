@@ -118,7 +118,14 @@ class Membership(BaseModel):
     invitation_token = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
+        null=True,
+        blank=True,
         db_index=True,
+    )
+    invitation_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date d'expiration du lien d'activation ou d'invitation.",
     )
     activated_at = models.DateTimeField(null=True, blank=True)
 

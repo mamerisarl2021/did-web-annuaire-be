@@ -28,6 +28,7 @@ from src.apps.authentication.schemas import (
     UserResponseSchema,
 )
 from src.apps.organizations.selectors import get_membership_by_invitation_token
+from src.apps.organizations.services import assert_membership_activatable
 from src.apps.users.services import update_user_profile
 from src.common.exceptions import NotFoundError
 from src.common.throttling import (
@@ -118,6 +119,8 @@ def activate_setup(request: HttpRequest, invitation_token: UUID):
     if membership is None:
         raise NotFoundError("Invalid or expired activation link.")
 
+    assert_membership_activatable(membership=membership)
+
     result = auth_services.setup_otp(user=membership.user)
 
     return 200, {
@@ -148,6 +151,8 @@ def activate_verify(
     membership = get_membership_by_invitation_token(token=invitation_token)
     if membership is None:
         raise NotFoundError("Invalid or expired activation link.")
+
+    assert_membership_activatable(membership=membership)
 
     # OTP verify + membership activation regroupés dans un seul service
     user, tokens = auth_services.verify_otp_activate_and_tokenize(

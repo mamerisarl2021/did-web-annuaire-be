@@ -247,12 +247,40 @@ def approve_organization(request: HttpRequest, org_id: UUID):
     )
 
     if admin_membership:
+        from django.template.loader import render_to_string
+
+        from src.apps.emails.services import create_outbox_email
         from src.apps.emails.tasks import send_activation_email
+        from src.config.env import env
+
+        platform_domain = env.PLATFORM_DOMAIN
+        activation_url = (
+            f"{platform_domain}/auth/activate/{admin_membership.invitation_token}/"
+        )
+        html = render_to_string(
+            "emails/activation.html",
+            {
+                "user_name": admin_membership.user.full_name or admin_membership.user.email,
+                "org_name": org.name,
+                "activation_url": activation_url,
+            },
+        )
+        outbox = create_outbox_email(
+            to=admin_membership.user.email,
+            subject="Welcome to AnnuaireDID — Activate your account",
+            html=html,
+            task_name="send_activation_email",
+            metadata={
+                "user_id": str(admin_membership.user.id),
+                "org_id": str(org.id),
+            },
+        )
 
         send_activation_email.delay(
             user_id=str(admin_membership.user.id),
             invitation_token=str(admin_membership.invitation_token),
             org_name=org.name,
+            outbox_id=str(outbox.id),
         )
 
     return {"message": f"Organization '{org.name}' approved. Activation email sent."}
@@ -288,12 +316,35 @@ def reject_organization(request: HttpRequest, org_id: UUID, payload: OrgRejectSc
     )
 
     if admin_membership:
+        from django.template.loader import render_to_string
+
+        from src.apps.emails.services import create_outbox_email
         from src.apps.emails.tasks import send_rejection_email
+
+        html = render_to_string(
+            "emails/rejection.html",
+            {
+                "user_name": admin_membership.user.full_name or admin_membership.user.email,
+                "org_name": org.name,
+                "reason": payload.reason,
+            },
+        )
+        outbox = create_outbox_email(
+            to=admin_membership.user.email,
+            subject="AnnuaireDID — Organization registration update",
+            html=html,
+            task_name="send_rejection_email",
+            metadata={
+                "user_id": str(admin_membership.user.id),
+                "org_id": str(org.id),
+            },
+        )
 
         send_rejection_email.delay(
             user_id=str(admin_membership.user.id),
             org_name=org.name,
             reason=payload.reason,
+            outbox_id=str(outbox.id),
         )
 
     return {"message": f"Organization '{org.name}' rejected."}

@@ -7,9 +7,15 @@ Enveloppe le backend d'e-mail de Django avec une API stable.
 import re
 from typing import Any
 
+import structlog
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.utils.html import strip_tags
+from django.utils import timezone
+
+from src.apps.emails.models import Email
+
+logger = structlog.get_logger(__name__)
 
 
 def _fallback_plain_text(html: str) -> str:
@@ -76,3 +82,51 @@ def email_send(
 
     sent = message.send(fail_silently=False)
     return sent > 0
+
+
+def create_outbox_email(
+    *,
+    to: str,
+    subject: str,
+    html: str,
+    task_name: str,
+    metadata: dict | None = None,
+) -> Email:
+    return Email.objects.create(
+        to=to,
+        subject=subject,
+        html=html,
+        plain_text=_fallback_plain_text(html),
+        task_name=task_name,
+        metadata=metadata or {},
+        status=Email.Status.READY,
+    )
+
+
+def mark_outbox_sending(outbox_id: str) -> None:
+    Email.objects.filter(id=outbox_id).update(
+        status=Email.Status.SENDING,
+        last_error="",
+    )
+
+
+def mark_outbox_sent(outbox_id: str) -> None:
+    Email.objects.filter(id=outbox_id).update(
+        status=Email.Status.SENT,
+        sent_at=timezone.now(),
+        last_error="",
+    )
+
+
+def mark_outbox_failed(outbox_id: str, error: str, *, permanent: bool = False) -> None:
+    status = Email.Status.FAILED if permanent else Email.Status.READY
+    Email.objects.filter(id=outbox_id).update(status=status, last_error=error)
+    if permanent:
+        email = Email.objects.filter(id=outbox_id).values("task_name", "to").first()
+        logger.error(
+            "email_delivery_failed_permanently",
+            outbox_id=outbox_id,
+            task_name=email["task_name"] if email else "",
+            to=email["to"] if email else "",
+            error=error,
+        )
