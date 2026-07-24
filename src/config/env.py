@@ -132,6 +132,7 @@ class AppSettings(BaseSettings):
     EMAIL_HOST_PASSWORD: str = ""
     EMAIL_USE_TLS: bool = True
     DEFAULT_FROM_EMAIL: str = "noreply@qcdigitalhub.com"
+    INVITATION_EXPIRY_DAYS: int = 7
 
     # ── CORS ────────────────────────────────────────────────────────────
     CORS_ALLOWED_ORIGINS: list[str] = [

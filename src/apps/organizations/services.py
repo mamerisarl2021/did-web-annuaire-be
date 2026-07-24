@@ -4,6 +4,8 @@ Services d'organisation (opérations d'écriture).
 La journalisation d'audit est intégrée dans chaque fonction de mutation via _log_org_audit().
 """
 
+from datetime import datetime, timedelta
+
 import structlog
 from django.db import transaction
 from django.utils import timezone
@@ -11,12 +13,48 @@ from django.utils.text import slugify
 
 from src.apps.files.models import File
 from src.apps.users.models import User
-from src.common.exceptions import ConflictError, ValidationError
+from src.common.exceptions import ConflictError, NotFoundError, ValidationError
 from src.common.types import MembershipStatus, OrgStatus, Role
+from src.config.env import env
 
 from .models import Membership, Organization
 
 logger = structlog.get_logger(__name__)
+
+_ACTIVATABLE_MEMBERSHIP_STATUSES = {
+    Role.ORG_ADMIN: {MembershipStatus.PENDING_ACTIVATION},
+    Role.ORG_MEMBER: {MembershipStatus.INVITED},
+    Role.AUDITOR: {MembershipStatus.INVITED},
+}
+
+
+def invitation_expires_at() -> datetime:
+    return timezone.now() + timedelta(days=env.INVITATION_EXPIRY_DAYS)
+
+
+def assert_membership_activatable(*, membership: Membership) -> None:
+    """Vérifie qu'une adhésion peut être activée via le lien d'invitation."""
+    organization = membership.organization
+
+    if organization.status != OrgStatus.APPROVED:
+        raise NotFoundError("Invalid or expired activation link.")
+
+    if membership.status == MembershipStatus.DEACTIVATED:
+        raise NotFoundError("Invalid or expired activation link.")
+
+    allowed_statuses = _ACTIVATABLE_MEMBERSHIP_STATUSES.get(membership.role, set())
+    if membership.status not in allowed_statuses:
+        raise NotFoundError("Invalid or expired activation link.")
+
+    if (
+        membership.invitation_expires_at
+        and membership.invitation_expires_at <= timezone.now()
+    ):
+        raise NotFoundError("Invalid or expired activation link.")
+
+    user = membership.user
+    if user.is_active and user.account_activated_at:
+        raise ValidationError("Account is already activated.")
 
 
 # ── Cycle de vie de l'organisation ──────────────────────────────────────
@@ -153,7 +191,10 @@ def approve_organization(
     )
     for membership in invited_admins:
         membership.status = MembershipStatus.PENDING_ACTIVATION
-        membership.save(update_fields=["status", "updated_at"])
+        membership.invitation_expires_at = invitation_expires_at()
+        membership.save(
+            update_fields=["status", "invitation_expires_at", "updated_at"]
+        )
 
         _log_membership_audit(
             actor=reviewed_by,
@@ -203,6 +244,37 @@ def reject_organization(
         description=f"Organization '{organization.name}' rejected.{f' Reason: {reason}' if reason else ''}",
         metadata={"reason": reason},
     )
+
+    pending_memberships = Membership.objects.filter(
+        organization=organization,
+        status__in=[
+            MembershipStatus.INVITED,
+            MembershipStatus.PENDING_ACTIVATION,
+        ],
+    )
+    for membership in pending_memberships:
+        membership.status = MembershipStatus.DEACTIVATED
+        membership.invitation_token = None
+        membership.invitation_expires_at = None
+        membership.save(
+            update_fields=[
+                "status",
+                "invitation_token",
+                "invitation_expires_at",
+                "updated_at",
+            ]
+        )
+        _log_membership_audit(
+            actor=reviewed_by,
+            action="MEMBER_INVITE_CANCELED",
+            membership=membership,
+            organization=organization,
+            description=(
+                f"Pending membership for '{membership.user.email}' canceled "
+                f"after organization rejection."
+            ),
+        )
+
     logger.info("org_rejected", org_id=str(organization.id))
     return organization
 
@@ -340,9 +412,25 @@ def activate_membership(*, membership: Membership) -> Membership:
     if membership.status == MembershipStatus.ACTIVE:
         raise ValidationError("Membership is already active.")
 
+    if membership.status not in (
+        MembershipStatus.INVITED,
+        MembershipStatus.PENDING_ACTIVATION,
+    ):
+        raise ValidationError("This membership cannot be activated.")
+
     membership.status = MembershipStatus.ACTIVE
     membership.activated_at = timezone.now()
-    membership.save(update_fields=["status", "activated_at", "updated_at"])
+    membership.invitation_token = None
+    membership.invitation_expires_at = None
+    membership.save(
+        update_fields=[
+            "status",
+            "activated_at",
+            "invitation_token",
+            "invitation_expires_at",
+            "updated_at",
+        ]
+    )
 
     _log_membership_audit(
         actor=membership.user,
@@ -390,6 +478,8 @@ def invite_member(
         status=MembershipStatus.INVITED,
         invited_by=invited_by,
     )
+    membership.invitation_expires_at = invitation_expires_at()
+    membership.save(update_fields=["invitation_expires_at", "updated_at"])
     return membership
 
 
